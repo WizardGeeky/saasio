@@ -1,28 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  FiHome, 
-  FiUsers, 
-  FiSettings, 
-  FiBarChart2, 
-  FiLayers, 
-  FiMenu, 
-  FiBell, 
-  FiSearch,
-  FiX
-} from "react-icons/fi";
-import styles from "./dashboard.module.css";
+import { DashboardSidebar, NavItem } from "@/components/dashboard-sidebar";
+import { DashboardTopbar } from "@/components/dashboard-topbar";
 
-const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: FiHome },
-  { name: "Analytics", href: "/dashboard/analytics", icon: FiBarChart2 },
-  { name: "Users", href: "/dashboard/users", icon: FiUsers },
-  { name: "Projects", href: "/dashboard/projects", icon: FiLayers },
-  { name: "Settings", href: "/dashboard/settings", icon: FiSettings },
-];
+// This array acts as your initial plug-and-play configuration.
+// In the future, this can be fetched from an API or filtered by RBAC.
+const PLUG_AND_PLAY_NAV_ITEMS: NavItem[] = [];
 
 export default function DashboardLayout({
   children,
@@ -38,78 +23,51 @@ export default function DashboardLayout({
   }, [pathname]);
 
   return (
-    <div className={styles.layoutContainer}>
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans">
       {/* Mobile Overlay */}
       <div 
-        className={`${styles.overlay} ${isMobileMenuOpen ? styles.open : ""}`} 
+        className={`fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`} 
         onClick={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${isMobileMenuOpen ? styles.open : ""}`}>
-        <div className={styles.sidebarHeader}>
-          <Link href="/dashboard" className={styles.brand}>
-            <div className={styles.brandIcon}>
-              <FiLayers size={22} />
-            </div>
-            SAASIO
-          </Link>
-        </div>
-        
-        <nav className={styles.nav}>
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link 
-                key={item.name} 
-                href={item.href} 
-                className={`${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                <item.icon className={styles.navIcon} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+      {/* Plug-and-play Sidebar Component */}
+      <DashboardSidebar 
+        navItems={PLUG_AND_PLAY_NAV_ITEMS} 
+        isOpen={isMobileMenuOpen} 
+      />
 
       {/* Main Content */}
-      <div className={styles.mainContent}>
-        {/* Topbar */}
-        <header className={styles.topbar}>
-          <button 
-            className={styles.mobileTrigger} 
-            onClick={() => setIsMobileMenuOpen(true)}
-          >
-            <FiMenu size={24} />
-          </button>
-
-          <div className={styles.searchContainer}>
-            <FiSearch size={18} color="#94a3b8" />
-            <input 
-              type="text" 
-              placeholder="Search anything..." 
-              className={styles.searchInput}
-            />
-          </div>
-
-          <div className={styles.topbarActions}>
-            <button className={styles.iconButton}>
-              <FiBell size={20} />
-              <span className={styles.badge}>3</span>
-            </button>
-            <button className={styles.profileButton}>
-              <div className={styles.avatar}>A</div>
-              <span className={styles.profileName}>Admin User</span>
-            </button>
-          </div>
-        </header>
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        {/* Plug-and-play Topbar Component */}
+        <DashboardTopbar 
+          onMobileMenuToggle={() => setIsMobileMenuOpen(true)} 
+        />
 
         {/* Page Content */}
-        <main className={styles.contentWrapper}>
+        <main className="flex-1 overflow-y-auto p-5 lg:p-8 bg-slate-50 custom-scrollbar">
           {children}
         </main>
       </div>
+      
+      {/* Global styles for the scrollbar inside JSX to keep it zero-css-file approach */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}} />
     </div>
   );
 }
