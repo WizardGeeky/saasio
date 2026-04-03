@@ -21,13 +21,13 @@ export function DashboardSidebar({ navItems, isOpen }: DashboardSidebarProps) {
 
   return (
     <aside 
-      className={`fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-white border-r border-slate-100 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[4px_0_24px_rgba(0,0,0,0.02)] lg:static lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-white border-r border-slate-100 transition-transform duration-300 ease-in-out shadow-[4px_0_24px_rgba(0,0,0,0.02)] lg:static lg:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
       <div className="flex h-20 items-center px-6">
         <Link href="/dashboard" className="flex items-center gap-3 text-2xl font-extrabold text-slate-900 tracking-tight decoration-transparent">
-          <div className="flex items-center justify-center p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-[0_8px_16px_rgba(16,185,129,0.2)]">
+          <div className="flex items-center justify-center p-2 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-[0_8px_16px_rgba(16,185,129,0.2)]">
             <FiLayers size={22} />
           </div>
           SAASIO
