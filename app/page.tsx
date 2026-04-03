@@ -73,7 +73,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans p-4 sm:p-6 lg:p-8">
+    <div className="flex h-screen w-full items-center justify-center bg-white font-sans p-4 sm:p-6 lg:p-8">
 
       <div className="w-full max-w-[440px] bg-white relative">
 
