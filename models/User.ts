@@ -5,6 +5,10 @@ export interface IUser extends Document {
   fullname: string;
   mobile: string;
   email: string;
+  occupation: string;
+  state: string;
+  country: string;
+  source: string;
   accountStatus: AccountStatus;
   role: string;
   createdAt: Date;
@@ -32,7 +36,6 @@ const UserSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
-      match: /^\S+@\S+\.\S+$/,
     },
 
     accountStatus: {
@@ -46,7 +49,33 @@ const UserSchema = new Schema<IUser>(
       type: String,
       ref: "Role",
       required: true,
+      lowercase: true,
+      trim: true,
       index: true,
+    },
+
+    occupation: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    state: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    country: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    source: {
+      type: String,
+      required: true,
+      trim: true,
     },
   },
   {
