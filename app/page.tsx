@@ -182,13 +182,6 @@ export default function LoginPage() {
           </form>
 
         </div>
-
-        {/* Footer info matching absolute minimalism */}
-        <div className="pt-2 pb-6 text-center">
-          <p className="text-xs font-medium text-slate-400">
-            Secure login for SAASIO dashboard.
-          </p>
-        </div>
       </div>
     </div>
   );
