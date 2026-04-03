@@ -49,7 +49,6 @@ const UserSchema = new Schema<IUser>(
       type: String,
       ref: "Role",
       required: true,
-      lowercase: true,
       trim: true,
       index: true,
     },

@@ -12,7 +12,7 @@ const RoleSchema = new Schema<IRole>(
     _id: {
       type: String,
       required: true,
-      lowercase: true,
+      uppercase: true,
       trim: true,
     },
     privileges: [
