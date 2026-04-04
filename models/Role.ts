@@ -2,7 +2,7 @@ import mongoose, { Schema, Model } from "mongoose";
 
 export interface IRole {
   _id: string;
-  privileges: mongoose.Types.ObjectId[];
+  privileges: string[]; // Changed from ObjectId[] to string[]
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,7 +17,7 @@ const RoleSchema = new Schema<IRole>(
     },
     privileges: [
       {
-        type: Schema.Types.ObjectId,
+        type: String,
         ref: "Privilege",
         required: true,
       },

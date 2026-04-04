@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { FiLayers } from "react-icons/fi";
+import { usePathname, useRouter } from "next/navigation";
+import { FiLayers, FiLogOut } from "react-icons/fi";
 
 export type NavItem = {
   name: string;
@@ -18,6 +18,12 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ navItems, isOpen }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.replace("/");
+  };
 
   return (
     <aside 
@@ -25,20 +31,17 @@ export function DashboardSidebar({ navItems, isOpen }: DashboardSidebarProps) {
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <div className="flex h-20 items-center px-6 border-b-2 ">
+      {/* Brand */}
+      <div className="flex h-20 items-center px-6 border-b-2 border-slate-200">
         <Link href="/dashboard" className="flex items-center gap-3 text-2xl font-extrabold text-slate-900 tracking-tight decoration-transparent">
-          <div className="flex items-center justify-center p-2 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-[0_8px_16px_rgba(16,185,129,0.2)]">
+          <div className="flex items-center justify-center p-2 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white">
             <FiLayers size={22} />
           </div>
           SAASIO
         </Link>
       </div>
       
-      {/* 
-        This is where your dynamic plug-and-play components go!
-        Since navItems are passed as props, any external config (like RBAC)
-        can simply pass their authorized links to this component.
-      */}
+      {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-1.5 custom-scrollbar">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -46,23 +49,31 @@ export function DashboardSidebar({ navItems, isOpen }: DashboardSidebarProps) {
             <Link 
               key={item.name} 
               href={item.href} 
-              className={`group relative flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-medium text-[0.95rem] transition-all duration-200 ${
-                isActive 
-                  ? "bg-emerald-50 text-emerald-700 font-semibold" 
-                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50"
+              className={`group flex items-center gap-2.5 px-4 py-2.5 rounded-full font-medium text-lg transition-all duration-200 ${
+                isActive
+                  ? "text-emerald-600 font-semibold bg-green-100"
+                  : "text-slate-700 hover:text-emerald-600"
               }`}
             >
-              {isActive && (
-                <span className="absolute left-0 top-[10%] bottom-[10%] w-1 bg-emerald-500 rounded-r-md" />
-              )}
               <item.icon className={`text-xl transition-colors duration-200 ${
-                isActive ? "text-emerald-700" : "group-hover:text-emerald-500"
+                isActive ? "text-emerald-600" : "group-hover:text-emerald-600"
               }`} />
               {item.name}
             </Link>
           );
         })}
       </nav>
+
+      {/* Footer — Logout */}
+      <div className="px-4 py-4 border-t-2 border-gray-200">
+        <button
+          onClick={handleLogout}
+          className="group flex w-full items-center gap-3 rounded-xl bg-red-50 px-4 py-3.5 text-sm font-semibold text-red-600 transition-all duration-200 hover:bg-red-100 active:scale-[0.98]"
+        >
+          <FiLogOut size={18} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
+          Logout
+        </button>
+      </div>
     </aside>
   );
 }

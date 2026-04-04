@@ -1,22 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { DashboardSidebar, NavItem } from "@/components/dashboard-sidebar";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard-topbar";
 import { useAuthGuard } from "@/app/utils/useAuthGuard";
+import { PrivilegeProvider, usePrivilegeContext } from "@/app/contexts/PrivilegeContext";
+import { NAV_CONFIG, NavConfig } from "@/app/configs/nav.config";
+import { NavItem } from "@/components/dashboard-sidebar";
 
-// This array acts as your initial plug-and-play configuration.
-// In the future, this can be fetched from an API or filtered by RBAC.
-const PLUG_AND_PLAY_NAV_ITEMS: NavItem[] = [];
+// ─── Inner layout (has access to PrivilegeContext) ────────────────────────────
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useAuthGuard("requireAuth");
 
+  const { hasPrivilege, isLoading } = usePrivilegeContext();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -25,52 +23,63 @@ export default function DashboardLayout({
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  /**
+   * Filter nav items by privilege:
+   * - Items with empty privileges[] are always shown (e.g., Overview)
+   * - Items with privileges are shown if the user has AT LEAST ONE match
+   */
+  const filteredNavItems: NavItem[] = useMemo(() => {
+    if (isLoading) return [];
+    return NAV_CONFIG.filter((item: NavConfig) => {
+      if (item.privileges.length === 0) return true;
+      return item.privileges.some((p) => hasPrivilege(p.method, p.apiPath));
+    });
+  }, [hasPrivilege, isLoading]);
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-100 font-sans">
       {/* Mobile Overlay */}
-      <div 
-        className={`fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
-          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`} 
+      <div
+        className={`fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
         onClick={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Plug-and-play Sidebar Component */}
-      <DashboardSidebar 
-        navItems={PLUG_AND_PLAY_NAV_ITEMS} 
-        isOpen={isMobileMenuOpen} 
+      {/* Sidebar — receives privilege-filtered nav items */}
+      <DashboardSidebar
+        navItems={filteredNavItems}
+        isOpen={isMobileMenuOpen}
       />
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-        {/* Plug-and-play Topbar Component */}
-        <DashboardTopbar 
-          onMobileMenuToggle={() => setIsMobileMenuOpen(true)} 
+        <DashboardTopbar
+          onMobileMenuToggle={() => setIsMobileMenuOpen(true)}
         />
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-5 lg:p-8 bg-slate-50 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-3 lg:px-8 lg:py-8  bg-gray-100 custom-scrollbar">
           {children}
         </main>
       </div>
-      
-      {/* Global styles for the scrollbar inside JSX to keep it zero-css-file approach */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
+
+      {/* Scrollbar styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}} />
     </div>
+  );
+}
+
+// ─── Outer layout (provides PrivilegeContext) ─────────────────────────────────
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PrivilegeProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </PrivilegeProvider>
   );
 }

@@ -1,8 +1,8 @@
 import mongoose, { Schema, Model } from "mongoose";
 
 export interface IOtp {
-  _id: string; // encrypted email as primary key
-  otp: string; // encrypted OTP code
+  _id: string; 
+  otp: string; 
   expiresAt: Date;
 }
 
@@ -19,7 +19,7 @@ const OtpSchema = new Schema<IOtp>(
     expiresAt: {
       type: Date,
       required: true,
-      index: { expires: 0 }, // MongoDB TTL: auto-delete when expiresAt is past
+      index: { expires: 0 }, 
     },
   },
   { timestamps: false }

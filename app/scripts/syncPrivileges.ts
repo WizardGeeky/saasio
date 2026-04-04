@@ -33,9 +33,13 @@ function getApiPath(filePath: string): string {
 function getMethods(filePath: string): string[] {
     const content = fs.readFileSync(filePath, "utf-8");
     const methods = ["GET", "POST", "PUT", "DELETE", "PATCH"];
-    return methods.filter((m) =>
-        content.includes(`export async function ${m}`)
-    );
+    return methods.filter((m) => {
+        // Detect:
+        // 1. export async function GET
+        // 2. export const GET =
+        const regex = new RegExp(`export\\s+(async\\s+function|const)\\s+${m}\\b`, 'g');
+        return regex.test(content);
+    });
 }
 
 function generateName(apiPath: string, method: string): string {
@@ -65,12 +69,13 @@ export default async function syncPrivileges() {
 
             for (const method of methods) {
                 const name = generateName(apiPath, method);
+                const privilegeId = `${method}:${apiPath}`;
 
                 try {
                     await Privilege.updateOne(
-                        { apiPath, method },
+                        { _id: privilegeId },
                         {
-                            $set: { name, apiPath, method },
+                            $set: { _id: privilegeId, name, apiPath, method },
                         },
                         { upsert: true }
                     );

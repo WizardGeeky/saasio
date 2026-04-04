@@ -1,6 +1,7 @@
 import mongoose, { Schema, Model } from "mongoose";
 
 export interface IPrivilege {
+  _id: string;
   name: string;
   apiPath: string;
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -10,6 +11,11 @@ export interface IPrivilege {
 
 const PrivilegeSchema = new Schema<IPrivilege>(
   {
+    _id: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     name: {
       type: String,
       required: true,
