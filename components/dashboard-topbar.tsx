@@ -15,7 +15,7 @@ export function DashboardTopbar({
   userName = "Admin User" 
 }: DashboardTopbarProps) {
   return (
-    <header className="flex h-20 items-center justify-between bg-white px-5 lg:px-8 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.02)] relative">
+    <header className="flex h-20 items-center justify-between bg-white px-5 lg:px-8 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.02)] relative border-b-2 border-slate-200">
       <button 
         className="flex lg:hidden bg-transparent border-none text-slate-800 p-2.5 rounded-lg hover:bg-slate-100 transition-colors mr-2" 
         onClick={onMobileMenuToggle}
@@ -26,13 +26,8 @@ export function DashboardTopbar({
       {/* Spacer for mobile to center/align actions if search is hidden */}
       <div className="flex-1 lg:hidden"></div>
 
-      <div className="hidden lg:flex items-center bg-slate-100 rounded-full px-4 py-2 w-[300px] border border-transparent focus-within:bg-white focus-within:border-emerald-500 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.1)] transition-all">
-        <FiSearch size={18} className="text-slate-400" />
-        <input 
-          type="text" 
-          placeholder="Search anything..." 
-          className="bg-transparent border-none outline-none w-full ml-2 text-slate-900 text-[0.95rem] placeholder:text-slate-400"
-        />
+      <div className="hidden lg:flex items-center">
+        
       </div>
 
       <div className="flex items-center gap-2 lg:gap-2">
