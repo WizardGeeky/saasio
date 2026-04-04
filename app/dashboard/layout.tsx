@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardSidebar, NavItem } from "@/components/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard-topbar";
+import { useAuthGuard } from "@/app/utils/useAuthGuard";
 
 // This array acts as your initial plug-and-play configuration.
 // In the future, this can be fetched from an API or filtered by RBAC.
@@ -14,6 +15,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  useAuthGuard("requireAuth");
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 

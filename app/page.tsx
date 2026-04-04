@@ -4,10 +4,13 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiMail, FiArrowRight, FiCheckCircle, FiChevronLeft, FiLayers } from "react-icons/fi";
 import { useToast } from "@/components/ui/toast";
+import { useAuthGuard } from "@/app/utils/useAuthGuard";
 
 type AuthStep = "email" | "otp";
 
 export default function LoginPage() {
+  useAuthGuard("requireGuest");
+
   const router = useRouter();
   const { error: toastError, success: toastSuccess } = useToast();
 
