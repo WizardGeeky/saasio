@@ -128,3 +128,8 @@
     @apply font-sans;
   }
 }
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
