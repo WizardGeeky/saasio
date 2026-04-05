@@ -319,131 +319,200 @@ export default function RolesPage() {
 
             {/* ── Roles Table ── */}
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                {/* Card header */}
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                        All Roles
-                    </h2>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
-                        {roles.length} role{roles.length !== 1 ? "s" : ""}
+                    <h2 className="font-semibold text-gray-800">All Roles</h2>
+                    <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+                        {isLoading ? "…" : `${roles.length} role${roles.length !== 1 ? "s" : ""}`}
                     </span>
                 </div>
 
+                {/* Loading skeleton */}
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500" />
-                        <p className="text-gray-400 text-sm animate-pulse">Loading roles…</p>
+                    <div className="p-5 space-y-3">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="animate-pulse flex gap-4 items-center p-4 rounded-xl border border-gray-100">
+                                <div className="h-8 w-8 rounded-lg bg-gray-200 shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-3 w-1/3 rounded bg-gray-200" />
+                                    <div className="h-3 w-1/5 rounded bg-gray-200" />
+                                </div>
+                                <div className="h-6 w-20 rounded-full bg-gray-200" />
+                                <div className="flex gap-1">
+                                    <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                                    <div className="h-8 w-8 rounded-lg bg-gray-200" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : roles.length === 0 ? (
+                    /* Empty state */
+                    <div className="flex flex-col items-center justify-center py-20 px-4 gap-4">
+                        <div className="p-5 bg-gray-100 rounded-2xl">
+                            <FiShield size={32} className="text-gray-400" />
+                        </div>
+                        <div className="text-center">
+                            <p className="text-gray-700 font-semibold">No roles found</p>
+                            <p className="text-gray-400 text-xs mt-1">
+                                Create your first role to start managing access.
+                            </p>
+                        </div>
+                        {canCreate && (
+                            <button
+                                onClick={openNew}
+                                className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all"
+                            >
+                                <FiPlus size={14} /> New Role
+                            </button>
+                        )}
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-gray-50 border-b border-gray-100">
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                        Role
-                                    </th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                        Privileges
-                                    </th>
-                                    <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                        Created
-                                    </th>
-                                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                        Last Updated
-                                    </th>
-                                    <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {roles.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-20 text-center">
-                                            <div className="flex flex-col items-center gap-3">
-                                                <div className="p-4 bg-gray-100 rounded-2xl">
-                                                    <FiShield size={28} className="text-gray-400" />
-                                                </div>
-                                                <p className="text-gray-700 font-semibold">No roles found</p>
-                                                <p className="text-gray-400 text-xs">
-                                                    Create your first role to start managing access.
-                                                </p>
-                                                {canCreate && (
-                                                    <button
-                                                        onClick={openNew}
-                                                        className="mt-1 flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-md shadow-emerald-600/20 transition-all"
-                                                    >
-                                                        <FiPlus size={14} /> New Role
-                                                    </button>
-                                                )}
+                    <>
+                        {/* ── Mobile cards (< sm) ── */}
+                        <div className="sm:hidden divide-y divide-gray-100">
+                            {roles.map((role) => (
+                                <div key={role._id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
+                                    {/* Top: name + badges */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="shrink-0 p-2 bg-emerald-100 rounded-lg">
+                                                <FiShield size={13} className="text-emerald-600" />
                                             </div>
-                                        </td>
+                                            <div className="min-w-0">
+                                                <p className="font-mono font-semibold text-sm text-gray-900 tracking-wide truncate">
+                                                    {role._id}
+                                                </p>
+                                                <p className="text-[11px] text-gray-400 mt-0.5">
+                                                    Updated {new Date(role.updatedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {role._id === "SYSTEM_ADMIN" && (
+                                            <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full">
+                                                <FiLock size={9} /> Protected
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Detail row */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-xs font-semibold">
+                                            <FiKey size={10} />
+                                            {role.privileges.length} privilege{role.privileges.length !== 1 ? "s" : ""}
+                                        </span>
+                                        {role.privileges.length === allPrivileges.length && allPrivileges.length > 0 && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-full">
+                                                Full access
+                                            </span>
+                                        )}
+                                        <span className="text-xs text-gray-400">
+                                            Created {new Date(role.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                        </span>
+                                    </div>
+
+                                    {/* Actions */}
+                                    {deleteConfirmId === role._id ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-red-600 font-medium flex-1">Delete this role?</span>
+                                            <button
+                                                onClick={() => handleDelete(role._id)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all"
+                                            >
+                                                <FiCheck size={11} /> Yes
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteConfirmId(null)}
+                                                className="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1.5">
+                                            {canUpdate && (
+                                                <button
+                                                    onClick={() => openEdit(role)}
+                                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all"
+                                                >
+                                                    <FiEdit2 size={13} /> Edit
+                                                </button>
+                                            )}
+                                            {canDelete && role._id !== "SYSTEM_ADMIN" && (
+                                                <button
+                                                    onClick={() => setDeleteConfirmId(role._id)}
+                                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all"
+                                                >
+                                                    <FiTrash2 size={13} /> Delete
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* ── Desktop table (≥ sm) ── */}
+                        <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50 border-b border-gray-100">
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Privileges</th>
+                                        <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Created</th>
+                                        <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Last Updated</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
                                     </tr>
-                                ) : (
-                                    roles.map((role) => (
-                                        <tr
-                                            key={role._id}
-                                            className="hover:bg-gray-50/70 transition-colors group"
-                                        >
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {roles.map((role) => (
+                                        <tr key={role._id} className="hover:bg-gray-50/70 transition-colors">
                                             {/* Role name */}
-                                            <td className="px-4 sm:px-6 py-4">
-                                                <div className="flex items-center gap-2.5 flex-wrap">
-                                                    <div className="flex-shrink-0 p-1.5 bg-emerald-100 rounded-lg">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="shrink-0 p-1.5 bg-emerald-100 rounded-lg">
                                                         <FiShield size={12} className="text-emerald-600" />
                                                     </div>
-                                                    <span className="font-semibold text-gray-900 text-sm font-mono tracking-wide">
+                                                    <span className="font-mono font-semibold text-sm text-gray-900 tracking-wide">
                                                         {role._id}
                                                     </span>
                                                     {role._id === "SYSTEM_ADMIN" && (
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
-                                                            <FiLock size={9} />
-                                                            Protected
+                                                            <FiLock size={9} /> Protected
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
 
-                                            {/* Privileges count */}
-                                            <td className="px-4 sm:px-6 py-4">
-                                                <div className="flex items-center gap-2 flex-wrap">
+                                            {/* Privileges */}
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
                                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-xs font-semibold">
                                                         <FiKey size={10} />
-                                                        {role.privileges.length}
-                                                        <span className="hidden sm:inline">
-                                                            {" "}privilege{role.privileges.length !== 1 ? "s" : ""}
-                                                        </span>
+                                                        {role.privileges.length} privilege{role.privileges.length !== 1 ? "s" : ""}
                                                     </span>
-                                                    {role.privileges.length === allPrivileges.length &&
-                                                        allPrivileges.length > 0 && (
-                                                            <span className="hidden sm:inline text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">
-                                                                Full access
-                                                            </span>
-                                                        )}
+                                                    {role.privileges.length === allPrivileges.length && allPrivileges.length > 0 && (
+                                                        <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">
+                                                            Full access
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
 
                                             {/* Created */}
                                             <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-xs">
-                                                {new Date(role.createdAt).toLocaleDateString("en-IN", {
-                                                    day: "2-digit",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                })}
+                                                {new Date(role.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                                             </td>
 
                                             {/* Updated */}
                                             <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-xs">
-                                                {new Date(role.updatedAt).toLocaleDateString("en-IN", {
-                                                    day: "2-digit",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                })}
+                                                {new Date(role.updatedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                                             </td>
 
                                             {/* Actions */}
-                                            <td className="px-4 sm:px-6 py-4">
+                                            <td className="px-6 py-4">
                                                 {deleteConfirmId === role._id ? (
                                                     <div className="flex items-center gap-1.5 justify-end flex-wrap">
-                                                        <span className="text-xs text-red-600 font-medium hidden sm:inline whitespace-nowrap">
+                                                        <span className="text-xs text-red-600 font-medium hidden md:inline whitespace-nowrap">
                                                             Confirm delete?
                                                         </span>
                                                         <button
@@ -467,18 +536,16 @@ export default function RolesPage() {
                                                                 className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
                                                                 title="Edit privileges"
                                                             >
-                                                                <FiEdit2 size={14} />
+                                                                <FiEdit2 size={15} />
                                                             </button>
                                                         )}
                                                         {canDelete && role._id !== "SYSTEM_ADMIN" && (
                                                             <button
-                                                                onClick={() => {
-                                                                    setDeleteConfirmId(role._id);
-                                                                }}
+                                                                onClick={() => setDeleteConfirmId(role._id)}
                                                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                                                 title="Delete role"
                                                             >
-                                                                <FiTrash2 size={14} />
+                                                                <FiTrash2 size={15} />
                                                             </button>
                                                         )}
                                                         {!canUpdate && !canDelete && (
@@ -488,11 +555,11 @@ export default function RolesPage() {
                                                 )}
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -720,7 +787,7 @@ function RoleModal({
                                                             e.stopPropagation();
                                                             toggleGroup(items);
                                                         }}
-                                                        className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                                                        className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
                                                             allGroupSelected
                                                                 ? "bg-emerald-500 border-emerald-500"
                                                                 : someGroupSelected
@@ -777,7 +844,7 @@ function RoleModal({
                                                                         className="sr-only"
                                                                     />
                                                                     <div
-                                                                        className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                                                                        className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
                                                                             checked
                                                                                 ? "bg-emerald-500 border-emerald-500"
                                                                                 : "border-gray-300 bg-white"

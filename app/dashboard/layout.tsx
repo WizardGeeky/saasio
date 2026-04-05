@@ -8,6 +8,7 @@ import { useAuthGuard } from "@/app/utils/useAuthGuard";
 import { PrivilegeProvider, usePrivilegeContext } from "@/app/contexts/PrivilegeContext";
 import { NAV_CONFIG, NavConfig } from "@/app/configs/nav.config";
 import { NavItem } from "@/components/dashboard-sidebar";
+import { getStoredToken, decodeToken } from "@/app/utils/token";
 
 // ─── Inner layout (has access to PrivilegeContext) ────────────────────────────
 
@@ -17,6 +18,19 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { hasPrivilege, isLoading } = usePrivilegeContext();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  const [userName, setUserName] = useState("Admin");
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const token = getStoredToken();
+    if (!token) return;
+    const payload = decodeToken(token);
+    if (payload) {
+      setUserName(payload.name ?? "Admin");
+      setUserRole(payload.role ?? "");
+    }
+  }, []);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -55,6 +69,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         <DashboardTopbar
           onMobileMenuToggle={() => setIsMobileMenuOpen(true)}
+          userName={userName}
+          userRole={userRole}
         />
 
         <main className="flex-1 overflow-y-auto p-3 lg:px-8 lg:py-8  bg-gray-100 custom-scrollbar">

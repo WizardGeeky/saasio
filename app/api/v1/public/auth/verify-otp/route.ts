@@ -51,6 +51,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const token = generateToken({
             sub: user._id.toString(),
             email: encrypt(user.email),
+            name: user.fullname,
             status: user.accountStatus,
             role: user.role,
         });

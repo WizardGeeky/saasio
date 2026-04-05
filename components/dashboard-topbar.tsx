@@ -1,44 +1,66 @@
 "use client";
 
-import React from "react";
-import { FiMenu, FiBell, FiSearch } from "react-icons/fi";
+import { FiMenu, FiBell } from "react-icons/fi";
+import Link from "next/link";
 
 interface DashboardTopbarProps {
   onMobileMenuToggle: () => void;
-  userInitials?: string;
   userName?: string;
+  userRole?: string;
 }
 
-export function DashboardTopbar({ 
-  onMobileMenuToggle, 
-  userInitials = "A", 
-  userName = "Admin User" 
+export function DashboardTopbar({
+  onMobileMenuToggle,
+  userName = "Admin",
+  userRole = "",
 }: DashboardTopbarProps) {
+  const initials = userName
+    .split(" ")
+    .map((n) => n[0] ?? "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <header className="flex h-20 items-center justify-between bg-white px-2 lg:px-8 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.02)] relative border-b-2 border-gray-200">
-      <button 
-        className="flex lg:hidden bg-transparent border-none text-slate-800 p-2.5 rounded-lg hover:bg-slate-100 transition-colors mr-2" 
+    <header className="flex h-20 items-center justify-between bg-white px-4 lg:px-8 z-30 border-b border-gray-200 shadow-sm shrink-0">
+      {/* Mobile menu toggle */}
+      <button
+        className="flex lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
         onClick={onMobileMenuToggle}
+        aria-label="Open menu"
       >
-        <FiMenu size={24} />
+        <FiMenu size={22} />
       </button>
 
-      {/* Spacer for mobile to center/align actions if search is hidden */}
-      <div className="flex-1 lg:hidden"></div>
+      {/* Left spacer on mobile */}
+      <div className="flex-1 lg:hidden" />
 
-      <div className="hidden lg:flex items-center">
-        
-      </div>
+      {/* Desktop left — empty for now (search could go here) */}
+      <div className="hidden lg:flex flex-1 items-center" />
 
-      <div className="flex items-center gap-2 lg:gap-2">
-        <button className="relative flex items-center justify-center p-2.5 rounded-full bg-transparent border border-transparent text-slate-500 hover:bg-slate-50 hover:text-emerald-500 hover:border-slate-200 transition-all">
-          <FiBell size={20} />
-          <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border-2 border-white bg-red-500 text-[0.65rem] font-bold text-white">3</span>
-        </button>
-        <button className="flex items-center gap-3 bg-transparent border border-gray-200 p-1 lg:pl-1.5 lg:pr-4 rounded-full transition-all ml-2 lg:ml-4 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-[0_4px_12px_rgba(16,185,129,0.1)]">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-emerald-500 to-emerald-700 font-bold text-[0.95rem] text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)]">{userInitials}</div>
-          <span className="hidden lg:block text-sm font-semibold text-slate-800">{userName}</span>
-        </button>
+      {/* Right actions */}
+      <div className="flex items-center gap-2">
+        {/* Notifications bell */}
+        <Link
+          href="/dashboard/notifications"
+          className="relative flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-emerald-600 transition-all"
+          title="Notifications"
+        >
+          <FiBell size={19} />
+        </Link>
+
+        {/* User pill */}
+        <div className="flex items-center gap-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 px-2.5 py-1.5 rounded-xl transition-all cursor-default ml-1">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-emerald-700 text-[0.7rem] font-bold text-white shadow-sm shadow-emerald-500/30 shrink-0">
+            {initials}
+          </div>
+          <div className="hidden sm:block leading-tight">
+            <p className="text-xs font-semibold text-slate-800 max-w-[110px] truncate">{userName}</p>
+            {userRole && (
+              <p className="text-[10px] text-slate-400 font-medium max-w-[110px] truncate">{userRole}</p>
+            )}
+          </div>
+        </div>
       </div>
     </header>
   );

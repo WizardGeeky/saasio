@@ -21,6 +21,7 @@ if (!JWT_SECRET || !JWT_ISSUER || !JWT_AUDIENCE || !JWT_API_VERSION) {
 export interface CustomJwtPayload {
     sub: string;
     email: string;
+    name: string;
     status: AccountStatus;
     role: string;
     apiVersion: string;
@@ -38,12 +39,14 @@ export interface VerifyResult {
 export const generateToken = (payload: {
     sub: string;
     email: string;
+    name: string;
     status: any;
     role: string;
 }): string => {
 
     const cleanPayload = {
         email: payload.email,
+        name: payload.name,
         status: payload.status,
         role: payload.role,
         apiVersion: JWT_API_VERSION

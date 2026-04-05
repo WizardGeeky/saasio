@@ -25,6 +25,8 @@ import {
     FiKey,
     FiSettings,
     FiCreditCard,
+    FiCpu,
+    FiBell,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -49,7 +51,6 @@ export const NAV_CONFIG: NavConfig[] = [
         name: "Overview",
         href: "/dashboard",
         icon: FiHome,
-        // Always visible — no specific privilege required
         privileges: [],
     },
     {
@@ -60,7 +61,6 @@ export const NAV_CONFIG: NavConfig[] = [
             { method: "GET",    apiPath: "/api/v1/private/users" },
             { method: "POST",   apiPath: "/api/v1/private/users" },
             { method: "PUT",    apiPath: "/api/v1/private/users" },
-            { method: "PATCH",  apiPath: "/api/v1/private/users" },
             { method: "DELETE", apiPath: "/api/v1/private/users" },
         ],
     },
@@ -82,7 +82,28 @@ export const NAV_CONFIG: NavConfig[] = [
         privileges: [
             { method: "GET",    apiPath: "/api/v1/private/privileges" },
             { method: "POST",   apiPath: "/api/v1/private/privileges" },
+            { method: "PUT",    apiPath: "/api/v1/private/privileges" },
             { method: "DELETE", apiPath: "/api/v1/private/privileges" },
+        ],
+    },
+    {
+        name: "AI Models",
+        href: "/dashboard/ai-models",
+        icon: FiCpu,
+        privileges: [
+            { method: "GET",    apiPath: "/api/v1/private/ai-models" },
+            { method: "POST",   apiPath: "/api/v1/private/ai-models" },
+            { method: "PUT",    apiPath: "/api/v1/private/ai-models" },
+            { method: "DELETE", apiPath: "/api/v1/private/ai-models" },
+        ],
+    },
+    {
+        name: "Notifications",
+        href: "/dashboard/notifications",
+        icon: FiBell,
+        privileges: [
+            { method: "POST",   apiPath: "/api/v1/private/notifications" },
+            { method: "GET",    apiPath: "/api/v1/private/notifications" },
         ],
     },
     {
