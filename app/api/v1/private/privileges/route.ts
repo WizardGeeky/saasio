@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { Role } from "@/models/Role";
+import { Privilege } from "@/models/Privilege";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 
 export interface PrivilegeDto {
@@ -17,12 +18,21 @@ export interface PrivilegeDto {
  * The response is used by the client PrivilegeContext to gate UI elements.
  */
 export const GET = withAuth(async (
-    _req: NextRequest,
+    req: NextRequest,
     _ctx: { params: any },
     user: CustomJwtPayload
 ): Promise<NextResponse> => {
     try {
         await connectDB();
+
+        // ?all=true — return every privilege in the system (used by role management UI)
+        const { searchParams } = new URL(req.url);
+        if (searchParams.get("all") === "true") {
+            const privileges = await Privilege.find()
+                .sort({ apiPath: 1, method: 1 })
+                .select("_id name apiPath method");
+            return NextResponse.json({ privileges }, { status: 200 });
+        }
 
         // Fetch the role and populate its privileges
         const role = await Role.findById(user.role).populate<{
