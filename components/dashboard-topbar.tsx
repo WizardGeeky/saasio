@@ -15,7 +15,7 @@ export function DashboardTopbar({
   userName = "Admin User" 
 }: DashboardTopbarProps) {
   return (
-    <header className="flex h-20 items-center justify-between bg-white px-5 lg:px-8 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.02)] relative border-b-2 border-gray-200">
+    <header className="flex h-20 items-center justify-between bg-white px-2 lg:px-8 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.02)] relative border-b-2 border-gray-200">
       <button 
         className="flex lg:hidden bg-transparent border-none text-slate-800 p-2.5 rounded-lg hover:bg-slate-100 transition-colors mr-2" 
         onClick={onMobileMenuToggle}
