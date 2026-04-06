@@ -20,7 +20,7 @@ export function useAuthGuard(mode: GuardMode): void {
     const valid = token ? isTokenValid(token) : false;
 
     if (mode === "requireAuth" && !valid) {
-      router.replace("/");
+      router.replace("/login");
     }
 
     if (mode === "requireGuest" && valid) {

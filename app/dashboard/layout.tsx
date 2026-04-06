@@ -44,10 +44,26 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
    */
   const filteredNavItems: NavItem[] = useMemo(() => {
     if (isLoading) return [];
-    return NAV_CONFIG.filter((item: NavConfig) => {
-      if (item.privileges.length === 0) return true;
-      return item.privileges.some((p) => hasPrivilege(p.method, p.apiPath));
-    });
+
+    const filterItem = (item: NavConfig): NavItem | null => {
+      const visible =
+        item.privileges.length === 0 ||
+        item.privileges.some((p) => hasPrivilege(p.method, p.apiPath));
+      if (!visible) return null;
+
+      const filteredChildren = item.children
+        ?.map(filterItem)
+        .filter((c): c is NavItem => c !== null);
+
+      return {
+        name: item.name,
+        href: item.href,
+        icon: item.icon,
+        ...(filteredChildren && filteredChildren.length > 0 ? { children: filteredChildren } : {}),
+      };
+    };
+
+    return NAV_CONFIG.map(filterItem).filter((i): i is NavItem => i !== null);
   }, [hasPrivilege, isLoading]);
 
   return (

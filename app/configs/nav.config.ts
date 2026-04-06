@@ -30,6 +30,8 @@ import {
     FiUser,
     FiFolder,
     FiFileText,
+    FiList,
+    FiShoppingCart,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -47,6 +49,8 @@ export interface NavConfig {
      * Use an empty array [] to always show (e.g., a home/overview page).
      */
     privileges: NavPrivilege[];
+    /** Optional sub-navigation items rendered as an indented group */
+    children?: NavConfig[];
 }
 
 export const NAV_CONFIG: NavConfig[] = [
@@ -129,6 +133,23 @@ export const NAV_CONFIG: NavConfig[] = [
             { method: "POST",   apiPath: "/api/v1/private/rozarpay" },
             { method: "PUT",    apiPath: "/api/v1/private/rozarpay" },
             { method: "DELETE", apiPath: "/api/v1/private/rozarpay" },
+        ],
+    },
+    {
+        name: "Create Order",
+        href: "/dashboard/rozarpay/orders",
+        icon: FiShoppingCart,
+        privileges: [
+            { method: "GET",  apiPath: "/api/v1/private/rozarpay" },
+            { method: "POST", apiPath: "/api/v1/private/rozarpay" },
+        ],
+    },
+    {
+        name: "Transactions",
+        href: "/dashboard/rozarpay/transactions",
+        icon: FiList,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/rozarpay" },
         ],
     },
     {

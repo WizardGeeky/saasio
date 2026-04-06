@@ -10,5 +10,10 @@ export const API_PATHS = {
     },
     PRIVATE: {
         USERS: "/api/v1/private/users",
+        ROZARPAY: "/api/v1/private/rozarpay",
+        CHECKOUT: {
+            CREATE_ORDER: "/api/v1/private/checkout/create-order",
+            VERIFY_PAYMENT: "/api/v1/private/checkout/verify-payment",
+        },
     },
 };

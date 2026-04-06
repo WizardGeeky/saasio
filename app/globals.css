@@ -133,3 +133,89 @@
   from { width: 100%; }
   to   { width: 0%; }
 }
+
+/* ── Landing page animations ─────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(1deg); }
+  50%       { transform: translateY(-14px) rotate(1deg); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-left {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes shimmer-move {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes pulse-ring {
+  0%        { transform: scale(1);   opacity: 0.6; }
+  70%, 100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.animate-float       { animation: float 4s ease-in-out infinite; }
+.animate-float-slow  { animation: float-slow 6s ease-in-out infinite; }
+.animate-fade-up     { animation: fade-up 0.65s ease-out forwards; }
+.animate-fade-in     { animation: fade-in 0.5s ease-out forwards; }
+.animate-scale-in    { animation: scale-in 0.5s ease-out forwards; }
+.animate-slide-right { animation: slide-right 0.6s ease-out forwards; }
+.animate-slide-left  { animation: slide-left 0.6s ease-out forwards; }
+.animate-ticker      { animation: ticker 28s linear infinite; }
+.animate-blink       { animation: blink-cursor 1s step-end infinite; }
+
+/* Dark lavender — hero, footer, CTA */
+.lavender-dark {
+  background: linear-gradient(135deg, #1a1040 0%, #1e1553 50%, #1a1040 100%);
+  background-size: 300% 300%;
+  animation: gradient-shift 16s ease infinite;
+}
+/* Gradient text — emerald */
+.text-gradient {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 60%, #a7f3d0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+/* Legacy alias kept for any remaining usage */
+.hero-gradient  { background: #1a1040; }
+.cta-gradient   { background: #1a1040; }
+.card-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+  background-size: 400px 100%;
+  animation: shimmer-move 2.4s linear infinite;
+}
