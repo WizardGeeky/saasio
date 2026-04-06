@@ -51,7 +51,23 @@ export const GET = withAuth(async (
     try {
         await connectDB();
 
-        const profile = await User.findById(user.sub).lean();
+        // 1. Primary: look up by _id stored in JWT sub
+        let profile = await User.findById(user.sub).lean();
+
+        if (!profile && user.email) {
+            // 2. New-token fallback: jwt.email = plain email → encrypt to match stored value
+            try {
+                profile = await User.findOne({ email: encrypt(user.email) }).lean();
+            } catch { /* ignore */ }
+        }
+
+        if (!profile && user.email) {
+            // 3. Old-token fallback: jwt.email = encrypt(storedEmail) → decrypt once to get stored value
+            try {
+                profile = await User.findOne({ email: decrypt(user.email) }).lean();
+            } catch { /* ignore – decrypt throws when value is not an encrypted string */ }
+        }
+
         if (!profile) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
@@ -78,7 +94,16 @@ export const PUT = withAuth(async (
 
         const { fullname, mobile, occupation, state, country, source } = await req.json();
 
-        const existing = await User.findById(user.sub);
+        let existing = await User.findById(user.sub);
+
+        if (!existing && user.email) {
+            try { existing = await User.findOne({ email: encrypt(user.email) }); } catch { /* ignore */ }
+        }
+
+        if (!existing && user.email) {
+            try { existing = await User.findOne({ email: decrypt(user.email) }); } catch { /* ignore */ }
+        }
+
         if (!existing) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
@@ -107,8 +132,8 @@ export const PUT = withAuth(async (
             return NextResponse.json({ message: "No changes to save" }, { status: 400 });
         }
 
-        await User.updateOne({ _id: user.sub }, { $set: updates });
-        const updated = await User.findById(user.sub).lean();
+        await User.updateOne({ _id: existing._id }, { $set: updates });
+        const updated = await User.findById(existing._id).lean();
 
         return NextResponse.json(
             { message: "Profile updated successfully", user: decryptProfile(updated) },

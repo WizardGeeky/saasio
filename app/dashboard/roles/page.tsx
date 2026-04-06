@@ -143,7 +143,11 @@ export default function RolesPage() {
     const openEdit = (role: RoleData) => {
         setSelectedRole(role);
         setFormName(role._id);
-        setSelectedPrivs(new Set(role.privileges.map((p) => p._id)));
+        setSelectedPrivs(new Set(
+            role.privileges
+                .filter((p): p is PrivilegeData => p != null && typeof p === "object")
+                .map((p) => p._id)
+        ));
         setModal("edit");
     };
 

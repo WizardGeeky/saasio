@@ -234,53 +234,8 @@ export default function UsersPage() {
                     </div>
                 ) : (
                     <>
-                        {/* Mobile cards */}
-                        <div className="sm:hidden divide-y divide-gray-100">
-                            {filtered.map((u) => (
-                                <div key={u._id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-center gap-2.5 min-w-0">
-                                            <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 text-white text-xs font-bold shadow-sm">
-                                                {u.fullname.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="font-semibold text-sm text-gray-900 truncate">{u.fullname}</p>
-                                                <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                                            </div>
-                                        </div>
-                                        <span className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${STATUS_STYLES[u.accountStatus]}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[u.accountStatus]}`} />
-                                            {u.accountStatus}
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                        <div className="bg-gray-50 rounded-xl p-2.5 flex items-center gap-1.5">
-                                            <FiShield size={11} className="text-emerald-500 shrink-0" />
-                                            <span className="text-gray-600 font-medium truncate">{u.role}</span>
-                                        </div>
-                                        <div className="bg-gray-50 rounded-xl p-2.5 flex items-center gap-1.5">
-                                            <FiPhone size={11} className="text-gray-400 shrink-0" />
-                                            <span className="text-gray-600 font-medium truncate">{u.mobile}</span>
-                                        </div>
-                                    </div>
-                                    {deleteConfirmId === u._id ? (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-red-600 font-medium flex-1">Delete this user?</span>
-                                            <button onClick={() => handleDelete(u._id)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all"><FiCheck size={11} /> Yes</button>
-                                            <button onClick={() => setDeleteConfirmId(null)} className="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all">No</button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1.5">
-                                            {canUpdate && <button onClick={() => openEdit(u)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all"><FiEdit2 size={13} /> Edit</button>}
-                                            {canDelete && <button onClick={() => setDeleteConfirmId(u._id)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all"><FiTrash2 size={13} /> Delete</button>}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Desktop table */}
-                        <div className="hidden sm:block overflow-x-auto">
+                        {/* Table */}
+                        <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-100">

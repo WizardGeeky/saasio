@@ -16,7 +16,7 @@ export const GET = withAuth(async (
     try {
         await connectDB();
 
-        const roles = await Role.find()
+        const rawRoles = await Role.find()
             .populate<{
                 privileges: {
                     _id: string;
@@ -26,6 +26,13 @@ export const GET = withAuth(async (
                 }[];
             }>("privileges", "_id name apiPath method")
             .sort({ createdAt: 1 });
+
+        // Filter out null entries that occur when a referenced privilege no longer exists
+        const roles = rawRoles.map((r) => {
+            const obj = r.toObject();
+            obj.privileges = (obj.privileges ?? []).filter(Boolean);
+            return obj;
+        });
 
         return NextResponse.json({ roles }, { status: 200 });
     } catch (error: any) {
@@ -76,8 +83,11 @@ export const POST = withAuth(async (
             privileges: { _id: string; name: string; apiPath: string; method: string }[];
         }>("privileges", "_id name apiPath method");
 
+        const populatedObj = populated?.toObject();
+        if (populatedObj) populatedObj.privileges = (populatedObj.privileges ?? []).filter(Boolean);
+
         return NextResponse.json(
-            { message: "Role created successfully", role: populated },
+            { message: "Role created successfully", role: populatedObj },
             { status: 201 }
         );
     } catch (error: any) {
@@ -118,8 +128,11 @@ export const PUT = withAuth(async (
             privileges: { _id: string; name: string; apiPath: string; method: string }[];
         }>("privileges", "_id name apiPath method");
 
+        const updatedObj = updated?.toObject();
+        if (updatedObj) updatedObj.privileges = (updatedObj.privileges ?? []).filter(Boolean);
+
         return NextResponse.json(
-            { message: "Role updated successfully", role: updated },
+            { message: "Role updated successfully", role: updatedObj },
             { status: 200 }
         );
     } catch (error: any) {

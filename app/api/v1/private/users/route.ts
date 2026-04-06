@@ -5,6 +5,7 @@ import { encrypt, decrypt } from "@/app/configs/crypto.config";
 import { User } from "@/models/User";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import { AccountStatus } from "@/app/constants/AccountStatus";
+import { sendWelcomeEmail } from "@/app/notifications/welcome.notification";
 
 function decryptUser(user: any) {
     try {
@@ -114,6 +115,16 @@ export const POST = withAuth(async (
             role,
             accountStatus: accountStatus ?? AccountStatus.INACTIVE,
         });
+
+        // Send welcome email in the background — don't block the response
+        const plainEmail = email.toLowerCase().trim();
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.JWT_AUDIENCE ?? "http://localhost:3000";
+        sendWelcomeEmail({
+            to: plainEmail,
+            fullname: fullname.trim(),
+            role,
+            loginUrl: `${appUrl}/login`,
+        }).catch((err) => console.error("[welcome-email] failed to send:", err));
 
         return NextResponse.json(
             { message: "User created successfully", user: decryptUser(user) },

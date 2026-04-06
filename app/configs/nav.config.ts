@@ -29,6 +29,7 @@ import {
     FiBell,
     FiUser,
     FiFolder,
+    FiFileText,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -138,6 +139,12 @@ export const NAV_CONFIG: NavConfig[] = [
             { method: "GET",    apiPath: "/api/v1/private/settings" },
             { method: "PUT",    apiPath: "/api/v1/private/settings" },
         ],
+    },
+    {
+        name: "Resume Templates",
+        href: "/dashboard/resume-templates",
+        icon: FiFileText,
+        privileges: [],   // always visible — available to every logged-in user
     },
     {
         name: "Profile",

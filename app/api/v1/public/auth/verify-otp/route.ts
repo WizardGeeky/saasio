@@ -47,10 +47,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
 
-        // Generate JWT
+        // Generate JWT — store the decrypted (plain) email so the client can display it
         const token = generateToken({
             sub: user._id.toString(),
-            email: encrypt(user.email),
+            email: decrypt(user.email),
             name: user.fullname,
             status: user.accountStatus,
             role: user.role,
