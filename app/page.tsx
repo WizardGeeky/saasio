@@ -3,10 +3,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
-  FiZap, FiTarget, FiCheck, FiArrowRight, FiStar,
-  FiChevronDown, FiMenu, FiX, FiDownload, FiCpu,
-  FiShield, FiLayers, FiBriefcase, FiEdit3, FiAward,
-  FiTrendingUp, FiCheckCircle, FiFileText,
+  FiZap,
+  FiTarget,
+  FiCheck,
+  FiArrowRight,
+  FiStar,
+  FiChevronDown,
+  FiMenu,
+  FiX,
+  FiDownload,
+  FiCpu,
+  FiShield,
+  FiLayers,
+  FiBriefcase,
+  FiEdit3,
+  FiAward,
+  FiTrendingUp,
+  FiCheckCircle,
+  FiFileText,
 } from "react-icons/fi";
 
 // ─── useInView ────────────────────────────────────────────────────────────────
@@ -18,8 +32,13 @@ function useInView(threshold = 0.12) {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } },
-      { threshold }
+      ([e]) => {
+        if (e.isIntersecting) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { threshold },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -29,7 +48,12 @@ function useInView(threshold = 0.12) {
 
 // ─── Reveal ───────────────────────────────────────────────────────────────────
 
-function Reveal({ children, delay = 0, dir = "up", className = "" }: {
+function Reveal({
+  children,
+  delay = 0,
+  dir = "up",
+  className = "",
+}: {
   children: React.ReactNode;
   delay?: number;
   dir?: "up" | "left" | "right" | "scale";
@@ -37,8 +61,8 @@ function Reveal({ children, delay = 0, dir = "up", className = "" }: {
 }) {
   const { ref, inView } = useInView();
   const anim = {
-    up:    "animate-fade-up",
-    left:  "animate-slide-right",
+    up: "animate-fade-up",
+    left: "animate-slide-right",
     right: "animate-slide-left",
     scale: "animate-scale-in",
   }[dir];
@@ -46,7 +70,11 @@ function Reveal({ children, delay = 0, dir = "up", className = "" }: {
     <div
       ref={ref}
       className={`${className} ${inView ? anim : "opacity-0"}`}
-      style={inView ? { animationDelay: `${delay}ms`, animationFillMode: "both" } : undefined}
+      style={
+        inView
+          ? { animationDelay: `${delay}ms`, animationFillMode: "both" }
+          : undefined
+      }
     >
       {children}
     </div>
@@ -76,10 +104,10 @@ function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: "Features",     id: "#features" },
-    { label: "How It Works", id: "#how"      },
-    { label: "Pricing",      id: "#pricing"  },
-    { label: "FAQ",          id: "#faq"      },
+    { label: "Features", id: "#features" },
+    { label: "How It Works", id: "#how" },
+    { label: "Pricing", id: "#pricing" },
+    { label: "FAQ", id: "#faq" },
   ];
 
   const go = (id: string) => {
@@ -88,16 +116,17 @@ function Navbar() {
   };
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-      scrolled
-        ? "bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-200/80"
-        : "bg-white/80 backdrop-blur-md"
-    }`}>
+    <header
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-200/80"
+          : "bg-white/80 backdrop-blur-md"
+      }`}
+    >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
-
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/30">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/30">
             <FiLayers size={18} />
           </div>
           <span className="text-xl font-extrabold text-slate-900 tracking-tight">
@@ -107,7 +136,7 @@ function Navbar() {
 
         {/* Desktop nav links */}
         <ul className="hidden md:flex items-center gap-1 flex-1 justify-center">
-          {navLinks.map(l => (
+          {navLinks.map((l) => (
             <li key={l.label}>
               <button
                 onClick={() => go(l.id)}
@@ -121,7 +150,10 @@ function Navbar() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
-          <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-2">
+          <Link
+            href="/login"
+            className="text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-2"
+          >
             Sign In
           </Link>
           <Link
@@ -134,7 +166,7 @@ function Navbar() {
 
         {/* Mobile toggle */}
         <button
-          onClick={() => setOpen(v => !v)}
+          onClick={() => setOpen((v) => !v)}
           className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
         >
           {open ? <FiX size={22} /> : <FiMenu size={22} />}
@@ -144,7 +176,7 @@ function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden bg-white border-t border-slate-100 px-4 pb-5 pt-2 space-y-1 animate-fade-up shadow-lg">
-          {navLinks.map(l => (
+          {navLinks.map((l) => (
             <button
               key={l.label}
               onClick={() => go(l.id)}
@@ -154,12 +186,18 @@ function Navbar() {
             </button>
           ))}
           <div className="pt-3 grid grid-cols-2 gap-2 border-t border-slate-100 mt-2">
-            <Link href="/login" onClick={() => setOpen(false)}
-              className="text-center py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all">
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="text-center py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+            >
               Sign In
             </Link>
-            <Link href="/login" onClick={() => setOpen(false)}
-              className="text-center py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all">
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="text-center py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all"
+            >
               Get Started
             </Link>
           </div>
@@ -174,9 +212,8 @@ function Navbar() {
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-white">
-
       {/* Light green gradient wash */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-emerald-50 via-white to-teal-50/60 pointer-events-none" />
 
       {/* Decorative circles */}
       <div className="absolute -top-32 -right-32 w-[480px] h-[480px] bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
@@ -186,14 +223,14 @@ function Hero() {
       <div
         className="absolute top-0 right-0 w-64 h-64 opacity-[0.07]"
         style={{
-          backgroundImage: "radial-gradient(circle, #059669 1px, transparent 1px)",
+          backgroundImage:
+            "radial-gradient(circle, #059669 1px, transparent 1px)",
           backgroundSize: "20px 20px",
         }}
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-28 pb-20 lg:pt-36 lg:pb-28">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
           {/* ── Left copy ── */}
           <div>
             {/* Live badge */}
@@ -205,7 +242,9 @@ function Hero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
               </span>
-              <span className="text-xs font-bold text-emerald-700 tracking-wide">AI-Powered Resume Builder</span>
+              <span className="text-xs font-bold text-emerald-700 tracking-wide">
+                AI-Powered Resume Builder
+              </span>
             </div>
 
             {/* Headline */}
@@ -213,7 +252,8 @@ function Hero() {
               className="animate-fade-up text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-5"
               style={{ animationDelay: "80ms", animationFillMode: "both" }}
             >
-              Build Resumes That<br />
+              Build Resumes That
+              <br />
               <span className="text-gradient">Land Your Dream Job</span>
             </h1>
 
@@ -222,9 +262,9 @@ function Hero() {
               className="animate-fade-up text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-lg"
               style={{ animationDelay: "160ms", animationFillMode: "both" }}
             >
-              Our AI agents analyze any job description and craft a perfectly tailored,
-              ATS-optimized resume in seconds. Your next interview is one click away —
-              starting at just{" "}
+              Our AI agents analyze any job description and craft a perfectly
+              tailored, ATS-optimized resume in seconds. Your next interview is
+              one click away — starting at just{" "}
               <span className="text-emerald-600 font-bold">₹9</span>.
             </p>
 
@@ -238,10 +278,17 @@ function Hero() {
                 className="group flex items-center justify-center gap-2 px-7 py-3.5 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-2xl shadow-xl shadow-emerald-600/25 transition-all active:scale-[0.98]"
               >
                 Start Building Free
-                <FiArrowRight size={17} className="group-hover:translate-x-0.5 transition-transform" />
+                <FiArrowRight
+                  size={17}
+                  className="group-hover:translate-x-0.5 transition-transform"
+                />
               </Link>
               <button
-                onClick={() => document.querySelector("#how")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() =>
+                  document
+                    .querySelector("#how")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
                 className="flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-slate-700 border-2 border-slate-200 rounded-2xl hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all"
               >
                 See How It Works
@@ -263,18 +310,26 @@ function Hero() {
                 ].map((g, i) => (
                   <div
                     key={i}
-                    className={`w-8 h-8 rounded-full bg-gradient-to-br ${g} border-2 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm`}
+                    className={`w-8 h-8 rounded-full bg-linear-to-br ${g} border-2 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm`}
                   >
-                    {["A","R","S","P","N"][i]}
+                    {["A", "R", "S", "P", "N"][i]}
                   </div>
                 ))}
               </div>
               <div>
                 <div className="flex gap-0.5 mb-0.5">
-                  {[...Array(5)].map((_, i) => <FiStar key={i} size={11} className="text-amber-400 fill-amber-400" />)}
+                  {[...Array(5)].map((_, i) => (
+                    <FiStar
+                      key={i}
+                      size={11}
+                      className="text-amber-400 fill-amber-400"
+                    />
+                  ))}
                 </div>
                 <p className="text-xs text-slate-500">
-                  Trusted by <span className="text-slate-900 font-semibold">10,000+</span> job seekers
+                  Trusted by{" "}
+                  <span className="text-slate-900 font-semibold">10,000+</span>{" "}
+                  job seekers
                 </p>
               </div>
             </div>
@@ -290,22 +345,27 @@ function Hero() {
 
             {/* Main resume card */}
             <div className="relative animate-float w-full max-w-[340px] bg-white rounded-3xl shadow-2xl shadow-slate-200/80 border border-slate-100 overflow-hidden">
-
               {/* AI badge */}
               <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-md">
                 <FiCpu size={10} /> AI Generated
               </div>
 
               {/* Resume header — green instead of dark */}
-              <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 px-5 pt-5 pb-4">
+              <div className="bg-linear-to-br from-emerald-600 to-emerald-800 px-5 pt-5 pb-4">
                 <div className="flex items-start gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center text-white font-extrabold text-base shadow-lg shrink-0 backdrop-blur-sm">
                     AK
                   </div>
                   <div>
-                    <h3 className="text-white font-bold text-sm leading-tight">Arjun Kumar</h3>
-                    <p className="text-emerald-200 text-xs font-semibold mt-0.5">Senior Software Engineer</p>
-                    <p className="text-emerald-300/80 text-[10px] mt-1">📍 Hyderabad · arjun@email.com</p>
+                    <h3 className="text-white font-bold text-sm leading-tight">
+                      Arjun Kumar
+                    </h3>
+                    <p className="text-emerald-200 text-xs font-semibold mt-0.5">
+                      Senior Software Engineer
+                    </p>
+                    <p className="text-emerald-300/80 text-[10px] mt-1">
+                      📍 Hyderabad · arjun@email.com
+                    </p>
                   </div>
                 </div>
               </div>
@@ -318,42 +378,62 @@ function Hero() {
                     <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center">
                       <FiTarget size={11} className="text-emerald-700" />
                     </div>
-                    <span className="text-[11px] font-semibold text-slate-700">Job Match Score</span>
+                    <span className="text-[11px] font-semibold text-slate-700">
+                      Job Match Score
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="h-1.5 w-20 bg-emerald-100 rounded-full overflow-hidden">
-                      <div className="h-full w-[92%] bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full" />
+                      <div className="h-full w-[92%] bg-linear-to-r from-emerald-500 to-emerald-600 rounded-full" />
                     </div>
-                    <span className="text-xs font-bold text-emerald-700">92%</span>
+                    <span className="text-xs font-bold text-emerald-700">
+                      92%
+                    </span>
                   </div>
                 </div>
 
                 {/* Experience */}
                 <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Experience</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+                    Experience
+                  </p>
                   {[
-                    { role: "Sr. Engineer", co: "Google",   yr: "2022–Now"   },
-                    { role: "Engineer II",  co: "Flipkart", yr: "2019–2022" },
-                  ].map(e => (
-                    <div key={e.co} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+                    { role: "Sr. Engineer", co: "Google", yr: "2022–Now" },
+                    { role: "Engineer II", co: "Flipkart", yr: "2019–2022" },
+                  ].map((e) => (
+                    <div
+                      key={e.co}
+                      className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0"
+                    >
                       <div>
-                        <p className="text-xs font-semibold text-slate-800">{e.role}</p>
+                        <p className="text-xs font-semibold text-slate-800">
+                          {e.role}
+                        </p>
                         <p className="text-[10px] text-slate-400">{e.co}</p>
                       </div>
-                      <span className="text-[10px] text-slate-400 whitespace-nowrap">{e.yr}</span>
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                        {e.yr}
+                      </span>
                     </div>
                   ))}
                 </div>
 
                 {/* Skills */}
                 <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Skills</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+                    Skills
+                  </p>
                   <div className="flex flex-wrap gap-1">
-                    {["React", "Node.js", "TypeScript", "AWS", "Python"].map(s => (
-                      <span key={s} className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-full border border-emerald-100">
-                        {s}
-                      </span>
-                    ))}
+                    {["React", "Node.js", "TypeScript", "AWS", "Python"].map(
+                      (s) => (
+                        <span
+                          key={s}
+                          className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-full border border-emerald-100"
+                        >
+                          {s}
+                        </span>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -365,24 +445,34 @@ function Hero() {
             </div>
 
             {/* Floating chips */}
-            <div className="absolute -left-4 top-[28%] animate-float-slow hidden sm:block" style={{ animationDelay: "1.2s" }}>
+            <div
+              className="absolute -left-4 top-[28%] animate-float-slow hidden sm:block"
+              style={{ animationDelay: "1.2s" }}
+            >
               <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-lg border border-slate-100">
                 <div className="w-7 h-7 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
                   <FiZap size={13} className="text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-[9px] text-slate-400 leading-none mb-0.5">Generated in</p>
+                  <p className="text-[9px] text-slate-400 leading-none mb-0.5">
+                    Generated in
+                  </p>
                   <p className="text-xs font-bold text-slate-800">8 seconds</p>
                 </div>
               </div>
             </div>
-            <div className="absolute -right-4 bottom-[22%] animate-float-slow hidden sm:block" style={{ animationDelay: "2.4s" }}>
+            <div
+              className="absolute -right-4 bottom-[22%] animate-float-slow hidden sm:block"
+              style={{ animationDelay: "2.4s" }}
+            >
               <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-lg border border-slate-100">
                 <div className="w-7 h-7 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
                   <FiCheckCircle size={13} className="text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-[9px] text-slate-400 leading-none mb-0.5">ATS Score</p>
+                  <p className="text-[9px] text-slate-400 leading-none mb-0.5">
+                    ATS Score
+                  </p>
                   <p className="text-xs font-bold text-emerald-700">98 / 100</p>
                 </div>
               </div>
@@ -393,7 +483,9 @@ function Hero() {
 
       {/* Scroll hint */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 animate-bounce">
-        <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Scroll</p>
+        <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">
+          Scroll
+        </p>
         <FiChevronDown size={15} className="text-slate-400" />
       </div>
     </section>
@@ -404,10 +496,14 @@ function Hero() {
 
 function Stats() {
   const items = [
-    { value: "10,000+", label: "Resumes Created",   icon: <FiFileText size={18} /> },
-    { value: "92%",     label: "Interview Rate",    icon: <FiTrendingUp size={18} /> },
-    { value: "30s",     label: "Avg. Build Time",   icon: <FiZap size={18} /> },
-    { value: "50+",     label: "Pro Templates",     icon: <FiAward size={18} /> },
+    {
+      value: "10,000+",
+      label: "Resumes Created",
+      icon: <FiFileText size={18} />,
+    },
+    { value: "92%", label: "Interview Rate", icon: <FiTrendingUp size={18} /> },
+    { value: "30s", label: "Avg. Build Time", icon: <FiZap size={18} /> },
+    { value: "50+", label: "Pro Templates", icon: <FiAward size={18} /> },
   ];
 
   return (
@@ -419,15 +515,21 @@ function Stats() {
               key={s.label}
               delay={i * 80}
               className={`flex flex-col sm:flex-row items-center sm:items-start gap-3 py-8 px-6 ${
-                i < 3 ? "border-b md:border-b-0 md:border-r border-slate-100" : "border-b-0"
+                i < 3
+                  ? "border-b md:border-b-0 md:border-r border-slate-100"
+                  : "border-b-0"
               } ${i % 2 === 0 && i < 2 ? "border-r md:border-r-0" : ""} md:border-r md:last:border-r-0`}
             >
               <div className="shrink-0 w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-700">
                 {s.icon}
               </div>
               <div className="text-center sm:text-left">
-                <p className="text-3xl font-extrabold text-slate-900 leading-tight">{s.value}</p>
-                <p className="text-sm text-slate-500 font-medium mt-0.5">{s.label}</p>
+                <p className="text-3xl font-extrabold text-slate-900 leading-tight">
+                  {s.value}
+                </p>
+                <p className="text-sm text-slate-500 font-medium mt-0.5">
+                  {s.label}
+                </p>
               </div>
             </Reveal>
           ))}
@@ -462,7 +564,10 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how" className="bg-emerald-50/50 py-24 border-y border-emerald-100/60">
+    <section
+      id="how"
+      className="bg-emerald-50/50 py-24 border-y border-emerald-100/60"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center mb-16">
           <SectionBadge label="How It Works" />
@@ -470,7 +575,8 @@ function HowItWorks() {
             From Job Description to Resume in 3 Steps
           </h2>
           <p className="mt-4 text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            No templates to fill. No hours of writing. Just tell our AI your goal and watch it work.
+            No templates to fill. No hours of writing. Just tell our AI your
+            goal and watch it work.
           </p>
         </Reveal>
 
@@ -482,14 +588,20 @@ function HowItWorks() {
             <Reveal key={s.n} delay={i * 120}>
               <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-500/25">
+                  <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-500/25">
                     {s.icon}
                   </div>
-                  <span className="text-5xl font-black text-emerald-100 leading-none select-none">{s.n}</span>
+                  <span className="text-5xl font-black text-emerald-100 leading-none select-none">
+                    {s.n}
+                  </span>
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2">{s.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{s.desc}</p>
+                  <h3 className="text-base font-bold text-slate-900 mb-2">
+                    {s.title}
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {s.desc}
+                  </p>
                 </div>
               </div>
             </Reveal>
@@ -545,7 +657,8 @@ function Features() {
             Everything You Need to Get Hired Faster
           </h2>
           <p className="mt-4 text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Powered by advanced AI agents trained on millions of successful resumes and recruiter preferences.
+            Powered by advanced AI agents trained on millions of successful
+            resumes and recruiter preferences.
           </p>
         </Reveal>
 
@@ -558,7 +671,9 @@ function Features() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 mb-1.5">{f.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {f.desc}
+                  </p>
                 </div>
               </div>
             </Reveal>
@@ -612,7 +727,10 @@ function Pricing() {
   ];
 
   return (
-    <section id="pricing" className="bg-emerald-50/50 py-24 border-y border-emerald-100/60">
+    <section
+      id="pricing"
+      className="bg-emerald-50/50 py-24 border-y border-emerald-100/60"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center mb-14">
           <SectionBadge label="Pricing" />
@@ -620,7 +738,8 @@ function Pricing() {
             Simple, Transparent Pricing
           </h2>
           <p className="mt-4 text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-            One-time payment. No subscriptions, no hidden fees. Pay only for the resumes you need.
+            One-time payment. No subscriptions, no hidden fees. Pay only for the
+            resumes you need.
           </p>
         </Reveal>
 
@@ -628,12 +747,13 @@ function Pricing() {
         <div className="grid md:grid-cols-3 gap-5 items-stretch">
           {plans.map((p, i) => (
             <Reveal key={p.name} delay={i * 100} dir="scale" className="flex">
-              <div className={`relative flex flex-col w-full bg-white rounded-2xl border-2 p-7 transition-all duration-300 ${
-                p.popular
-                  ? "border-emerald-500 shadow-xl shadow-emerald-600/15"
-                  : "border-slate-200 hover:border-emerald-300 hover:shadow-lg hover:-translate-y-1"
-              }`}>
-
+              <div
+                className={`relative flex flex-col w-full bg-white rounded-2xl border-2 p-7 transition-all duration-300 ${
+                  p.popular
+                    ? "border-emerald-500 shadow-xl shadow-emerald-600/15"
+                    : "border-slate-200 hover:border-emerald-300 hover:shadow-lg hover:-translate-y-1"
+                }`}
+              >
                 {/* Popular badge */}
                 {p.popular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full whitespace-nowrap shadow-md">
@@ -644,18 +764,30 @@ function Pricing() {
                 {/* Header */}
                 <div className="mb-5 pb-5 border-b border-slate-100">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-extrabold text-slate-900">{p.name}</h3>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                      p.popular ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-                    }`}>
+                    <h3 className="text-lg font-extrabold text-slate-900">
+                      {p.name}
+                    </h3>
+                    <span
+                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                        p.popular
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
                       {p.resumes} Resume{p.resumes > 1 ? "s" : ""}
                     </span>
                   </div>
                   <div className="flex items-end gap-1">
-                    <span className="text-4xl font-black text-slate-900">₹{p.price}</span>
-                    <span className="text-slate-400 text-sm pb-1.5">one-time</span>
+                    <span className="text-4xl font-black text-slate-900">
+                      ₹{p.price}
+                    </span>
+                    <span className="text-slate-400 text-sm pb-1.5">
+                      one-time
+                    </span>
                   </div>
-                  <p className={`text-xs font-semibold mt-1.5 ${p.popular ? "text-emerald-600" : "text-slate-400"}`}>
+                  <p
+                    className={`text-xs font-semibold mt-1.5 ${p.popular ? "text-emerald-600" : "text-slate-400"}`}
+                  >
                     {p.perResume}
                   </p>
                 </div>
@@ -665,7 +797,10 @@ function Pricing() {
                   {ALL_FEATURES.map((f, fi) => {
                     const included = p.included.includes(fi);
                     return (
-                      <li key={f} className={`flex items-center gap-2.5 text-sm ${included ? "text-slate-700" : "text-slate-300"}`}>
+                      <li
+                        key={f}
+                        className={`flex items-center gap-2.5 text-sm ${included ? "text-slate-700" : "text-slate-300"}`}
+                      >
                         <FiCheckCircle
                           size={15}
                           className={`shrink-0 ${included ? "text-emerald-500" : "text-slate-200"}`}
@@ -750,7 +885,11 @@ function Testimonials() {
                 {/* Stars */}
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(r.stars)].map((_, j) => (
-                    <FiStar key={j} size={13} className="text-amber-400 fill-amber-400" />
+                    <FiStar
+                      key={j}
+                      size={13}
+                      className="text-amber-400 fill-amber-400"
+                    />
                   ))}
                 </div>
 
@@ -761,11 +900,13 @@ function Testimonials() {
 
                 {/* Author */}
                 <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-linear-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
                     {r.avatar}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900 leading-tight">{r.name}</p>
+                    <p className="text-sm font-bold text-slate-900 leading-tight">
+                      {r.name}
+                    </p>
                     <p className="text-xs text-slate-500">{r.role}</p>
                   </div>
                 </div>
@@ -807,7 +948,10 @@ function FAQ() {
   ];
 
   return (
-    <section id="faq" className="bg-emerald-50/50 py-24 border-y border-emerald-100/60">
+    <section
+      id="faq"
+      className="bg-emerald-50/50 py-24 border-y border-emerald-100/60"
+    >
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <Reveal className="text-center mb-12">
           <SectionBadge label="FAQ" />
@@ -819,18 +963,26 @@ function FAQ() {
         <div className="space-y-3">
           {items.map((item, i) => (
             <Reveal key={i} delay={i * 50}>
-              <div className={`bg-white rounded-2xl border overflow-hidden transition-all duration-200 ${
-                openIdx === i ? "border-emerald-300 shadow-md" : "border-slate-200 hover:border-slate-300"
-              }`}>
+              <div
+                className={`bg-white rounded-2xl border overflow-hidden transition-all duration-200 ${
+                  openIdx === i
+                    ? "border-emerald-300 shadow-md"
+                    : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
                 <button
                   onClick={() => setOpenIdx(openIdx === i ? null : i)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
                 >
-                  <span className="font-semibold text-slate-900 text-sm leading-snug">{item.q}</span>
+                  <span className="font-semibold text-slate-900 text-sm leading-snug">
+                    {item.q}
+                  </span>
                   <FiChevronDown
                     size={17}
                     className={`shrink-0 transition-transform duration-300 ${
-                      openIdx === i ? "rotate-180 text-emerald-600" : "text-slate-400"
+                      openIdx === i
+                        ? "rotate-180 text-emerald-600"
+                        : "text-slate-400"
                     }`}
                   />
                 </button>
@@ -857,7 +1009,11 @@ function FinalCTA() {
     <section className="cta-gradient py-24 relative overflow-hidden">
       <div
         className="absolute inset-0 opacity-[0.06]"
-        style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.5) 1px,transparent 1px)", backgroundSize: "28px 28px" }}
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.5) 1px,transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
       />
       <div className="absolute top-0 left-1/4 w-72 h-72 bg-emerald-400/15 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-teal-400/10 rounded-full blur-3xl" />
@@ -866,17 +1022,20 @@ function FinalCTA() {
         <Reveal>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full mb-6">
             <FiAward size={13} className="text-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-400">Start Your Career Growth Today</span>
+            <span className="text-xs font-semibold text-emerald-400">
+              Start Your Career Growth Today
+            </span>
           </div>
 
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-5 leading-tight">
-            Your Dream Job Is One<br />
+            Your Dream Job Is One
+            <br />
             <span className="text-gradient">Resume Away</span>
           </h2>
 
           <p className="text-base sm:text-lg text-slate-300 mb-8 max-w-lg mx-auto leading-relaxed">
-            Join thousands of professionals who landed better jobs with AI-crafted resumes.
-            Start for just ₹9 — no risk, no subscription.
+            Join thousands of professionals who landed better jobs with
+            AI-crafted resumes. Start for just ₹9 — no risk, no subscription.
           </p>
 
           <Link
@@ -884,16 +1043,21 @@ function FinalCTA() {
             className="group inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-2xl shadow-xl shadow-emerald-600/30 transition-all active:scale-[0.98]"
           >
             Build My Resume Now
-            <FiArrowRight size={17} className="group-hover:translate-x-0.5 transition-transform" />
+            <FiArrowRight
+              size={17}
+              className="group-hover:translate-x-0.5 transition-transform"
+            />
           </Link>
 
           <div className="mt-7 flex items-center justify-center flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400">
-            {["No subscription", "Secure payment", "Instant download"].map(t => (
-              <span key={t} className="flex items-center gap-1.5">
-                <FiCheck size={13} className="text-emerald-500" />
-                {t}
-              </span>
-            ))}
+            {["No subscription", "Secure payment", "Instant download"].map(
+              (t) => (
+                <span key={t} className="flex items-center gap-1.5">
+                  <FiCheck size={13} className="text-emerald-500" />
+                  {t}
+                </span>
+              ),
+            )}
           </div>
         </Reveal>
       </div>
@@ -907,7 +1071,12 @@ function Footer() {
   const cols = {
     Product: ["Features", "Pricing", "Templates", "How It Works"],
     Company: ["About", "Blog", "Careers", "Press"],
-    Support: ["Help Center", "Contact Us", "Privacy Policy", "Terms of Service"],
+    Support: [
+      "Help Center",
+      "Contact Us",
+      "Privacy Policy",
+      "Terms of Service",
+    ],
   };
 
   return (
@@ -917,7 +1086,7 @@ function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/30">
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/30">
                 <FiLayers size={18} />
               </div>
               <span className="text-xl font-extrabold text-white tracking-tight">
@@ -925,19 +1094,24 @@ function Footer() {
               </span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              AI-powered resume builder helping Indian professionals land their dream jobs.
-              Fast, affordable, effective.
+              AI-powered resume builder helping Indian professionals land their
+              dream jobs. Fast, affordable, effective.
             </p>
           </div>
 
           {/* Link columns */}
           {Object.entries(cols).map(([group, items]) => (
             <div key={group}>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">{group}</h4>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
+                {group}
+              </h4>
               <ul className="space-y-2.5">
-                {items.map(item => (
+                {items.map((item) => (
                   <li key={item}>
-                    <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
+                    <Link
+                      href="/login"
+                      className="text-sm text-slate-400 hover:text-white transition-colors"
+                    >
                       {item}
                     </Link>
                   </li>
@@ -948,10 +1122,14 @@ function Footer() {
         </div>
 
         <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} SAASIO. All rights reserved.</p>
+          <p className="text-xs text-slate-500">
+            © {new Date().getFullYear()} SAASIO. All rights reserved.
+          </p>
           <div className="flex items-center gap-1.5">
             <FiShield size={11} className="text-emerald-600" />
-            <p className="text-xs text-slate-500">Secured payments via Razorpay · Made in India 🇮🇳</p>
+            <p className="text-xs text-slate-500">
+              Secured payments via Razorpay · Made in India 🇮🇳
+            </p>
           </div>
         </div>
       </div>
