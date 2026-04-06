@@ -240,7 +240,7 @@ export default function UsersPage() {
                                 <div key={u._id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            <div className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white text-xs font-bold shadow-sm">
+                                            <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 text-white text-xs font-bold shadow-sm">
                                                 {u.fullname.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
                                             </div>
                                             <div className="min-w-0">
@@ -294,7 +294,7 @@ export default function UsersPage() {
                                         <tr key={u._id} className="hover:bg-gray-50/70 transition-colors">
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 text-white text-[10px] font-bold shadow-sm">
+                                                    <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 text-white text-[10px] font-bold shadow-sm">
                                                         {u.fullname.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
                                                     </div>
                                                     <span className="font-semibold text-gray-900 text-sm whitespace-nowrap">{u.fullname}</span>

@@ -27,6 +27,8 @@ import {
     FiCreditCard,
     FiCpu,
     FiBell,
+    FiUser,
+    FiFolder,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -107,6 +109,17 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
+        name: "Projects",
+        href: "/dashboard/projects",
+        icon: FiFolder,
+        privileges: [
+            { method: "GET",    apiPath: "/api/v1/private/projects" },
+            { method: "POST",   apiPath: "/api/v1/private/projects" },
+            { method: "PUT",    apiPath: "/api/v1/private/projects" },
+            { method: "DELETE", apiPath: "/api/v1/private/projects" },
+        ],
+    },
+    {
         name: "Razorpay",
         href: "/dashboard/rozarpay",
         icon: FiCreditCard,
@@ -125,5 +138,11 @@ export const NAV_CONFIG: NavConfig[] = [
             { method: "GET",    apiPath: "/api/v1/private/settings" },
             { method: "PUT",    apiPath: "/api/v1/private/settings" },
         ],
+    },
+    {
+        name: "Profile",
+        href: "/dashboard/profile",
+        icon: FiUser,
+        privileges: [],   // always visible — every logged-in user owns their profile
     },
 ];
