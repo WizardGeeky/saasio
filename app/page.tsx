@@ -158,7 +158,7 @@ export default function LoginPage() {
                   <p className="text-sm text-slate-500 text-center">
                     Code sent to <span className="font-semibold text-slate-700">{email}</span>
                   </p>
-                  <div className="flex justify-center gap-2.5">
+                  <div className="flex justify-center gap-1.5 sm:gap-2.5">
                     {otp.map((digit, index) => (
                       <input
                         key={index}
@@ -170,7 +170,7 @@ export default function LoginPage() {
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
                         onPaste={handleOtpPaste}
                         maxLength={1}
-                        className="w-11 h-13 aspect-[1/1.1] shrink-0 text-center bg-slate-50 border-2 border-slate-200 rounded-xl text-lg font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all"
+                        className="w-9 h-11 sm:w-11 sm:h-13 shrink-0 text-center bg-slate-50 border-2 border-slate-200 rounded-xl text-base sm:text-lg font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all"
                         placeholder="·"
                       />
                     ))}

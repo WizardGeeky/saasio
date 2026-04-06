@@ -127,7 +127,7 @@ export default function NotificationsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
                 {/* ── Left: Compose ── */}
-                <div className="lg:col-span-2 space-y-4">
+                <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
                     <form onSubmit={handleSend} className="space-y-4">
 
                         {/* Subject */}
@@ -188,7 +188,7 @@ export default function NotificationsPage() {
                 </div>
 
                 {/* ── Right: Target + Result ── */}
-                <div className="space-y-4">
+                <div className="space-y-4 order-1 lg:order-2">
 
                     {/* Target selector */}
                     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
@@ -266,7 +266,7 @@ export default function NotificationsPage() {
                     )}
 
                     {/* Tips card */}
-                    <div className="bg-emerald-900 text-white rounded-2xl p-5 space-y-2 relative overflow-hidden">
+                    <div className="hidden sm:block bg-emerald-900 text-white rounded-2xl p-5 space-y-2 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-3 opacity-10"><FiBell size={60} /></div>
                         <h3 className="font-semibold text-sm relative z-10">Email Tips</h3>
                         <ul className="text-xs text-emerald-200 space-y-1.5 relative z-10 leading-relaxed">

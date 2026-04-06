@@ -51,7 +51,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [hasPrivilege, isLoading]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-100 font-sans">
+    <div className="flex h-screen w-full overflow-hidden bg-gray-100 font-sans">
       {/* Mobile Overlay */}
       <div
         className={`fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -63,6 +63,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <DashboardSidebar
         navItems={filteredNavItems}
         isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Content */}

@@ -22,7 +22,7 @@ export function DashboardTopbar({
     .slice(0, 2);
 
   return (
-    <header className="flex h-20 items-center justify-between bg-white px-4 lg:px-8 z-30 border-b border-gray-200 shadow-sm shrink-0">
+    <header className="flex h-14 sm:h-20 items-center justify-between bg-white px-4 lg:px-8 z-30 border-b border-gray-200 shadow-sm shrink-0">
       {/* Mobile menu toggle */}
       <button
         className="flex lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
