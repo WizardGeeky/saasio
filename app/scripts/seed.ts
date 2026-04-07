@@ -14,7 +14,7 @@ export default async function seed() {
         // Note: You might want to remove this after a successful migration if preserving manual changes
         console.log("🧹 Clearing existing privileges and roles for fresh sync...");
         await Privilege.deleteMany({});
-        await Role.deleteMany({});
+        // await Role.deleteMany({});
 
         await syncPrivileges();
         await syncRoles();
