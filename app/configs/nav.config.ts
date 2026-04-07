@@ -32,6 +32,7 @@ import {
     FiFileText,
     FiList,
     FiShoppingCart,
+    FiMessageSquare,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -169,6 +170,24 @@ export const NAV_CONFIG: NavConfig[] = [
         href: "/dashboard/profile",
         icon: FiUser,
         privileges: [],
+    },
+    {
+        name: "My Complaints",
+        href: "/dashboard/complaints/my",
+        icon: FiMessageSquare,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/complaints/my" },
+            { method: "POST", apiPath: "/api/v1/private/complaints" },
+        ],
+    },
+    {
+        name: "Complaints",
+        href: "/dashboard/complaints",
+        icon: FiMessageSquare,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/complaints" },
+            { method: "PUT", apiPath: "/api/v1/private/complaints/[id]" },
+        ],
     },
     {
         name: "Settings",
