@@ -19,7 +19,7 @@
  */
 
 import {
-    FiHome,
+    FiBarChart2,
     FiUsers,
     FiShield,
     FiKey,
@@ -55,9 +55,9 @@ export interface NavConfig {
 
 export const NAV_CONFIG: NavConfig[] = [
     {
-        name: "Overview",
+        name: "Analytics",
         href: "/dashboard",
-        icon: FiHome,
+        icon: FiBarChart2,
         privileges: [],
     },
     {
@@ -162,7 +162,7 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
-        name: "Resume Templates",
+        name: "Resumes",
         href: "/dashboard/resume-templates",
         icon: FiFileText,
         privileges: [],   // always visible — available to every logged-in user
