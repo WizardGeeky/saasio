@@ -12,6 +12,8 @@ export interface IPaymentOrder extends Document {
     amount: number;        // in paise (₹1 = 100 paise)
     currency: string;
     status: PaymentStatus;
+    paymentMethod?: string;
+    paymentChannel?: string;
     description?: string;
     notes?: Record<string, string>;
     createdAt: Date;
@@ -60,6 +62,12 @@ const PaymentOrderSchema: Schema<IPaymentOrder> = new Schema(
             type: String,
             enum: ["PENDING", "SUCCESS", "FAILED"],
             default: "PENDING",
+        },
+        paymentMethod: {
+            type: String,
+        },
+        paymentChannel: {
+            type: String,
         },
         description: {
             type: String,

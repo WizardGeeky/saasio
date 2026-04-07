@@ -61,6 +61,29 @@ export const NAV_CONFIG: NavConfig[] = [
         privileges: [],
     },
     {
+        name: "Projects",
+        href: "/dashboard/projects",
+        icon: FiFolder,
+        privileges: [
+            { method: "GET",    apiPath: "/api/v1/private/projects" },
+            { method: "POST",   apiPath: "/api/v1/private/projects" },
+            { method: "PUT",    apiPath: "/api/v1/private/projects" },
+            { method: "DELETE", apiPath: "/api/v1/private/projects" },
+        ],
+    },
+    {
+        name: "Resumes",
+        href: "/dashboard/resume-templates",
+        icon: FiFileText,
+        privileges: [],
+    },
+    {
+        name: "My Transactions",
+        href: "/dashboard/my-transactions",
+        icon: FiCreditCard,
+        privileges: [],
+    },
+    {
         name: "Users",
         href: "/dashboard/users",
         icon: FiUsers,
@@ -114,20 +137,9 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
-        name: "Projects",
-        href: "/dashboard/projects",
-        icon: FiFolder,
-        privileges: [
-            { method: "GET",    apiPath: "/api/v1/private/projects" },
-            { method: "POST",   apiPath: "/api/v1/private/projects" },
-            { method: "PUT",    apiPath: "/api/v1/private/projects" },
-            { method: "DELETE", apiPath: "/api/v1/private/projects" },
-        ],
-    },
-    {
         name: "Razorpay",
         href: "/dashboard/rozarpay",
-        icon: FiCreditCard,
+        icon: FiShoppingCart,
         privileges: [
             { method: "GET",    apiPath: "/api/v1/private/rozarpay" },
             { method: "POST",   apiPath: "/api/v1/private/rozarpay" },
@@ -153,6 +165,12 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
+        name: "Profile",
+        href: "/dashboard/profile",
+        icon: FiUser,
+        privileges: [],
+    },
+    {
         name: "Settings",
         href: "/dashboard/settings",
         icon: FiSettings,
@@ -160,17 +178,5 @@ export const NAV_CONFIG: NavConfig[] = [
             { method: "GET",    apiPath: "/api/v1/private/settings" },
             { method: "PUT",    apiPath: "/api/v1/private/settings" },
         ],
-    },
-    {
-        name: "Resumes",
-        href: "/dashboard/resume-templates",
-        icon: FiFileText,
-        privileges: [],   // always visible — available to every logged-in user
-    },
-    {
-        name: "Profile",
-        href: "/dashboard/profile",
-        icon: FiUser,
-        privileges: [],   // always visible — every logged-in user owns their profile
     },
 ];
