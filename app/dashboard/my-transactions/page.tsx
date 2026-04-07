@@ -161,8 +161,8 @@ function PaymentMethodCards({ transactions }: { transactions: Transaction[] }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {cards.map(c => (
                 <div key={c.key} className="relative bg-white rounded-2xl border border-gray-100 shadow-sm p-4 overflow-hidden">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${c.color} opacity-5`} />
-                    <div className={`inline-flex p-2 rounded-xl bg-gradient-to-br ${c.color} text-white mb-2`}>
+                    <div className={`absolute inset-0 bg-linear-to-br ${c.color} opacity-5`} />
+                    <div className={`inline-flex p-2 rounded-xl bg-linear-to-br ${c.color} text-white mb-2`}>
                         {c.icon}
                     </div>
                     <p className="text-xs text-gray-400 font-medium">{c.label}</p>
@@ -540,7 +540,7 @@ export default function MyTransactionsPage() {
                             <FiFilter size={14} /> Filters
                         </button>
 
-                        <div className={`hidden sm:flex items-center gap-2 ${showFilter ? "!flex flex-wrap" : ""}`}>
+                        <div className={`hidden sm:flex items-center gap-2 ${showFilter ? "flex! flex-wrap" : ""}`}>
                             {statusOptions.map((s) => (
                                 <button
                                     key={s}
