@@ -23,27 +23,36 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             return NextResponse.json({ message: "Site is still in development. Role 'USER' not found." }, { status: 503 });
         }
 
+        const emailNormalized = email.toLowerCase().trim();
+        const mobileTrimmed = mobile.trim();
+        const encryptedEmail = encrypt(emailNormalized);
+        const encryptedMobile = encrypt(mobileTrimmed);
+
         // Check if user already exists
         const existingUser = await User.findOne({ 
             $or: [
-                { email: encrypt(email) },
-                { mobile: encrypt(mobile) }
+                { email: encryptedEmail },
+                { mobile: encryptedMobile }
             ]
         });
 
         if (existingUser) {
-            return NextResponse.json({ message: "User with this email or mobile already exists" }, { status: 409 });
+            const field = existingUser.email === encryptedEmail ? "email" : "mobile";
+            return NextResponse.json(
+                { message: `A user with this ${field} already exists` },
+                { status: 409 }
+            );
         }
 
         // Create new user
         const newUser = new User({
-            fullname, // Should probably be encrypted too? Checking User.ts... 
-            email: encrypt(email),
-            mobile: encrypt(mobile),
-            occupation,
-            state,
-            country,
-            source,
+            fullname: fullname.trim(),
+            email: encryptedEmail,
+            mobile: encryptedMobile,
+            occupation: (occupation || "").trim(),
+            state: (state || "").trim(),
+            country: (country || "").trim(),
+            source: (source || "").trim(),
             role: "USER",
             accountStatus: AccountStatus.INACTIVE
         });
