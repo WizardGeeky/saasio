@@ -33,6 +33,8 @@ import {
     FiList,
     FiShoppingCart,
     FiMessageSquare,
+    FiZap,
+    FiClock,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -76,6 +78,18 @@ export const NAV_CONFIG: NavConfig[] = [
         name: "Resumes",
         href: "/dashboard/resume-templates",
         icon: FiFileText,
+        privileges: [],
+    },
+    {
+        name: "AI ATS",
+        href: "/dashboard/ai-ats",
+        icon: FiZap,
+        privileges: [],
+    },
+    {
+        name: "ATS History",
+        href: "/dashboard/ats-history",
+        icon: FiClock,
         privileges: [],
     },
     {
