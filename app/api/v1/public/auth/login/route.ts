@@ -24,7 +24,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         }
 
         if (user.accountStatus === AccountStatus.INACTIVE) {
-            return NextResponse.json({ message: "Your account is inactive. Please contact support." }, { status: 403 });
+            return NextResponse.json({ message: "Your account is inactive. Please check your email for the activation link." }, { status: 403 });
         }
 
         if (user.accountStatus === AccountStatus.SUSPENDED) {

@@ -5,10 +5,14 @@ import { encrypt, decrypt } from "@/app/configs/crypto.config";
 import { AiModel } from "@/models/AiModel";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 
-const MASKED_KEY = "••••••••••••••••";
-
-function maskKey(model: any) {
-    return { ...model.toObject(), apiKey: MASKED_KEY };
+function decryptKey(model: any) {
+    const obj = model.toObject();
+    try {
+        obj.apiKey = decrypt(obj.apiKey);
+    } catch {
+        // Fallback if decryption fails (e.g. if key was already plain text or invalid)
+    }
+    return obj;
 }
 
 /**
@@ -23,7 +27,7 @@ export const GET = withAuth(async (
     try {
         await connectDB();
         const models = await AiModel.find().sort({ createdAt: -1 });
-        return NextResponse.json({ models: models.map(maskKey) }, { status: 200 });
+        return NextResponse.json({ models: models.map(decryptKey) }, { status: 200 });
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
@@ -43,7 +47,7 @@ export const POST = withAuth(async (
         await connectDB();
 
         const body = await req.json();
-        const { provider, modelName, displayName, apiKey, baseUrl, temperature, maxTokens, description, isActive } = body;
+        const { provider, modelName, displayName, apiKey, baseUrl, description, isActive } = body;
 
         if (!provider || !modelName || !displayName || !apiKey) {
             return NextResponse.json(
@@ -63,14 +67,12 @@ export const POST = withAuth(async (
             displayName: displayName.trim(),
             apiKey: encrypt(apiKey),
             baseUrl: baseUrl?.trim() || undefined,
-            temperature: temperature ?? 0.7,
-            maxTokens: maxTokens ?? 4096,
             description: description?.trim() || undefined,
             isActive: isActive ?? false,
         });
 
         return NextResponse.json(
-            { message: "AI model created successfully", model: maskKey(model) },
+            { message: "AI model created successfully", model: decryptKey(model) },
             { status: 201 }
         );
     } catch (error: any) {
@@ -92,7 +94,7 @@ export const PUT = withAuth(async (
         await connectDB();
 
         const body = await req.json();
-        const { id, provider, modelName, displayName, apiKey, baseUrl, temperature, maxTokens, description, isActive } = body;
+        const { id, provider, modelName, displayName, apiKey, baseUrl, description, isActive } = body;
 
         if (!id) {
             return NextResponse.json({ message: "Model ID is required" }, { status: 400 });
@@ -112,10 +114,8 @@ export const PUT = withAuth(async (
         if (provider) updates.provider = provider;
         if (modelName) updates.modelName = modelName.trim();
         if (displayName) updates.displayName = displayName.trim();
-        if (apiKey && apiKey !== MASKED_KEY) updates.apiKey = encrypt(apiKey);
+        if (apiKey) updates.apiKey = encrypt(apiKey);
         if (baseUrl !== undefined) updates.baseUrl = baseUrl?.trim() || undefined;
-        if (temperature !== undefined) updates.temperature = temperature;
-        if (maxTokens !== undefined) updates.maxTokens = maxTokens;
         if (description !== undefined) updates.description = description?.trim() || undefined;
         if (isActive !== undefined) updates.isActive = isActive;
 
@@ -123,7 +123,7 @@ export const PUT = withAuth(async (
         const updated = await AiModel.findById(id);
 
         return NextResponse.json(
-            { message: "AI model updated successfully", model: maskKey(updated!) },
+            { message: "AI model updated successfully", model: decryptKey(updated!) },
             { status: 200 }
         );
     } catch (error: any) {

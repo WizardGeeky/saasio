@@ -21,8 +21,6 @@ interface AiModelData {
     displayName: string;
     apiKey: string;
     baseUrl?: string;
-    temperature: number;
-    maxTokens: number;
     isActive: boolean;
     description?: string;
     createdAt: string;
@@ -37,8 +35,6 @@ const EMPTY_FORM = {
     displayName: "",
     apiKey: "",
     baseUrl: "",
-    temperature: 0.7,
-    maxTokens: 4096,
     description: "",
     isActive: false,
 };
@@ -92,7 +88,7 @@ export default function AiModelsPage() {
     const openNew = () => { setSelected(null); setForm({ ...EMPTY_FORM }); setModal("new"); };
     const openEdit = (m: AiModelData) => {
         setSelected(m);
-        setForm({ provider: m.provider, modelName: m.modelName, displayName: m.displayName, apiKey: "", baseUrl: m.baseUrl ?? "", temperature: m.temperature, maxTokens: m.maxTokens, description: m.description ?? "", isActive: m.isActive });
+        setForm({ provider: m.provider, modelName: m.modelName, displayName: m.displayName, apiKey: m.apiKey, baseUrl: m.baseUrl ?? "", description: m.description ?? "", isActive: m.isActive });
         setModal("edit");
     };
     const closeModal = () => { setModal(null); setSelected(null); };
@@ -263,14 +259,14 @@ export default function AiModelsPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                            <div className="bg-gray-50 rounded-xl p-2.5">
-                                                <p className="text-gray-400 font-medium mb-0.5">Temperature</p>
-                                                <p className="text-gray-700 font-semibold">{m.temperature}</p>
+                                        <div className="bg-gray-50 rounded-xl p-2.5 grid grid-cols-2 gap-4 text-xs">
+                                            <div>
+                                                <p className="text-gray-400 font-medium mb-0.5 uppercase tracking-tighter">API Key</p>
+                                                <p className="text-gray-700 font-mono truncate">{m.apiKey}</p>
                                             </div>
-                                            <div className="bg-gray-50 rounded-xl p-2.5">
-                                                <p className="text-gray-400 font-medium mb-0.5">Max Tokens</p>
-                                                <p className="text-gray-700 font-semibold">{m.maxTokens.toLocaleString()}</p>
+                                            <div>
+                                                <p className="text-gray-400 font-medium mb-0.5 uppercase tracking-tighter">Description</p>
+                                                <p className="text-gray-700 font-semibold truncate">{m.description || "—"}</p>
                                             </div>
                                         </div>
                                         {deleteConfirmId === m._id ? (
@@ -301,7 +297,7 @@ export default function AiModelsPage() {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-100">
-                                        {["Provider", "Model", "Temperature", "Max Tokens", "Status", "Actions"].map((h) => (
+                                        {["Provider", "Model", "API Key", "Description", "Status", "Actions"].map((h) => (
                                             <th key={h} className={`px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Actions" ? "text-right" : ""}`}>{h}</th>
                                         ))}
                                     </tr>
@@ -318,8 +314,10 @@ export default function AiModelsPage() {
                                                     <p className="font-semibold text-gray-900 text-sm">{m.displayName}</p>
                                                     <p className="text-xs font-mono text-gray-400 mt-0.5">{m.modelName}</p>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600 font-mono">{m.temperature}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-600 font-mono">{m.maxTokens.toLocaleString()}</td>
+                                                <td className="px-6 py-4">
+                                                    <p className="font-mono text-slate-500 text-xs truncate max-w-[140px]" title={m.apiKey}>{m.apiKey}</p>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-400 truncate max-w-[150px]">{m.description || "—"}</td>
                                                 <td className="px-6 py-4">
                                                     {canUpdate ? (
                                                         <button onClick={() => handleToggleActive(m)} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${m.isActive ? "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200" : "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200"}`}>
@@ -460,7 +458,7 @@ function AiModelModal({ type, form, setForm, onClose, onSubmit, isSaving }: {
                                     value={form.apiKey}
                                     onChange={e => setForm(f => ({ ...f, apiKey: e.target.value }))}
                                     required={isNew}
-                                    placeholder={isNew ? "sk-..." : "Leave empty to keep current"}
+                                    placeholder="sk-..."
                                     className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm text-gray-800 transition-all placeholder:text-gray-400"
                                 />
                             </div>
@@ -469,19 +467,6 @@ function AiModelModal({ type, form, setForm, onClose, onSubmit, isSaving }: {
                         {/* Base URL (custom only or optional) */}
                         {field("Base URL", false, input({ placeholder: "https://api.openai.com/v1 (optional)", value: form.baseUrl, onChange: e => setForm(f => ({ ...f, baseUrl: e.target.value })) }))}
 
-                        {/* Temperature + Max Tokens */}
-                        <div className="grid grid-cols-2 gap-4">
-                            {field("Temperature", false,
-                                <div className="space-y-2">
-                                    <input type="range" min="0" max="2" step="0.1" value={form.temperature} onChange={e => setForm(f => ({ ...f, temperature: parseFloat(e.target.value) }))}
-                                        className="w-full accent-emerald-600" />
-                                    <div className="flex justify-between text-xs text-gray-400">
-                                        <span>0</span><span className="font-semibold text-emerald-600">{form.temperature}</span><span>2</span>
-                                    </div>
-                                </div>
-                            )}
-                            {field("Max Tokens", false, input({ type: "number", min: "1", max: "200000", value: form.maxTokens, onChange: e => setForm(f => ({ ...f, maxTokens: parseInt(e.target.value) || 4096 }) )}))}
-                        </div>
 
                         {/* Description */}
                         {field("Description", false,

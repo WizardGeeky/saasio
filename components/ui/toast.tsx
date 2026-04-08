@@ -127,12 +127,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => [...prev, { id, type, message }]);
   }, []);
 
-  const value: ToastContextValue = {
+  const value: ToastContextValue = React.useMemo(() => ({
     toast: add,
     success: (msg) => add(msg, "success"),
     error: (msg) => add(msg, "error"),
     info: (msg) => add(msg, "info"),
-  };
+  }), [add]);
 
   return (
     <ToastContext.Provider value={value}>
