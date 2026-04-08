@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from "framer-motion";
 type AuthMode = "login" | "signup";
 type AuthStep = "form" | "otp" | "success";
 
-export default function LoginPage() {
+function LoginContent() {
   useAuthGuard("requireGuest");
 
   const router = useRouter();
@@ -541,6 +541,18 @@ export default function LoginPage() {
       </div>
     </div>
   </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
 
