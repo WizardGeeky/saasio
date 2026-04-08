@@ -9,10 +9,10 @@ import { CustomJwtPayload } from "@/app/configs/jwt.config";
  * (Update complaint status/notes - Admin only)
  */
 export const PUT = withAuth(
-    async (req: NextRequest, ctx: { params: { id: string } }, _user: CustomJwtPayload): Promise<NextResponse> => {
+    async (req: NextRequest, ctx: { params: Promise<{ id: string }> }, _user: CustomJwtPayload): Promise<NextResponse> => {
         try {
             await connectDB();
-            const { id } = ctx.params;
+            const { id } = await ctx.params;
             const { status, adminNotes } = await req.json();
 
             if (!status) {
@@ -43,10 +43,10 @@ export const PUT = withAuth(
  * DELETE /api/v1/private/complaints/[id]
  */
 export const DELETE = withAuth(
-    async (req: NextRequest, ctx: { params: { id: string } }, _user: CustomJwtPayload): Promise<NextResponse> => {
+    async (req: NextRequest, ctx: { params: Promise<{ id: string }> }, _user: CustomJwtPayload): Promise<NextResponse> => {
         try {
             await connectDB();
-            const { id } = ctx.params;
+            const { id } = await ctx.params;
 
             const deleted = await Complaint.findByIdAndDelete(id);
 
