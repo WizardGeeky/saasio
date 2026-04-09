@@ -1668,9 +1668,7 @@ function Footer() {
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-500 to-violet-500 flex items-center justify-center">
-                <FiFileText className="w-4 h-4 text-white" />
-              </div>
+              
               <span className="text-xl font-extrabold text-white">SAASIO</span>
             </div>
             <p className="text-sm leading-relaxed mb-4">
