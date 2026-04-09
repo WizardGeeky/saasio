@@ -18,11 +18,11 @@ export const GET = withAuth(async (
         await connectDB();
 
         const records = await AtsRecord
-            .find({ userId: new mongoose.Types.ObjectId(user.sub) })
+            .find({ userEmail: encrypt(user.email) })
             .populate("modelId", "displayName provider modelName")
             .sort({ createdAt: -1 });
 
-        return NextResponse.json({ records }, { status: 200 });
+        return NextResponse.json({ records, email: user.email }, { status: 200 });
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }

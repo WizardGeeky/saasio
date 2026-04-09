@@ -185,6 +185,10 @@ function DetailModal({
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
               <FiUser size={13} className="text-gray-400" />
               <span className="text-gray-700">{record.userDisplayName}</span>
+              <span className="text-gray-400">·</span>
+              <span className="text-gray-500 text-xs">
+                {record.userDisplayEmail}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
               <FiCpu size={13} className="text-gray-400" />
@@ -340,7 +344,7 @@ export default function AtsHistoryPage() {
   const { can, isLoading: privLoading } = usePrivilege();
   const token = getStoredToken();
 
-  const canRead = !privLoading && can("GET", "/api/v1/private/ats-history");
+  const canRead = !privLoading && can("GET", "/api/v1/private/ai-ats");
 
   const [records, setRecords] = useState<AtsHistoryRecord[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -554,93 +558,6 @@ export default function AtsHistoryPage() {
           )
         )}
 
-        {/* ── Charts Row ──────────────────────────────────────────────── */}
-        {stats && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Score Distribution */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-              <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <FiBarChart2 size={15} className="text-indigo-500" /> Score
-                Distribution
-              </h2>
-              <div className="space-y-3">
-                {[
-                  {
-                    label: "High (≥80)",
-                    count: stats.highMatch,
-                    color: "bg-emerald-500",
-                    textColor: "text-emerald-700",
-                  },
-                  {
-                    label: "Medium (60–79)",
-                    count: stats.mediumMatch,
-                    color: "bg-amber-500",
-                    textColor: "text-amber-700",
-                  },
-                  {
-                    label: "Low (<60)",
-                    count: stats.lowMatch,
-                    color: "bg-red-500",
-                    textColor: "text-red-700",
-                  },
-                ].map(({ label, count, color, textColor }) => (
-                  <div key={label}>
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-gray-600">{label}</span>
-                      <span className={`font-semibold ${textColor}`}>
-                        {count}{" "}
-                        <span className="text-gray-400 font-normal">
-                          ({total > 0 ? Math.round((count / total) * 100) : 0}%)
-                        </span>
-                      </span>
-                    </div>
-                    <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${color} transition-all duration-500`}
-                        style={{
-                          width: `${Math.round((count / distMax) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Avg Section Scores */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-              <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <FiTarget size={15} className="text-indigo-500" /> Avg Section
-                Scores
-              </h2>
-              <div className="space-y-4">
-                {(
-                  ["skills", "experience", "projects", "education"] as const
-                ).map((key) => {
-                  const val = stats.avgSectionScores[key];
-                  const cs = scoreStyle(val);
-                  return (
-                    <div key={key}>
-                      <div className="flex justify-between text-xs mb-1.5">
-                        <span className="text-gray-600 capitalize">{key}</span>
-                        <span className={`font-semibold ${cs.text}`}>
-                          {val}%
-                        </span>
-                      </div>
-                      <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${cs.bar} transition-all duration-500`}
-                          style={{ width: `${Math.min(100, val)}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* ── Filters ─────────────────────────────────────────────────── */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <div className="flex flex-col sm:flex-row gap-3">
@@ -768,7 +685,10 @@ export default function AtsHistoryPage() {
                           <div className="font-medium text-gray-800 text-xs">
                             {rec.userDisplayName}
                           </div>
-                          <div className="text-gray-400 text-xs truncate max-w-[140px]">
+                          <div
+                            className="text-gray-400 text-xs truncate max-w-[200px]"
+                            title={rec.userDisplayEmail}
+                          >
                             {rec.userDisplayEmail}
                           </div>
                         </td>
@@ -860,6 +780,12 @@ export default function AtsHistoryPage() {
                         <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                           <FiUser size={11} />
                           {rec.userDisplayName}
+                        </div>
+                        <div
+                          className="text-xs text-gray-400 mt-0.5 truncate"
+                          title={rec.userDisplayEmail}
+                        >
+                          {rec.userDisplayEmail}
                         </div>
                         <div className="text-xs text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
                           {rec.modelId && (

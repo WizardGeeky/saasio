@@ -89,14 +89,14 @@ export const GET = withAuth(async (
             .skip(skip)
             .limit(limit);
 
-        // ── Resolve display email: prefer populated user.email, fallback to decrypted ──
+        // ── Resolve display fields ──
+        // userEmail in AtsRecord is always encrypted via encrypt() in POST handler.
+        // User.email in the User model may also be encrypted, so we decrypt userEmail directly.
         const records = rawRecords.map((r) => {
             const obj = r.toObject() as any;
             const populatedUser = obj.userId as any;
             obj.userDisplayName  = populatedUser?.fullname ?? "—";
-            obj.userDisplayEmail = populatedUser?.email ?? (() => {
-                try { return decrypt(obj.userEmail); } catch { return "—"; }
-            })();
+            try { obj.userDisplayEmail = decrypt(obj.userEmail); } catch { obj.userDisplayEmail = "—"; }
             return obj;
         });
 

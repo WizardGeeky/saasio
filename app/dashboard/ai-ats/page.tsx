@@ -72,6 +72,7 @@ export default function AiAtsPage() {
 
     const [modalOpen, setModalOpen]       = useState(false);
     const [history, setHistory]           = useState<AtsHistoryRecord[]>([]);
+    const [userEmail, setUserEmail]       = useState("");
     const [historyLoading, setHistoryLoading] = useState(true);
     const [isAnalyzing, setIsAnalyzing]   = useState(false);
     const [form, setForm] = useState<{ jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string }>({
@@ -88,7 +89,7 @@ export default function AiAtsPage() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await res.json();
-            if (res.ok) setHistory(data.records ?? []);
+            if (res.ok) { setHistory(data.records ?? []); setUserEmail(data.email ?? ""); }
         } catch { /* silently ignore */ }
         finally { setHistoryLoading(false); }
     };
@@ -268,6 +269,7 @@ export default function AiAtsPage() {
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
                                                 <p className="font-semibold text-sm text-gray-900 truncate">{record.jobRoleName}</p>
+                                                {userEmail && <p className="text-[11px] text-gray-500 truncate mt-0.5">{userEmail}</p>}
                                                 <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
                                                     <FiCalendar size={10} />
                                                     {formatDate(record.createdAt)} · {formatTime(record.createdAt)}
@@ -302,7 +304,7 @@ export default function AiAtsPage() {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-100">
-                                        {["Job Role", "Score", "Matched Keywords", "Missing Keywords", "Date & Time"].map((h) => (
+                                        {["Job Role", "Email", "Score", "Matched Keywords", "Missing Keywords", "Date & Time"].map((h) => (
                                             <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                                         ))}
                                     </tr>
@@ -315,6 +317,9 @@ export default function AiAtsPage() {
                                                 <td className="px-6 py-4">
                                                     <p className="font-semibold text-gray-900">{record.jobRoleName}</p>
                                                     <p className="text-xs text-gray-400 mt-0.5 font-mono truncate max-w-[180px]">{record.fileName}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <p className="text-xs text-gray-700 truncate max-w-[200px]" title={userEmail}>{userEmail || "—"}</p>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${s.bg} ${s.text} ${s.border}`}>

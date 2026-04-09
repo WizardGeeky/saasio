@@ -87,7 +87,7 @@ export const NAV_CONFIG: NavConfig[] = [
         href: "/dashboard/ats-history",
         icon: FiClock,
         privileges: [
-            { method: "GET", apiPath: "/api/v1/private/ats-history" },
+            { method: "GET", apiPath: "/api/v1/private/ai-ats" },
         ],
     },
     {
