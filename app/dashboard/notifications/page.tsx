@@ -18,8 +18,9 @@ interface RoleOption { _id: string; }
 
 const DEFAULT_HTML = `<div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
   <h2 style="margin: 0 0 12px; color: #111827; font-size: 20px;">Hello 👋</h2>
-  <p style="margin: 0 0 16px; color: #4b5563; font-size: 15px; line-height: 1.6;">Write your message here. You can use HTML to format it.</p>
-  <p style="margin: 0; color: #9ca3af; font-size: 13px;">— SAASIO Team</p>
+  <p style="margin: 0 0 24px; color: #4b5563; font-size: 15px; line-height: 1.6;">Write your message here. You can use HTML to format it.</p>
+  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 16px;" />
+  <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.6;">Thanks &amp; Regards,<br /><strong style="color: #111827;">SAASIO Team</strong></p>
 </div>`;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
