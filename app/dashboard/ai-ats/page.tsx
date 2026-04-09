@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { getStoredToken } from "@/app/utils/token";
 import {
     FiZap,
     FiPlus,
@@ -16,6 +17,9 @@ import {
     FiAward,
     FiUploadCloud,
     FiTag,
+    FiChevronDown,
+    FiCheck,
+    FiCpu,
 } from "react-icons/fi";
 
 // ─── Mock history data ────────────────────────────────────────────────────────
@@ -95,10 +99,11 @@ function formatTime(iso: string) {
 
 export default function AiAtsPage() {
     const [modalOpen, setModalOpen] = useState(false);
-    const [form, setForm] = useState<{ jobRoleName: string; jobDescription: string; resumeFile: File | null }>({
+    const [form, setForm] = useState<{ jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string }>({
         jobRoleName: "",
         jobDescription: "",
         resumeFile: null,
+        aiModel: "",
     });
 
     const avgScore = Math.round(MOCK_HISTORY.reduce((s, r) => s + r.score, 0) / MOCK_HISTORY.length);
@@ -301,16 +306,30 @@ function AnalyzeModal({
     setForm,
     onClose,
 }: {
-    form: { jobRoleName: string; jobDescription: string; resumeFile: File | null };
-    setForm: React.Dispatch<React.SetStateAction<{ jobRoleName: string; jobDescription: string; resumeFile: File | null }>>;
+    form: { jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string };
+    setForm: React.Dispatch<React.SetStateAction<{ jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string }>>;
     onClose: () => void;
 }) {
     const [dragOver, setDragOver] = useState(false);
+    const [aiModels, setAiModels] = useState<{ _id: string; displayName: string; modelName: string; provider: string }[]>([]);
+    const [modelsLoading, setModelsLoading] = useState(true);
+
+    useEffect(() => {
+        const token = getStoredToken();
+        fetch("/api/v1/private/ai-models", {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((r) => r.json())
+            .then((data) => setAiModels(data.models ?? []))
+            .catch(() => {})
+            .finally(() => setModelsLoading(false));
+    }, []);
 
     const canSubmit =
         form.jobRoleName.trim().length > 0 &&
         form.jobDescription.trim().length > 0 &&
-        form.resumeFile !== null;
+        form.resumeFile !== null &&
+        form.aiModel.trim().length > 0;
 
     const handleFile = (file: File) => {
         if (file.type === "application/pdf") {
@@ -363,6 +382,14 @@ function AnalyzeModal({
                             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm text-gray-800 transition-all placeholder:text-gray-400"
                         />
                     </div>
+
+                    {/* AI Model */}
+                    <ModelDropdown
+                        models={aiModels}
+                        loading={modelsLoading}
+                        value={form.aiModel}
+                        onChange={(id) => setForm((f) => ({ ...f, aiModel: id }))}
+                    />
 
                     {/* Job Description */}
                     <div className="space-y-1.5">
@@ -474,6 +501,123 @@ function AnalyzeModal({
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+// ─── Model Dropdown ───────────────────────────────────────────────────────────
+
+const PROVIDER_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+    openai:    { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+    anthropic: { bg: "bg-orange-50",  text: "text-orange-700",  border: "border-orange-200"  },
+    google:    { bg: "bg-blue-50",    text: "text-blue-700",    border: "border-blue-200"    },
+    mistral:   { bg: "bg-purple-50",  text: "text-purple-700",  border: "border-purple-200"  },
+    groq:      { bg: "bg-cyan-50",    text: "text-cyan-700",    border: "border-cyan-200"    },
+    custom:    { bg: "bg-gray-100",   text: "text-gray-600",    border: "border-gray-200"    },
+};
+
+function ModelDropdown({
+    models,
+    loading,
+    value,
+    onChange,
+}: {
+    models: { _id: string; displayName: string; modelName: string; provider: string }[];
+    loading: boolean;
+    value: string;
+    onChange: (id: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const selected = models.find((m) => m._id === value) ?? null;
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
+    return (
+        <div className="space-y-1.5 relative" ref={ref}>
+            <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <FiCpu size={12} className="text-orange-500" />
+                AI Model <span className="text-red-400">*</span>
+            </label>
+
+            {/* Trigger */}
+            <button
+                type="button"
+                onClick={() => !loading && setOpen((o) => !o)}
+                disabled={loading}
+                className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 bg-white border rounded-xl text-sm transition-all ${
+                    open ? "border-emerald-500 ring-4 ring-emerald-500/10" : "border-gray-200 hover:border-gray-300"
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
+            >
+                {loading ? (
+                    <span className="flex items-center gap-2 text-gray-400">
+                        <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                        Loading models…
+                    </span>
+                ) : selected ? (
+                    <span className="flex items-center gap-2.5 min-w-0">
+                        {(() => {
+                            const c = PROVIDER_COLORS[selected.provider] ?? PROVIDER_COLORS.custom;
+                            return (
+                                <span className={`shrink-0 px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wide ${c.bg} ${c.text} ${c.border}`}>
+                                    {selected.provider}
+                                </span>
+                            );
+                        })()}
+                        <span className="font-semibold text-gray-900 truncate">{selected.displayName}</span>
+                        <span className="text-gray-400 font-mono text-xs shrink-0 hidden sm:inline">{selected.modelName}</span>
+                    </span>
+                ) : (
+                    <span className="text-gray-400">
+                        {models.length === 0 ? "No models configured" : "Select a model…"}
+                    </span>
+                )}
+                <FiChevronDown
+                    size={15}
+                    className={`text-gray-400 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                />
+            </button>
+
+            {/* Dropdown panel */}
+            {open && models.length > 0 && (
+                <div className="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150" style={{ maxHeight: "220px", overflowY: "auto" }}>
+                    {models.map((m) => {
+                        const c = PROVIDER_COLORS[m.provider] ?? PROVIDER_COLORS.custom;
+                        const isSelected = m._id === value;
+                        return (
+                            <button
+                                key={m._id}
+                                type="button"
+                                onClick={() => { onChange(m._id); setOpen(false); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-gray-50 last:border-0 ${
+                                    isSelected ? "bg-emerald-50" : "hover:bg-gray-50"
+                                }`}
+                            >
+                                <span className={`shrink-0 px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wide ${c.bg} ${c.text} ${c.border}`}>
+                                    {m.provider}
+                                </span>
+                                <span className="flex-1 min-w-0">
+                                    <span className="block font-semibold text-sm text-gray-900 truncate">{m.displayName}</span>
+                                    <span className="block font-mono text-xs text-gray-400 truncate mt-0.5">{m.modelName}</span>
+                                </span>
+                                {isSelected && <FiCheck size={14} className="text-emerald-600 shrink-0" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {!loading && models.length === 0 && (
+                <p className="text-[11px] text-amber-500 flex items-center gap-1">
+                    <FiCpu size={11} /> No AI models found. Configure one in AI Models settings.
+                </p>
+            )}
         </div>
     );
 }
