@@ -29,7 +29,6 @@ import {
     FiBell,
     FiUser,
     FiFolder,
-    FiFileText,
     FiList,
     FiShoppingCart,
     FiMessageSquare,
@@ -73,12 +72,6 @@ export const NAV_CONFIG: NavConfig[] = [
             { method: "PUT",    apiPath: "/api/v1/private/projects" },
             { method: "DELETE", apiPath: "/api/v1/private/projects" },
         ],
-    },
-    {
-        name: "Resumes",
-        href: "/dashboard/resume-templates",
-        icon: FiFileText,
-        privileges: [],
     },
     {
         name: "AI ATS",
