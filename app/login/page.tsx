@@ -360,9 +360,7 @@ function LoginContent() {
 
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center justify-center gap-2.5 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-violet-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
-              <FiZap className="w-5 h-5 text-white" />
-            </div>
+            
             <span className="text-3xl font-extrabold tracking-tight font-heading">
               <span className="text-gradient">SAASIO</span>
             </span>
