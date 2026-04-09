@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import {
   FiZap,
   FiTarget,
@@ -12,989 +13,1576 @@ import {
   FiMenu,
   FiX,
   FiDownload,
-  FiCpu,
   FiShield,
-  FiLayers,
-  FiBriefcase,
   FiEdit3,
   FiAward,
   FiTrendingUp,
-  FiCheckCircle,
   FiFileText,
+  FiUsers,
+  FiClock,
+  FiCpu,
+  FiLayers,
+  FiBriefcase,
+  FiUser,
 } from "react-icons/fi";
+import { BlurFade } from "@/components/magicui/blur-fade";
+import { NumberTicker } from "@/components/magicui/number-ticker";
+import { Marquee } from "@/components/magicui/marquee";
+import { BorderBeam } from "@/components/magicui/border-beam";
+import { ShimmerButton } from "@/components/magicui/shimmer-button";
+import { Meteors } from "@/components/magicui/meteors";
+import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text";
+import { WordFadeIn } from "@/components/magicui/word-fade-in";
 
-// ─── useInView ────────────────────────────────────────────────────────────────
+/* ─── Data ────────────────────────────────────────────────────────────── */
 
-function useInView(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setInView(true);
-          obs.disconnect();
-        }
-      },
-      { threshold },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, inView };
-}
+const testimonials = [
+  {
+    name: "Priya Sharma",
+    role: "Product Manager",
+    company: "Swiggy",
+    initials: "PS",
+    text: "Got 3 interview calls in one week! The ATS score jumped to 96/100. Absolutely worth every rupee.",
+    rating: 5,
+  },
+  {
+    name: "Rahul Verma",
+    role: "Software Engineer",
+    company: "Zepto",
+    initials: "RV",
+    text: "Crafted the perfect resume for my dream company in under 30 seconds. Landed the job in 2 weeks.",
+    rating: 5,
+  },
+  {
+    name: "Neha Patel",
+    role: "Data Scientist",
+    company: "PhonePe",
+    initials: "NP",
+    text: "The job-tailored matching is incredible. My resume finally spoke the recruiter's language!",
+    rating: 5,
+  },
+  {
+    name: "Arjun Singh",
+    role: "UX Designer",
+    company: "CRED",
+    initials: "AS",
+    text: "Never thought resume building could be this effortless. The templates are stunning too.",
+    rating: 5,
+  },
+  {
+    name: "Ananya Kapoor",
+    role: "Marketing Manager",
+    company: "Razorpay",
+    initials: "AK",
+    text: "94% job match score on my first try. Interview conversion rate doubled within days.",
+    rating: 5,
+  },
+  {
+    name: "Vikram Nair",
+    role: "Backend Developer",
+    company: "Groww",
+    initials: "VN",
+    text: "Version tracking for different job roles is a game-changer. Highly recommend the Pro plan.",
+    rating: 5,
+  },
+  {
+    name: "Sneha Reddy",
+    role: "Business Analyst",
+    company: "Flipkart",
+    initials: "SR",
+    text: "From job description to polished PDF in 30 seconds — this is the future of job applications.",
+    rating: 5,
+  },
+  {
+    name: "Karan Mehta",
+    role: "DevOps Engineer",
+    company: "Meesho",
+    initials: "KM",
+    text: "Finally cracked Meesho's hiring process. The ATS optimizer made my resume stand out.",
+    rating: 5,
+  },
+];
 
-// ─── Reveal ───────────────────────────────────────────────────────────────────
 
-function Reveal({
-  children,
-  delay = 0,
-  dir = "up",
-  className = "",
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  dir?: "up" | "left" | "right" | "scale";
-  className?: string;
-}) {
-  const { ref, inView } = useInView();
-  const anim = {
-    up: "animate-fade-up",
-    left: "animate-slide-right",
-    right: "animate-slide-left",
-    scale: "animate-scale-in",
-  }[dir];
-  return (
-    <div
-      ref={ref}
-      className={`${className} ${inView ? anim : "opacity-0"}`}
-      style={
-        inView
-          ? { animationDelay: `${delay}ms`, animationFillMode: "both" }
-          : undefined
-      }
-    >
-      {children}
-    </div>
-  );
-}
+const steps = [
+  {
+    number: "01",
+    icon: FiBriefcase,
+    title: "Paste Your Job Description",
+    subtitle: "Any role. Any company. Any portal.",
+    description:
+      "Copy the job listing from LinkedIn, Naukri, or any careers page and paste it into SAASIO. Our AI reads every requirement, keyword, and skill the recruiter is looking for.",
+    bullets: [
+      "Works with any job portal or company listing",
+      "Supports freshers and experienced professionals",
+      "Any role: tech, management, design, finance",
+    ],
+    accent: "violet",
+  },
+  {
+    number: "02",
+    icon: FiCpu,
+    title: "AI Crafts Your Resume",
+    subtitle: "Under 30 seconds. Every single time.",
+    description:
+      "Our AI analyzes the job requirements, extracts the exact keywords ATS systems look for, and generates a tailored resume that speaks the recruiter's language — perfectly.",
+    bullets: [
+      "Real-time ATS scoring up to 98/100",
+      "Job-specific keyword and phrase optimization",
+      "Professional tone auto-enhanced by AI",
+    ],
+    accent: "emerald",
+  },
+  {
+    number: "03",
+    icon: FiDownload,
+    title: "Download & Start Applying",
+    subtitle: "PDF-ready in seconds.",
+    description:
+      "Your ATS-optimized resume is instantly available as a polished, professionally formatted PDF. Choose from 50+ templates and start applying to your dream role today.",
+    bullets: [
+      "PDF download ready for immediate applications",
+      "50+ professional, ATS-friendly templates",
+      "Track separate versions for different roles",
+    ],
+    accent: "violet",
+  },
+];
 
-// ─── SectionBadge ─────────────────────────────────────────────────────────────
+const pricingPlans = [
+  {
+    name: "Starter",
+    price: "₹9",
+    per: "1 resume",
+    perUnit: "₹9/resume",
+    description: "Perfect for a single job application",
+    features: [
+      "1 AI-generated resume",
+      "ATS optimization score",
+      "Job description matching",
+      "PDF download",
+      "50+ templates",
+    ],
+    missing: ["Smart editing suggestions", "Version tracking", "Priority support"],
+    cta: "Get Started",
+    popular: false,
+    gradient: "from-slate-50 to-white",
+    border: "border-slate-200",
+  },
+  {
+    name: "Growth",
+    price: "₹39",
+    per: "5 resumes",
+    perUnit: "₹7.8/resume",
+    description: "Best value for active job seekers",
+    features: [
+      "5 AI-generated resumes",
+      "ATS optimization score",
+      "Job description matching",
+      "PDF download",
+      "50+ templates",
+      "Smart editing suggestions",
+      "Version tracking",
+    ],
+    missing: ["Priority support"],
+    cta: "Get Started",
+    popular: true,
+    gradient: "from-white to-white",
+    border: "border-transparent",
+  },
+  {
+    name: "Pro",
+    price: "₹69",
+    per: "10 resumes",
+    perUnit: "₹6.9/resume",
+    description: "For serious career professionals",
+    features: [
+      "10 AI-generated resumes",
+      "ATS optimization score",
+      "Job description matching",
+      "PDF download",
+      "50+ templates",
+      "Smart editing suggestions",
+      "Version tracking",
+      "Priority support",
+    ],
+    missing: [],
+    cta: "Get Started",
+    popular: false,
+    gradient: "from-violet-50 to-white",
+    border: "border-violet-200",
+  },
+];
 
-function SectionBadge({ label }: { label: string }) {
-  return (
-    <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-widest rounded-full mb-4 border border-emerald-200">
-      {label}
-    </span>
-  );
-}
+const faqs = [
+  {
+    q: "How does AI generate my resume?",
+    a: "Our AI analyzes your job description to extract key requirements, skills, and language patterns. It then crafts a tailored resume that highlights your most relevant experience in the exact vocabulary that ATS systems and recruiters respond to.",
+  },
+  {
+    q: "What is ATS optimization and why does it matter?",
+    a: "Applicant Tracking Systems (ATS) are software tools used by 99% of large companies to filter resumes before a human ever sees them. Our ATS optimizer scores your resume against the job description and ensures it passes automated screening, maximizing your chances of reaching an interview.",
+  },
+  {
+    q: "Is there a subscription or recurring charge?",
+    a: "No! SAASIO is completely pay-as-you-go. Pay once for a bundle of resumes and use them whenever you need. No monthly fees, no recurring charges, no hidden costs — ever.",
+  },
+  {
+    q: "Can I create resumes for different job roles?",
+    a: "Absolutely. Each resume is independently tailored to a specific job description. The Growth and Pro plans let you build multiple versions of your resume for different roles, companies, or industries — all tracked separately.",
+  },
+  {
+    q: "What format will I receive my resume in?",
+    a: "Your AI-crafted resume is delivered as a professionally formatted PDF, ready to attach directly to any job application. Choose from 50+ industry-specific templates before downloading.",
+  },
+  {
+    q: "Is my personal data safe and secure?",
+    a: "Absolutely. All data is encrypted in transit (TLS) and at rest. We never share your personal information with third parties. Payments are processed through Razorpay, India's most trusted and PCI-DSS compliant payment gateway.",
+  },
+];
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
+/* ─── shared container ─────────────────────────────────────────────────── */
+const CONTAINER = "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10";
+
+/* ─── Navbar ────────────────────────────────────────────────────────────── */
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 24);
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinks = [
-    { label: "Features", id: "#features" },
-    { label: "How It Works", id: "#how" },
-    { label: "Pricing", id: "#pricing" },
-    { label: "FAQ", id: "#faq" },
+  const links = [
+    { label: "Features", href: "#features" },
+    { label: "How It Works", href: "#how-it-works" },
+    { label: "Pricing", href: "#pricing" },
+    { label: "FAQ", href: "#faq" },
   ];
 
-  const go = (id: string) => {
-    setOpen(false);
-    document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
-    <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+    <nav
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-200/80"
-          : "bg-white/80 backdrop-blur-md"
+          ? "bg-white/90 backdrop-blur-xl shadow-sm border-b border-violet-100/60"
+          : "bg-transparent"
       }`}
     >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/30">
-            <FiLayers size={18} />
-          </div>
-          <span className="text-xl font-extrabold text-slate-900 tracking-tight">
-            SAAS<span className="text-emerald-600">IO</span>
-          </span>
-        </Link>
+      <div className={CONTAINER}>
+        <div className="flex items-center justify-between h-16 sm:h-18">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ type: "spring", stiffness: 400 }}
+              className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-500 to-violet-500 flex items-center justify-center shadow-md"
+            >
+              <FiFileText className="w-4 h-4 text-white" />
+            </motion.div>
+            <span className="text-xl font-extrabold text-gradient-gl">SAASIO</span>
+          </Link>
 
-        {/* Desktop nav links */}
-        <ul className="hidden md:flex items-center gap-1 flex-1 justify-center">
-          {navLinks.map((l) => (
-            <li key={l.label}>
-              <button
-                onClick={() => go(l.id)}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-6 lg:gap-8">
+            {links.map((l) => (
+              <motion.a
+                key={l.label}
+                href={l.href}
+                whileHover={{ y: -1 }}
+                className="text-sm font-semibold text-slate-600 hover:text-violet-600 transition-colors"
               >
                 {l.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+              </motion.a>
+            ))}
+          </div>
 
-        {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center gap-3 shrink-0">
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-2"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/login"
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-600/25 transition-all active:scale-95"
-          >
-            Get Started <FiArrowRight size={14} />
-          </Link>
-        </div>
-
-        {/* Mobile toggle */}
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
-        >
-          {open ? <FiX size={22} /> : <FiMenu size={22} />}
-        </button>
-      </nav>
-
-      {/* Mobile menu */}
-      {open && (
-        <div className="md:hidden bg-white border-t border-slate-100 px-4 pb-5 pt-2 space-y-1 animate-fade-up shadow-lg">
-          {navLinks.map((l) => (
-            <button
-              key={l.label}
-              onClick={() => go(l.id)}
-              className="block w-full text-left px-4 py-3 text-sm font-medium text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
-            >
-              {l.label}
-            </button>
-          ))}
-          <div className="pt-3 grid grid-cols-2 gap-2 border-t border-slate-100 mt-2">
+          {/* Desktop CTAs */}
+          <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
-              onClick={() => setOpen(false)}
-              className="text-center py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+              className="text-sm font-semibold text-slate-700 hover:text-violet-600 transition-colors px-4 py-2 rounded-full hover:bg-violet-50"
             >
               Sign In
             </Link>
-            <Link
-              href="/login"
-              onClick={() => setOpen(false)}
-              className="text-center py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all"
-            >
-              Get Started
+            <Link href="/login">
+              <ShimmerButton
+                background="linear-gradient(135deg,#10b981,#059669)"
+                className="text-sm px-5 py-2.5 rounded-full shadow-md shadow-emerald-500/20"
+              >
+                Get Started
+              </ShimmerButton>
             </Link>
           </div>
+
+          {/* Mobile menu toggle */}
+          <button
+            className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-violet-50 transition-colors"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Toggle menu"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={open ? "x" : "menu"}
+                initial={{ opacity: 0, rotate: -90 }}
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={{ opacity: 0, rotate: 90 }}
+                transition={{ duration: 0.15 }}
+              >
+                {open ? <FiX className="w-5 h-5" /> : <FiMenu className="w-5 h-5" />}
+              </motion.div>
+            </AnimatePresence>
+          </button>
         </div>
-      )}
-    </header>
+      </div>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="md:hidden border-t border-violet-100 bg-white/98 backdrop-blur-xl overflow-hidden"
+          >
+            <div className="px-4 py-4 space-y-1">
+              {links.map((l, i) => (
+                <motion.a
+                  key={l.label}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                >
+                  {l.label}
+                </motion.a>
+              ))}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="pt-3 pb-1 grid grid-cols-2 gap-2"
+              >
+                <Link
+                  href="/login"
+                  className="text-center px-4 py-3 rounded-xl text-sm font-semibold border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link href="/login">
+                  <ShimmerButton
+                    background="linear-gradient(135deg,#10b981,#059669)"
+                    className="w-full text-sm py-3 rounded-xl justify-center"
+                  >
+                    Get Started
+                  </ShimmerButton>
+                </Link>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
   );
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
+/* ─── Hero — AI Scanner Animation ──────────────────────────────────────── */
 
-function Hero() {
+const RESUME_JOBS = [
+  {
+    title: "Senior Product Manager",
+    company: "Swiggy",
+    color: "from-violet-500 to-violet-700",
+    score: 94,
+    ats: 97,
+    keywords: ["Product Strategy", "SQL", "A/B Testing", "Agile"],
+  },
+  {
+    title: "Software Engineer II",
+    company: "Google",
+    color: "from-emerald-500 to-teal-600",
+    score: 91,
+    ats: 98,
+    keywords: ["React", "TypeScript", "System Design", "REST APIs"],
+  },
+  {
+    title: "Data Scientist",
+    company: "PhonePe",
+    color: "from-blue-500 to-indigo-600",
+    score: 96,
+    ats: 95,
+    keywords: ["Python", "ML", "TensorFlow", "Statistics"],
+  },
+];
+
+function AIScannerAnimation() {
+  const [activeJob, setActiveJob] = useState(0);
+  const [scanPhase, setScanPhase] = useState<"scanning" | "scoring" | "done">("scanning");
+  const [scanY, setScanY] = useState(0);
+
+  useEffect(() => {
+    let frame: ReturnType<typeof setTimeout>;
+    const cycle = () => {
+      // scanning phase
+      setScanPhase("scanning");
+      setScanY(0);
+      let y = 0;
+      const scanInterval = setInterval(() => {
+        y += 2.5;
+        setScanY(y);
+        if (y >= 100) {
+          clearInterval(scanInterval);
+          setScanPhase("scoring");
+          frame = setTimeout(() => {
+            setScanPhase("done");
+            frame = setTimeout(() => {
+              setActiveJob((j) => (j + 1) % RESUME_JOBS.length);
+              cycle();
+            }, 1800);
+          }, 900);
+        }
+      }, 30);
+    };
+    cycle();
+    return () => clearTimeout(frame);
+  }, []);
+
+  const job = RESUME_JOBS[activeJob];
+
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white">
-      {/* Light green gradient wash */}
-      <div className="absolute inset-0 bg-linear-to-br from-emerald-50 via-white to-teal-50/60 pointer-events-none" />
+    <div className="relative w-full max-w-[420px] mx-auto select-none">
+      {/* Ambient glow behind card */}
+      <div className="absolute inset-0 bg-violet-300/20 rounded-3xl blur-3xl scale-110 pointer-events-none" />
 
-      {/* Decorative circles */}
-      <div className="absolute -top-32 -right-32 w-[480px] h-[480px] bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 -left-24 w-[360px] h-[360px] bg-teal-400/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Main card */}
+      <div className="relative bg-white rounded-2xl shadow-2xl shadow-violet-500/15 border border-violet-100 overflow-hidden">
+        <BorderBeam colorFrom="#10b981" colorTo="#8b5cf6" duration={4} />
 
-      {/* Dot grid top-right */}
-      <div
-        className="absolute top-0 right-0 w-64 h-64 opacity-[0.07]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, #059669 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-        }}
-      />
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-28 pb-20 lg:pt-36 lg:pb-28">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* ── Left copy ── */}
-          <div>
-            {/* Live badge */}
-            <div
-              className="animate-fade-up inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 border border-emerald-200 rounded-full mb-6"
-              style={{ animationFillMode: "both" }}
+        {/* Header bar */}
+        <div className={`bg-linear-to-r ${job.color} px-5 py-3.5 flex items-center justify-between`}>
+          <div className="flex items-center gap-2.5">
+            <motion.div
+              key={activeJob + "icon"}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
-              </span>
-              <span className="text-xs font-bold text-emerald-700 tracking-wide">
-                AI-Powered Resume Builder
-              </span>
-            </div>
-
-            {/* Headline */}
-            <h1
-              className="animate-fade-up text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-5"
-              style={{ animationDelay: "80ms", animationFillMode: "both" }}
-            >
-              Build Resumes That
-              <br />
-              <span className="text-gradient">Land Your Dream Job</span>
-            </h1>
-
-            {/* Description */}
-            <p
-              className="animate-fade-up text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-lg"
-              style={{ animationDelay: "160ms", animationFillMode: "both" }}
-            >
-              Our AI agents analyze any job description and craft a perfectly
-              tailored, ATS-optimized resume in seconds. Your next interview is
-              one click away — starting at just{" "}
-              <span className="text-emerald-600 font-bold">₹9</span>.
-            </p>
-
-            {/* CTA buttons */}
-            <div
-              className="animate-fade-up flex flex-col sm:flex-row gap-3 mb-10"
-              style={{ animationDelay: "240ms", animationFillMode: "both" }}
-            >
-              <Link
-                href="/login"
-                className="group flex items-center justify-center gap-2 px-7 py-3.5 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-2xl shadow-xl shadow-emerald-600/25 transition-all active:scale-[0.98]"
+              <FiCpu className="w-4 h-4 text-white" />
+            </motion.div>
+            <div>
+              <motion.p
+                key={activeJob + "title"}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-white text-xs font-bold leading-tight"
               >
-                Start Building Free
-                <FiArrowRight
-                  size={17}
-                  className="group-hover:translate-x-0.5 transition-transform"
+                {job.title}
+              </motion.p>
+              <p className="text-white/70 text-[10px] font-medium">{job.company}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-white/40" />
+            <span className="w-2 h-2 rounded-full bg-white/40" />
+            <span className="w-2 h-2 rounded-full bg-white" />
+          </div>
+        </div>
+
+        {/* Resume preview with scan line */}
+        <div className="relative px-5 pt-4 pb-3 overflow-hidden" style={{ height: 160 }}>
+          {/* Resume skeleton */}
+          <div className="space-y-2.5">
+            <div className="h-3 w-2/5 bg-slate-700 rounded-full" />
+            <div className="h-2 w-1/3 bg-slate-300 rounded-full" />
+            <div className="h-px bg-slate-200 my-1" />
+            {[
+              { w: "100%", c: "bg-violet-200" },
+              { w: "88%",  c: "bg-slate-200" },
+              { w: "75%",  c: "bg-slate-200" },
+              { w: "95%",  c: "bg-emerald-200" },
+              { w: "60%",  c: "bg-slate-200" },
+              { w: "80%",  c: "bg-slate-200" },
+            ].map((l, i) => (
+              <div key={i} className={`h-2 rounded-full ${l.c}`} style={{ width: l.w }} />
+            ))}
+          </div>
+
+          {/* Animated scan line */}
+          {scanPhase === "scanning" && (
+            <motion.div
+              className="absolute left-0 right-0 h-[2px] pointer-events-none"
+              style={{ top: `${scanY}%` }}
+            >
+              <div className="h-full bg-linear-to-r from-transparent via-emerald-400 to-transparent opacity-90" />
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-emerald-300/40 to-transparent blur-sm" />
+            </motion.div>
+          )}
+
+          {/* Scan overlay tint */}
+          {scanPhase === "scanning" && (
+            <div
+              className="absolute left-0 right-0 top-0 bg-emerald-400/5 pointer-events-none transition-all"
+              style={{ height: `${scanY}%` }}
+            />
+          )}
+        </div>
+
+        {/* Keyword chips */}
+        <div className="px-5 pb-3">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            Matched Keywords
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {job.keywords.map((kw, i) => (
+              <motion.span
+                key={kw}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={scanPhase !== "scanning" ? { opacity: 1, scale: 1 } : { opacity: 0.3, scale: 0.9 }}
+                transition={{ delay: i * 0.08 }}
+                className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-violet-50 text-violet-700 border border-violet-100"
+              >
+                ✓ {kw}
+              </motion.span>
+            ))}
+          </div>
+        </div>
+
+        {/* Score row */}
+        <div className="px-5 pb-4 pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-3">
+            {/* ATS score ring */}
+            <div className="relative shrink-0 w-14 h-14">
+              <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                <circle cx="28" cy="28" r="22" fill="none" stroke="#f0fdf4" strokeWidth="5" />
+                <motion.circle
+                  cx="28" cy="28" r="22" fill="none"
+                  stroke="#10b981" strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 22}`}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 22 }}
+                  animate={scanPhase !== "scanning"
+                    ? { strokeDashoffset: 2 * Math.PI * 22 * (1 - job.ats / 100) }
+                    : { strokeDashoffset: 2 * Math.PI * 22 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
                 />
-              </Link>
-              <button
-                onClick={() =>
-                  document
-                    .querySelector("#how")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-slate-700 border-2 border-slate-200 rounded-2xl hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all"
-              >
-                See How It Works
-              </button>
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center flex-col">
+                <motion.span
+                  key={activeJob + "ats"}
+                  initial={{ opacity: 0 }}
+                  animate={scanPhase !== "scanning" ? { opacity: 1 } : { opacity: 0 }}
+                  className="text-sm font-black text-emerald-700 leading-none"
+                >
+                  {job.ats}
+                </motion.span>
+                <span className="text-[8px] text-slate-400 font-bold">ATS</span>
+              </div>
             </div>
 
-            {/* Social proof */}
-            <div
-              className="animate-fade-up flex items-center gap-4"
-              style={{ animationDelay: "320ms", animationFillMode: "both" }}
-            >
-              <div className="flex -space-x-2.5">
-                {[
-                  "from-emerald-400 to-emerald-600",
-                  "from-teal-400 to-teal-600",
-                  "from-emerald-500 to-emerald-700",
-                  "from-slate-400 to-slate-600",
-                  "from-emerald-300 to-emerald-500",
-                ].map((g, i) => (
-                  <div
-                    key={i}
-                    className={`w-8 h-8 rounded-full bg-linear-to-br ${g} border-2 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm`}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-slate-500 font-medium">Job Match Score</span>
+                <motion.span
+                  key={activeJob + "score"}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={scanPhase !== "scanning" ? { opacity: 1, scale: 1 } : { opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 200 }}
+                  className="text-base font-black text-emerald-600"
+                >
+                  {job.score}%
+                </motion.span>
+              </div>
+              <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-linear-to-r from-emerald-400 to-emerald-500"
+                  initial={{ width: 0 }}
+                  animate={scanPhase !== "scanning" ? { width: `${job.score}%` } : { width: 0 }}
+                  transition={{ duration: 0.9, ease: "easeOut" }}
+                />
+              </div>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={scanPhase === "done" ? { opacity: 1 } : { opacity: 0 }}
+                className="text-[10px] text-emerald-600 font-bold mt-1 flex items-center gap-1"
+              >
+                <FiCheck className="w-3 h-3" /> Resume ready to download
+              </motion.p>
+            </div>
+          </div>
+        </div>
+
+        {/* Status bar */}
+        <div className="bg-slate-50 border-t border-slate-100 px-5 py-2 flex items-center gap-2">
+          <motion.div
+            animate={scanPhase === "scanning"
+              ? { backgroundColor: ["#fbbf24", "#10b981", "#fbbf24"] }
+              : { backgroundColor: "#10b981" }}
+            transition={{ repeat: scanPhase === "scanning" ? Infinity : 0, duration: 1 }}
+            className="w-2 h-2 rounded-full"
+          />
+          <motion.span
+            key={scanPhase}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-[10px] font-semibold text-slate-500"
+          >
+            {scanPhase === "scanning"
+              ? "AI scanning resume…"
+              : scanPhase === "scoring"
+                ? "Computing scores…"
+                : "Analysis complete ✓"}
+          </motion.span>
+          <div className="flex-1" />
+          <span className="text-[10px] text-slate-400">
+            {activeJob + 1}/{RESUME_JOBS.length} jobs
+          </span>
+        </div>
+      </div>
+
+      {/* Floating chips */}
+      <motion.div
+        animate={{ y: [0, -8, 0] }}
+        transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+        className="absolute -top-4 -right-2 sm:-right-6 bg-white rounded-xl shadow-lg border border-violet-100 px-3 py-2 flex items-center gap-2"
+      >
+        <motion.div
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+          className="w-2 h-2 bg-emerald-400 rounded-full"
+        />
+        <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Live AI Analysis</span>
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 6, 0] }}
+        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.8 }}
+        className="absolute -bottom-4 -left-2 sm:-left-6 bg-white rounded-xl shadow-lg border border-violet-100 px-3 py-2 flex items-center gap-2"
+      >
+        <FiStar className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+        <span className="text-xs font-bold text-slate-700 whitespace-nowrap">10,000+ Users</span>
+      </motion.div>
+    </div>
+  );
+}
+
+function HeroSection() {
+  return (
+    <section className="relative min-h-screen bg-hero-radial flex items-center pt-16 overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <Meteors number={18} />
+        <div className="absolute top-1/3 -left-20 w-[500px] h-[500px] bg-violet-300/10 rounded-full blur-[120px] animate-glow-pulse" />
+        <div
+          className="absolute bottom-1/4 -right-20 w-[400px] h-[400px] bg-emerald-300/10 rounded-full blur-[100px] animate-glow-pulse"
+          style={{ animationDelay: "1.5s" }}
+        />
+      </div>
+
+      <div className={`relative ${CONTAINER} w-full`}>
+        <div className="grid lg:grid-cols-2 gap-10 xl:gap-16 items-center py-16 sm:py-20 lg:py-24">
+          {/* ── Left ── */}
+          <div className="text-center lg:text-left">
+            <BlurFade delay={0}>
+              <div className="inline-block mb-5">
+                <AnimatedGradientText>
+                  <FiZap className="w-4 h-4 text-emerald-500" />
+                  <span className="text-gradient-gl font-bold">AI-Powered Resume Builder</span>
+                  <span className="text-violet-400">✦</span>
+                </AnimatedGradientText>
+              </div>
+            </BlurFade>
+
+            <WordFadeIn
+              words="Build Resumes That Land Your Dream Job"
+              className="font-heading text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-slate-900 leading-[1.1] mb-5"
+            />
+
+            <BlurFade delay={0.5}>
+              <p className="text-base sm:text-lg xl:text-xl text-slate-600 leading-relaxed mb-7 max-w-lg mx-auto lg:mx-0">
+                AI crafts{" "}
+                <span className="font-bold text-emerald-600">ATS-optimized resumes</span>{" "}
+                tailored to your job description in under{" "}
+                <span className="font-bold text-violet-600">30 seconds</span>. No
+                subscriptions — starting at just{" "}
+                <span className="font-bold text-emerald-600">₹9</span>.
+              </p>
+            </BlurFade>
+
+            <BlurFade delay={0.65}>
+              {/* Buttons — always side by side */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8">
+                <Link href="/login" className="w-full sm:w-auto">
+                  <ShimmerButton
+                    background="linear-gradient(135deg,#10b981,#059669)"
+                    className="w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-4 rounded-full shadow-xl shadow-emerald-500/30 justify-center"
                   >
-                    {["A", "R", "S", "P", "N"][i]}
+                    Start Building
+                    <FiArrowRight className="w-4 h-4" />
+                  </ShimmerButton>
+                </Link>
+                <a
+                  href="#how-it-works"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-4.5  px-6 sm:px-8 sm:py-4 rounded-full border-3 border-violet-200 text-violet-700 font-semibold text-sm sm:text-base hover:bg-violet-50 hover:border-violet-300 transition-all duration-200"
+                >
+                  See How It Works
+                </a>
+              </div>
+            </BlurFade>
+
+            <BlurFade delay={0.8}>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-5 text-xs sm:text-sm text-slate-500">
+                {[
+                  { icon: FiCheck, text: "No subscription" },
+                  { icon: FiShield, text: "Secure payment" },
+                  { icon: FiDownload, text: "Instant PDF" },
+                ].map(({ icon: Icon, text }) => (
+                  <div key={text} className="flex items-center gap-1.5">
+                    <Icon className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span className="font-medium">{text}</span>
                   </div>
                 ))}
               </div>
-              <div>
-                <div className="flex gap-0.5 mb-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <FiStar
-                      key={i}
-                      size={11}
-                      className="text-amber-400 fill-amber-400"
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-slate-500">
-                  Trusted by{" "}
-                  <span className="text-slate-900 font-semibold">10,000+</span>{" "}
-                  job seekers
-                </p>
-              </div>
-            </div>
+            </BlurFade>
           </div>
 
-          {/* ── Right: floating resume mockup ── */}
-          <div
-            className="relative flex justify-center lg:justify-end animate-fade-in"
-            style={{ animationDelay: "280ms", animationFillMode: "both" }}
+          {/* ── Right — AI Scanner ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.65, ease: "easeOut" }}
+            className="w-full flex justify-center lg:justify-end px-4 sm:px-8 lg:px-0"
           >
-            {/* Soft shadow glow behind card */}
-            <div className="absolute inset-6 bg-emerald-200/40 rounded-3xl blur-2xl" />
+            <AIScannerAnimation />
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-            {/* Main resume card */}
-            <div className="relative animate-float w-full max-w-[340px] bg-white rounded-3xl shadow-2xl shadow-slate-200/80 border border-slate-100 overflow-hidden">
-              {/* AI badge */}
-              <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-md">
-                <FiCpu size={10} /> AI Generated
-              </div>
+/* ─── Stats ─────────────────────────────────────────────────────────────── */
 
-              {/* Resume header — green instead of dark */}
-              <div className="bg-linear-to-br from-emerald-600 to-emerald-800 px-5 pt-5 pb-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center text-white font-extrabold text-base shadow-lg shrink-0 backdrop-blur-sm">
-                    AK
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-sm leading-tight">
-                      Arjun Kumar
-                    </h3>
-                    <p className="text-emerald-200 text-xs font-semibold mt-0.5">
-                      Senior Software Engineer
-                    </p>
-                    <p className="text-emerald-300/80 text-[10px] mt-1">
-                      📍 Hyderabad · arjun@email.com
-                    </p>
-                  </div>
-                </div>
-              </div>
+function StatsSection() {
+  const stats = [
+    { value: 10000, suffix: "+", label: "Resumes Created", icon: FiFileText, color: "text-emerald-500" },
+    { value: 92, suffix: "%", label: "Interview Success Rate", icon: FiTrendingUp, color: "text-violet-500" },
+    { value: 30, suffix: "s", label: "Average Build Time", icon: FiClock, color: "text-emerald-500" },
+    { value: 50, suffix: "+", label: "Pro Templates", icon: FiLayers, color: "text-violet-500" },
+  ];
 
-              {/* Resume body */}
-              <div className="px-5 py-4 space-y-3.5 bg-white">
-                {/* Match score */}
-                <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center">
-                      <FiTarget size={11} className="text-emerald-700" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-700">
-                      Job Match Score
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-20 bg-emerald-100 rounded-full overflow-hidden">
-                      <div className="h-full w-[92%] bg-linear-to-r from-emerald-500 to-emerald-600 rounded-full" />
-                    </div>
-                    <span className="text-xs font-bold text-emerald-700">
-                      92%
-                    </span>
-                  </div>
+  return (
+    <section className="py-16 section-lavender border-y border-violet-100/60">
+      <div className={CONTAINER}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {stats.map((s, i) => (
+            <BlurFade key={s.label} delay={i * 0.1}>
+              <motion.div
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="text-center p-4 sm:p-6 rounded-2xl bg-white border border-violet-100/80 shadow-sm hover:shadow-md hover:border-violet-200 transition-shadow duration-200"
+              >
+                <s.icon className={`w-6 h-6 mx-auto mb-3 ${s.color}`} />
+                <div className="text-2xl sm:text-4xl font-extrabold text-slate-900 tabular-nums">
+                  <NumberTicker value={s.value} suffix={s.suffix} delay={i * 0.15} />
                 </div>
+                <p className="text-sm font-medium text-slate-500 mt-1">{s.label}</p>
+              </motion.div>
+            </BlurFade>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-                {/* Experience */}
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-                    Experience
-                  </p>
-                  {[
-                    { role: "Sr. Engineer", co: "Google", yr: "2022–Now" },
-                    { role: "Engineer II", co: "Flipkart", yr: "2019–2022" },
-                  ].map((e) => (
-                    <div
-                      key={e.co}
-                      className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0"
-                    >
-                      <div>
-                        <p className="text-xs font-semibold text-slate-800">
-                          {e.role}
-                        </p>
-                        <p className="text-[10px] text-slate-400">{e.co}</p>
-                      </div>
-                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                        {e.yr}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+/* ─── How It Works ──────────────────────────────────────────────────────── */
 
-                {/* Skills */}
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-                    Skills
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {["React", "Node.js", "TypeScript", "AWS", "Python"].map(
-                      (s) => (
-                        <span
-                          key={s}
-                          className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-full border border-emerald-100"
-                        >
-                          {s}
-                        </span>
-                      ),
-                    )}
-                  </div>
-                </div>
+function PasteMockup() {
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border border-violet-100 p-5 w-full">
+      {/* Window chrome */}
+      <div className="flex items-center gap-1.5 mb-4">
+        <div className="w-3 h-3 rounded-full bg-red-400/70" />
+        <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
+        <div className="w-3 h-3 rounded-full bg-emerald-400/70" />
+        <span className="ml-3 text-xs text-slate-400 font-medium">Paste Job Description</span>
+      </div>
+      {/* JD content */}
+      <div className="bg-violet-50/60 rounded-xl p-4 border border-violet-100 mb-4 font-mono text-xs leading-relaxed">
+        <p className="font-bold text-violet-800 text-sm mb-2">Senior Product Manager — Swiggy</p>
+        <p className="text-slate-600 mb-1">We are looking for a data-driven PM with 3+ years of experience in B2C product...</p>
+        <p className="text-slate-500 mt-2">• Strong SQL &amp; analytics tool experience</p>
+        <p className="text-slate-500">• Cross-functional stakeholder management</p>
+        <p className="text-slate-500">• Proven track record of 0-to-1 products</p>
+        <span className="inline-block w-0.5 h-4 bg-violet-500 mt-1 animate-blink" />
+      </div>
+      {/* Input + button row */}
+      <div className="flex gap-2">
+        <div className="flex-1 h-9 rounded-lg bg-slate-50 border border-slate-200 flex items-center px-3">
+          <span className="text-xs text-slate-400">Your work experience or LinkedIn URL...</span>
+        </div>
+        <button className="px-4 py-2 bg-linear-to-r from-violet-500 to-violet-600 text-white text-xs font-bold rounded-lg shadow-md shadow-violet-500/30 whitespace-nowrap">
+          Analyze →
+        </button>
+      </div>
+    </div>
+  );
+}
 
-                {/* Download button */}
-                <button className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors">
-                  <FiDownload size={11} /> Download PDF
-                </button>
-              </div>
-            </div>
+function GenerateMockup() {
+  const ref = React.useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isInView = useInView(ref as any, { once: true, margin: "-100px" as any });
+  const [progress, setProgress] = React.useState(0);
 
-            {/* Floating chips */}
-            <div
-              className="absolute -left-4 top-[28%] animate-float-slow hidden sm:block"
-              style={{ animationDelay: "1.2s" }}
-            >
-              <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-lg border border-slate-100">
-                <div className="w-7 h-7 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
-                  <FiZap size={13} className="text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-[9px] text-slate-400 leading-none mb-0.5">
-                    Generated in
-                  </p>
-                  <p className="text-xs font-bold text-slate-800">8 seconds</p>
-                </div>
-              </div>
-            </div>
-            <div
-              className="absolute -right-4 bottom-[22%] animate-float-slow hidden sm:block"
-              style={{ animationDelay: "2.4s" }}
-            >
-              <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-lg border border-slate-100">
-                <div className="w-7 h-7 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
-                  <FiCheckCircle size={13} className="text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-[9px] text-slate-400 leading-none mb-0.5">
-                    ATS Score
-                  </p>
-                  <p className="text-xs font-bold text-emerald-700">98 / 100</p>
-                </div>
-              </div>
-            </div>
+  React.useEffect(() => {
+    if (!isInView) return;
+    let p = 0;
+    const id = setInterval(() => {
+      p += 1.4;
+      setProgress(Math.min(Math.round(p), 100));
+      if (p >= 100) clearInterval(id);
+    }, 28);
+    return () => clearInterval(id);
+  }, [isInView]);
+
+  const tasks = [
+    "Analyzing job requirements",
+    "Extracting ATS keywords",
+    "Tailoring experience bullets",
+    "Formatting & optimizing",
+  ];
+
+  return (
+    <div ref={ref} className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-6 w-full">
+      {/* Progress ring */}
+      <div className="flex items-center gap-5 mb-5">
+        <div className="relative w-16 h-16 shrink-0">
+          <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="28" fill="none" stroke="#d1fae5" strokeWidth="6" />
+            <circle
+              cx="32" cy="32" r="28" fill="none"
+              stroke="#10b981" strokeWidth="6"
+              strokeDasharray={`${2 * Math.PI * 28}`}
+              strokeDashoffset={`${2 * Math.PI * 28 * (1 - progress / 100)}`}
+              strokeLinecap="round"
+              className="transition-all duration-100"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-sm font-black text-emerald-600">{progress}%</span>
           </div>
         </div>
-      </div>
-
-      {/* Scroll hint */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 animate-bounce">
-        <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">
-          Scroll
-        </p>
-        <FiChevronDown size={15} className="text-slate-400" />
-      </div>
-    </section>
-  );
-}
-
-// ─── Stats bar ────────────────────────────────────────────────────────────────
-
-function Stats() {
-  const items = [
-    {
-      value: "10,000+",
-      label: "Resumes Created",
-      icon: <FiFileText size={18} />,
-    },
-    { value: "92%", label: "Interview Rate", icon: <FiTrendingUp size={18} /> },
-    { value: "30s", label: "Avg. Build Time", icon: <FiZap size={18} /> },
-    { value: "50+", label: "Pro Templates", icon: <FiAward size={18} /> },
-  ];
-
-  return (
-    <section className="bg-white border-y border-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4">
-          {items.map((s, i) => (
-            <Reveal
-              key={s.label}
-              delay={i * 80}
-              className={`flex flex-col sm:flex-row items-center sm:items-start gap-3 py-8 px-6 ${
-                i < 3
-                  ? "border-b md:border-b-0 md:border-r border-slate-100"
-                  : "border-b-0"
-              } ${i % 2 === 0 && i < 2 ? "border-r md:border-r-0" : ""} md:border-r md:last:border-r-0`}
-            >
-              <div className="shrink-0 w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-700">
-                {s.icon}
-              </div>
-              <div className="text-center sm:text-left">
-                <p className="text-3xl font-extrabold text-slate-900 leading-tight">
-                  {s.value}
-                </p>
-                <p className="text-sm text-slate-500 font-medium mt-0.5">
-                  {s.label}
-                </p>
-              </div>
-            </Reveal>
-          ))}
+        <div>
+          <p className="font-bold text-slate-900 text-sm">Crafting your resume…</p>
+          <p className="text-xs text-slate-400 mt-0.5">AI at work — almost done</p>
         </div>
       </div>
-    </section>
+      {/* Task checklist */}
+      <div className="space-y-2.5">
+        {tasks.map((task, i) => {
+          const done = progress >= (i + 1) * 25;
+          return (
+            <div key={task} className={`flex items-center gap-2.5 text-xs transition-colors duration-300 ${done ? "text-emerald-700" : "text-slate-300"}`}>
+              <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${done ? "bg-emerald-100 text-emerald-600" : "border border-slate-200"}`}>
+                {done && <FiCheck className="w-2.5 h-2.5" />}
+              </div>
+              <span className="font-medium">{task}</span>
+            </div>
+          );
+        })}
+      </div>
+      {/* ETA */}
+      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+        <span>⚡ AI-powered generation</span>
+        <span className="font-semibold text-emerald-600">~28 seconds</span>
+      </div>
+    </div>
   );
 }
 
-// ─── How It Works ─────────────────────────────────────────────────────────────
+function DownloadMockup() {
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border border-violet-100 p-5 w-full">
+      {/* File header */}
+      <div className="flex items-center gap-3 pb-4 mb-4 border-b border-slate-100">
+        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-emerald-500 flex items-center justify-center shrink-0">
+          <FiFileText className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-slate-900 truncate">Resume_Priya_Sharma.pdf</p>
+          <p className="text-xs text-slate-400">AI-Generated · 2 pages · Ready</p>
+        </div>
+        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full whitespace-nowrap">
+          ATS 98/100
+        </span>
+      </div>
+      {/* Mini resume skeleton */}
+      <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-100 space-y-2">
+        <div className="h-2.5 w-3/5 bg-slate-700 rounded-full" />
+        <div className="h-2 w-2/5 bg-slate-300 rounded-full" />
+        <div className="h-px bg-slate-200 my-2" />
+        <div className="space-y-1.5">
+          <div className="h-2 w-full bg-violet-200 rounded-full" />
+          <div className="h-2 w-11/12 bg-slate-200 rounded-full" />
+          <div className="h-2 w-4/5 bg-slate-200 rounded-full" />
+        </div>
+        <div className="h-px bg-slate-200 my-2" />
+        <div className="space-y-1.5">
+          <div className="h-2 w-full bg-emerald-200 rounded-full" />
+          <div className="h-2 w-10/12 bg-slate-200 rounded-full" />
+          <div className="h-2 w-3/4 bg-slate-200 rounded-full" />
+        </div>
+      </div>
+      {/* Download button */}
+      <button className="w-full py-3 bg-linear-to-r from-violet-500 to-emerald-500 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-md shadow-violet-500/20 hover:opacity-90 transition-opacity">
+        <FiDownload className="w-4 h-4" />
+        Download PDF
+      </button>
+      {/* Match score */}
+      <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+        <span>Job Match Score</span>
+        <div className="flex items-center gap-2">
+          <div className="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full w-[92%] bg-linear-to-r from-emerald-400 to-emerald-500 rounded-full" />
+          </div>
+          <span className="font-bold text-emerald-600">92%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-function HowItWorks() {
-  const steps = [
-    {
-      n: "01",
-      icon: <FiBriefcase size={22} />,
-      title: "Describe Your Target Role",
-      desc: "Paste a job description or tell us the role, company, and skills required. Our AI understands exactly what recruiters are looking for.",
-    },
-    {
-      n: "02",
-      icon: <FiCpu size={22} />,
-      title: "AI Crafts Your Resume",
-      desc: "Our AI agents analyze the job, match it with your experience, and generate a tailored, keyword-rich, ATS-friendly resume in seconds.",
-    },
-    {
-      n: "03",
-      icon: <FiDownload size={22} />,
-      title: "Download & Apply",
-      desc: "Get a polished PDF resume. Edit, refine, or generate variations for multiple roles. Start applying with confidence.",
-    },
-  ];
+function HowItWorksSection() {
+  const mockups = [<PasteMockup key="paste" />, <GenerateMockup key="gen" />, <DownloadMockup key="dl" />];
 
   return (
-    <section
-      id="how"
-      className="bg-emerald-50/50 py-24 border-y border-emerald-100/60"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center mb-16">
-          <SectionBadge label="How It Works" />
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            From Job Description to Resume in 3 Steps
-          </h2>
-          <p className="mt-4 text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            No templates to fill. No hours of writing. Just tell our AI your
-            goal and watch it work.
-          </p>
-        </Reveal>
+    <section id="how-it-works" className="py-24 bg-white relative overflow-hidden">
+      {/* Subtle background orbs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-50 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-50 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative grid md:grid-cols-3 gap-6">
-          {/* Connector line */}
-          <div className="hidden md:block absolute top-14 left-[calc(33.33%+16px)] right-[calc(33.33%+16px)] h-px border-t-2 border-dashed border-emerald-200" />
+      <div className={`relative ${CONTAINER}`}>
+        {/* Header */}
+        <div className="text-center mb-20">
+          <BlurFade>
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold uppercase tracking-widest mb-4">
+              How It Works
+            </span>
+          </BlurFade>
+          <BlurFade delay={0.1}>
+            <h2 className="font-heading text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
+              Land Your Dream Job in{" "}
+              <span className="text-gradient-gl">3 Simple Steps</span>
+            </h2>
+          </BlurFade>
+          <BlurFade delay={0.2}>
+            <p className="mt-4 text-xl text-slate-500 max-w-xl mx-auto">
+              No complicated forms. No hours of editing. Just paste, generate, and download.
+            </p>
+          </BlurFade>
+        </div>
 
-          {steps.map((s, i) => (
-            <Reveal key={s.n} delay={i * 120}>
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-500/25">
-                    {s.icon}
+        {/* Steps — alternating layout */}
+        <div className="space-y-24">
+          {steps.map((step, i) => {
+            const reversed = i % 2 === 1;
+            const accentColor = step.accent === "emerald"
+              ? { badge: "bg-emerald-100 text-emerald-700 border-emerald-200", bullet: "bg-emerald-500", num: "text-emerald-100" }
+              : { badge: "bg-violet-100 text-violet-700 border-violet-200", bullet: "bg-violet-500", num: "text-violet-100" };
+
+            return (
+              <BlurFade key={step.number} delay={0.1}>
+                <div className={`flex flex-col ${reversed ? "lg:flex-row-reverse" : "lg:flex-row"} gap-8 lg:gap-16 items-center`}>
+                  {/* Mockup */}
+                  <div className="w-full lg:w-[48%]">
+                    <motion.div
+                      initial={{ opacity: 0, x: reversed ? 40 : -40 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, margin: "-80px" }}
+                      transition={{ duration: 0.55, ease: "easeOut" }}
+                    >
+                      {mockups[i]}
+                    </motion.div>
                   </div>
-                  <span className="text-5xl font-black text-emerald-100 leading-none select-none">
-                    {s.n}
-                  </span>
+
+                  {/* Content */}
+                  <div className="w-full lg:w-[52%] relative">
+                    {/* Decorative big number */}
+                    <div className={`hidden sm:block absolute -top-8 ${reversed ? "right-0" : "left-0"} text-[6rem] sm:text-[9rem] font-black leading-none select-none pointer-events-none ${accentColor.num} opacity-60`}>
+                      {step.number}
+                    </div>
+
+                    <div className="relative">
+                      <BlurFade delay={0.15}>
+                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold mb-4 ${accentColor.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${accentColor.bullet}`} />
+                          Step {step.number}
+                        </span>
+                      </BlurFade>
+
+                      <BlurFade delay={0.2}>
+                        <h3 className="font-heading text-2xl lg:text-3xl font-extrabold text-slate-900 leading-snug mb-1">
+                          {step.title}
+                        </h3>
+                        <p className="text-base font-semibold text-slate-400 mb-4">{step.subtitle}</p>
+                      </BlurFade>
+
+                      <BlurFade delay={0.25}>
+                        <p className="text-slate-600 text-base leading-relaxed mb-6">
+                          {step.description}
+                        </p>
+                      </BlurFade>
+
+                      <BlurFade delay={0.3}>
+                        <ul className="space-y-3">
+                          {step.bullets.map((b) => (
+                            <li key={b} className="flex items-start gap-3 text-sm text-slate-700">
+                              <div className={`mt-0.5 w-5 h-5 rounded-full ${accentColor.bullet} flex items-center justify-center shrink-0`}>
+                                <FiCheck className="w-3 h-3 text-white" />
+                              </div>
+                              <span>{b}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </BlurFade>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2">
-                    {s.title}
-                  </h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    {s.desc}
-                  </p>
-                </div>
-              </div>
-            </Reveal>
-          ))}
+              </BlurFade>
+            );
+          })}
         </div>
+
+        {/* CTA */}
+        <BlurFade delay={0.2}>
+          <div className="mt-20 text-center">
+            <Link href="/login">
+              <ShimmerButton
+                background="linear-gradient(135deg,#8b5cf6,#7c3aed)"
+                className="text-base px-8 py-4 rounded-full shadow-xl shadow-violet-500/30"
+              >
+                Try It Now — Free to Start
+                <FiArrowRight className="w-4 h-4" />
+              </ShimmerButton>
+            </Link>
+          </div>
+        </BlurFade>
       </div>
     </section>
   );
 }
 
-// ─── Features ─────────────────────────────────────────────────────────────────
+/* ─── Features ──────────────────────────────────────────────────────────── */
 
-function Features() {
-  const features = [
-    {
-      icon: <FiTarget size={19} />,
-      title: "Job-Tailored Matching",
-      desc: "AI reads the job description and rewrites your resume to precisely match each role's requirements and keywords.",
-    },
-    {
-      icon: <FiZap size={19} />,
-      title: "30-Second Generation",
-      desc: "Stop spending hours writing. Get a complete, polished resume draft in under 30 seconds — every time.",
-    },
-    {
-      icon: <FiShield size={19} />,
-      title: "ATS Optimization",
-      desc: "Beat applicant tracking systems with keyword-optimized content that passes automated screening filters.",
-    },
-    {
-      icon: <FiEdit3 size={19} />,
-      title: "Smart Editing",
-      desc: "Real-time AI suggestions as you edit. Improve impact scores, fix weak language, and sharpen bullet points.",
-    },
-    {
-      icon: <FiAward size={19} />,
-      title: "50+ Templates",
-      desc: "Choose from modern, creative, or classic designs. Each template is crafted for maximum recruiter appeal.",
-    },
-    {
-      icon: <FiTrendingUp size={19} />,
-      title: "Version Tracking",
-      desc: "Maintain multiple versions for different roles. Track which resume got you callbacks and interviews.",
-    },
-  ];
-
+function FeaturesSection() {
   return (
-    <section id="features" className="bg-white py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center mb-14">
-          <SectionBadge label="Features" />
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Everything You Need to Get Hired Faster
-          </h2>
-          <p className="mt-4 text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Powered by advanced AI agents trained on millions of successful
-            resumes and recruiter preferences.
-          </p>
-        </Reveal>
+    <section id="features" className="py-24 bg-white relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-violet-50/80 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {features.map((f, i) => (
-            <Reveal key={f.title} delay={i * 60} dir="scale">
-              <div className="group p-6 rounded-2xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-600/5 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shrink-0">
-                  {f.icon}
+      <div className={`relative ${CONTAINER}`}>
+        <div className="text-center mb-16">
+          <BlurFade>
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-violet-100 border border-violet-200 text-violet-700 text-xs font-bold uppercase tracking-widest mb-4">
+              Features
+            </span>
+          </BlurFade>
+          <BlurFade delay={0.1}>
+            <h2 className="font-heading text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
+              Everything You Need to{" "}
+              <span className="text-gradient-gl">Land the Job</span>
+            </h2>
+          </BlurFade>
+          <BlurFade delay={0.2}>
+            <p className="mt-4 text-xl text-slate-500 max-w-xl mx-auto">
+              Powered by state-of-the-art AI. Built for the Indian job market.
+            </p>
+          </BlurFade>
+        </div>
+
+        {/* ── Top row ── */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
+          {/* Large card — AI Matching */}
+          <BlurFade className="lg:flex-2">
+            <div className="h-full min-h-[340px] rounded-3xl bg-linear-to-br from-violet-600 via-violet-700 to-indigo-900 p-7 flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
+              <div className="absolute -bottom-10 -right-10 w-56 h-56 bg-white/5 rounded-full" />
+              <div className="relative">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-white text-xs font-bold mb-5 border border-white/10">
+                  <FiTarget className="w-3.5 h-3.5 text-emerald-300" /> AI Job Matching
+                </span>
+                <h3 className="text-2xl font-extrabold text-white leading-snug mb-2">
+                  Tailored to Every Job Description
+                </h3>
+                <p className="text-violet-200 text-sm leading-relaxed max-w-md">
+                  Our AI reads the job description and rewrites your experience in the exact language ATS systems and recruiters look for — every single time.
+                </p>
+              </div>
+              <div className="relative flex flex-col sm:flex-row gap-3 items-stretch mt-6">
+                <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                  <p className="text-violet-300 text-xs font-bold uppercase tracking-wider mb-3">JD Keywords</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["SQL", "Product Strategy", "A/B Testing", "Stakeholder Mgmt", "Agile", "P&L"].map((kw) => (
+                      <span key={kw} className="px-2 py-0.5 bg-violet-400/30 text-violet-100 text-xs rounded-full border border-violet-300/20">{kw}</span>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 mb-1.5">{f.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    {f.desc}
-                  </p>
+                <div className="flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-emerald-400/20 border border-emerald-300/20 flex items-center justify-center">
+                    <FiArrowRight className="w-4 h-4 text-emerald-300" />
+                  </div>
+                </div>
+                <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                  <p className="text-violet-300 text-xs font-bold uppercase tracking-wider mb-3">Your Resume</p>
+                  <div className="space-y-2">
+                    {[
+                      "Led SQL-driven analysis, cut churn by 22%",
+                      "Owned P&L for ₹15Cr product portfolio",
+                      "Ran 12 A/B tests, improved CVR 18%",
+                    ].map((b) => (
+                      <div key={b} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 mt-1.5 rounded-full bg-emerald-400 shrink-0" />
+                        <span className="text-white/80 text-xs leading-relaxed">{b}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </Reveal>
-          ))}
+              <div className="mt-4 flex items-center gap-3 bg-white/10 rounded-xl px-4 py-2.5 border border-white/10">
+                <span className="text-xs text-violet-200 font-medium">Match Score</span>
+                <div className="flex-1 h-1.5 bg-violet-800/60 rounded-full overflow-hidden">
+                  <div className="h-full w-[94%] bg-linear-to-r from-emerald-400 to-emerald-300 rounded-full" />
+                </div>
+                <span className="text-sm font-black text-emerald-300">94%</span>
+              </div>
+            </div>
+          </BlurFade>
+
+          {/* Right column — ATS + Speed */}
+          <div className="lg:flex-1 flex flex-col sm:flex-row lg:flex-col gap-4">
+            {/* ATS */}
+            <BlurFade delay={0.1} className="flex-1">
+              <div className="h-full min-h-[156px] rounded-3xl bg-linear-to-br from-emerald-50 to-white border border-emerald-100 p-5 flex items-center gap-5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(16,185,129,0.07),transparent_70%)]" />
+                <div className="relative shrink-0">
+                  <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="31" fill="none" stroke="#d1fae5" strokeWidth="7" />
+                    <circle cx="40" cy="40" r="31" fill="none" stroke="#10b981" strokeWidth="7"
+                      strokeDasharray={`${2 * Math.PI * 31 * 0.98} ${2 * Math.PI * 31}`}
+                      strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-base font-black text-emerald-700">98</span>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center mb-2">
+                    <FiTrendingUp className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900">ATS Optimizer</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 max-w-[140px]">Score 90+ on every application automatically</p>
+                </div>
+              </div>
+            </BlurFade>
+
+            {/* Speed */}
+            <BlurFade delay={0.15} className="flex-1">
+              <div className="h-full min-h-[156px] rounded-3xl bg-linear-to-br from-amber-50 to-white border border-amber-100 p-5 relative overflow-hidden">
+                <div className="absolute -right-4 -bottom-4 text-[100px] font-black text-amber-100/80 leading-none select-none pointer-events-none">⚡</div>
+                <div className="relative">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center mb-2">
+                    <FiZap className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900">30-Second Build</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Average AI generation time</p>
+                  <div className="flex items-baseline gap-1 mt-3">
+                    <span className="text-4xl font-black text-amber-500 tabular-nums">28</span>
+                    <span className="text-lg font-bold text-amber-400">s</span>
+                  </div>
+                </div>
+              </div>
+            </BlurFade>
+          </div>
+        </div>
+
+        {/* ── Bottom row ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Templates */}
+          <BlurFade delay={0.2}>
+            <div className="rounded-3xl bg-linear-to-br from-blue-50 to-white border border-blue-100 p-5 relative overflow-hidden min-h-[200px] flex flex-col justify-between">
+              <div>
+                <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center mb-3">
+                  <FiLayers className="w-4 h-4 text-blue-600" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1">50+ Templates</h3>
+                <p className="text-xs text-slate-500">ATS-friendly for every industry</p>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5 mt-4">
+                {[
+                  "bg-violet-200","bg-emerald-200","bg-blue-200","bg-amber-200",
+                  "bg-pink-200","bg-indigo-200","bg-teal-200","bg-rose-200",
+                ].map((c, i) => (
+                  <div key={i} className={`h-9 rounded-lg ${c}`} />
+                ))}
+              </div>
+            </div>
+          </BlurFade>
+
+          {/* Smart Editing */}
+          <BlurFade delay={0.25}>
+            <div className="rounded-3xl bg-linear-to-br from-pink-50 to-white border border-pink-100 p-5 relative overflow-hidden min-h-[200px] flex flex-col justify-between">
+              <div>
+                <div className="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center mb-3">
+                  <FiEdit3 className="w-4 h-4 text-pink-600" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1">Smart Editing</h3>
+                <p className="text-xs text-slate-500">AI rewrites every bullet for impact</p>
+              </div>
+              <div className="mt-4 bg-white rounded-2xl p-3 border border-pink-100 space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <FiX className="w-3 h-3 text-red-400 shrink-0" />
+                  <span className="line-through">Worked on product features</span>
+                </div>
+                <div className="flex items-start gap-2 text-slate-800">
+                  <div className="mt-0.5 w-4 h-4 rounded-full bg-pink-500 flex items-center justify-center shrink-0">
+                    <FiZap className="w-2.5 h-2.5 text-white" />
+                  </div>
+                  <span className="font-semibold leading-snug">Led 8 product launches increasing DAU by 34%</span>
+                </div>
+              </div>
+            </div>
+          </BlurFade>
+
+          {/* Version Tracking */}
+          <BlurFade delay={0.3}>
+            <div className="rounded-3xl bg-linear-to-br from-indigo-50 to-white border border-indigo-100 p-5 relative overflow-hidden min-h-[200px] flex flex-col justify-between">
+              <div>
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center mb-3">
+                  <FiAward className="w-4 h-4 text-indigo-600" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1">Version Tracking</h3>
+                <p className="text-xs text-slate-500">One tailored resume per role</p>
+              </div>
+              <div className="mt-4 space-y-2">
+                {[
+                  { label: "PM Resume", company: "Swiggy", pill: "bg-violet-100 text-violet-700 border-violet-200" },
+                  { label: "Senior PM", company: "Amazon", pill: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+                  { label: "Lead PM",   company: "Google", pill: "bg-blue-100 text-blue-700 border-blue-200" },
+                ].map((v) => (
+                  <div key={v.company} className={`flex items-center justify-between px-3 py-1.5 rounded-xl border text-xs font-medium ${v.pill}`}>
+                    <span>{v.label}</span>
+                    <span className="font-bold">{v.company}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </BlurFade>
         </div>
       </div>
     </section>
   );
 }
 
-// ─── Pricing ──────────────────────────────────────────────────────────────────
+/* ─── Pricing ───────────────────────────────────────────────────────────── */
 
-function Pricing() {
-  const ALL_FEATURES = [
-    "AI-generated resume",
-    "Job description matching",
-    "ATS optimization",
-    "PDF download",
-    "All 50+ templates",
-    "Smart editing suggestions",
-    "Version tracking",
-    "Cover letter generation",
-    "Priority support",
-  ];
-
-  const plans = [
-    {
-      name: "Starter",
-      price: 9,
-      resumes: 1,
-      popular: false,
-      included: [0, 1, 2, 3],
-      perResume: "₹9 per resume",
-    },
-    {
-      name: "Growth",
-      price: 39,
-      resumes: 5,
-      popular: true,
-      included: [0, 1, 2, 3, 4, 5, 6],
-      perResume: "₹7.8 per resume",
-    },
-    {
-      name: "Pro",
-      price: 69,
-      resumes: 10,
-      popular: false,
-      included: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-      perResume: "₹6.9 per resume",
-    },
-  ];
-
+function PricingSection() {
   return (
     <section
       id="pricing"
-      className="bg-emerald-50/50 py-24 border-y border-emerald-100/60"
+      className="py-28 relative overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg,#0f172a 0%,#1e1b4b 35%,#0f172a 65%,#052e16 100%)",
+      }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center mb-14">
-          <SectionBadge label="Pricing" />
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Simple, Transparent Pricing
-          </h2>
-          <p className="mt-4 text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-            One-time payment. No subscriptions, no hidden fees. Pay only for the
-            resumes you need.
-          </p>
-        </Reveal>
+      {/* Ambient glows */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,rgba(139,92,246,0.25),transparent)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_30%_at_50%_100%,rgba(16,185,129,0.15),transparent)]" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <Meteors number={8} />
+      </div>
 
-        {/* Equal-height grid: stretch + flex-col cards */}
-        <div className="grid md:grid-cols-3 gap-5 items-stretch">
-          {plans.map((p, i) => (
-            <Reveal key={p.name} delay={i * 100} dir="scale" className="flex">
-              <div
-                className={`relative flex flex-col w-full bg-white rounded-2xl border-2 p-7 transition-all duration-300 ${
-                  p.popular
-                    ? "border-emerald-500 shadow-xl shadow-emerald-600/15"
-                    : "border-slate-200 hover:border-emerald-300 hover:shadow-lg hover:-translate-y-1"
-                }`}
-              >
-                {/* Popular badge */}
-                {p.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full whitespace-nowrap shadow-md">
-                    Most Popular
-                  </div>
-                )}
+      <div className={`relative ${CONTAINER}`}>
+        {/* Header */}
+        <div className="text-center mb-16">
+          <BlurFade>
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-widest mb-4">
+              Pricing
+            </span>
+          </BlurFade>
+          <BlurFade delay={0.1}>
+            <h2 className="font-heading text-4xl lg:text-5xl font-extrabold text-white leading-tight">
+              Pay Once.{" "}
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-300 to-violet-300">
+                Land Your Job.
+              </span>
+            </h2>
+          </BlurFade>
+          <BlurFade delay={0.2}>
+            <p className="mt-4 text-xl text-white/55 max-w-xl mx-auto">
+              No subscriptions. No recurring fees. Pick a pack — pay once, use whenever.
+            </p>
+          </BlurFade>
+        </div>
 
-                {/* Header */}
-                <div className="mb-5 pb-5 border-b border-slate-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-extrabold text-slate-900">
-                      {p.name}
-                    </h3>
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        p.popular
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
-                      {p.resumes} Resume{p.resumes > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="flex items-end gap-1">
-                    <span className="text-4xl font-black text-slate-900">
-                      ₹{p.price}
-                    </span>
-                    <span className="text-slate-400 text-sm pb-1.5">
-                      one-time
-                    </span>
-                  </div>
-                  <p
-                    className={`text-xs font-semibold mt-1.5 ${p.popular ? "text-emerald-600" : "text-slate-400"}`}
-                  >
-                    {p.perResume}
-                  </p>
-                </div>
+        {/* Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-4 lg:gap-5 items-center">
+          {pricingPlans.map((plan, i) =>
+            plan.popular ? (
+              /* ── Popular: elevated white card ── */
+              <BlurFade key={plan.name} delay={i * 0.1}>
+                <div className="relative sm:-translate-y-4 sm:scale-[1.03]">
+                  {/* Outer glow ring */}
+                  <div className="absolute -inset-[3px] rounded-3xl bg-linear-to-r from-emerald-400 via-violet-400 to-emerald-400 blur-md opacity-60" />
+                  {/* Card */}
+                  <div className="relative bg-white rounded-3xl p-7 shadow-2xl flex flex-col">
+                    {/* Top badge */}
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                      <span className="px-4 py-1 bg-linear-to-r from-emerald-500 to-violet-500 text-white text-xs font-black rounded-full shadow-lg">
+                        ⭐ MOST POPULAR
+                      </span>
+                    </div>
 
-                {/* Features — flex-1 pushes button to bottom */}
-                <ul className="space-y-3 flex-1 mb-6">
-                  {ALL_FEATURES.map((f, fi) => {
-                    const included = p.included.includes(fi);
-                    return (
-                      <li
-                        key={f}
-                        className={`flex items-center gap-2.5 text-sm ${included ? "text-slate-700" : "text-slate-300"}`}
+                    <div className="mb-5 pt-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-violet-600 mb-1 block">
+                        {plan.name}
+                      </span>
+                      <div className="flex items-end gap-1.5">
+                        <span className="text-5xl font-extrabold text-slate-900">{plan.price}</span>
+                        <span className="text-slate-400 mb-2 text-sm font-medium">/ {plan.per}</span>
+                      </div>
+                      <p className="text-xs font-bold text-emerald-600 mt-0.5">{plan.perUnit} · Best value</p>
+                    </div>
+                    <p className="text-slate-500 text-sm mb-6">{plan.description}</p>
+                    <ul className="space-y-3 mb-8 flex-1">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2.5 text-sm text-slate-700">
+                          <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                            <FiCheck className="w-2.5 h-2.5 text-emerald-600" />
+                          </div>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/login" className="block">
+                      <ShimmerButton
+                        background="linear-gradient(135deg,#10b981,#059669)"
+                        className="w-full py-3.5 rounded-xl text-base font-bold justify-center shadow-lg shadow-emerald-500/30"
                       >
-                        <FiCheckCircle
-                          size={15}
-                          className={`shrink-0 ${included ? "text-emerald-500" : "text-slate-200"}`}
-                        />
+                        {plan.cta} <FiArrowRight className="w-4 h-4" />
+                      </ShimmerButton>
+                    </Link>
+                  </div>
+                </div>
+              </BlurFade>
+            ) : (
+              /* ── Regular: dark glassy card ── */
+              <BlurFade key={plan.name} delay={i * 0.1}>
+                <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-7 flex flex-col h-full hover:bg-white/8transition-all duration-200 group">
+                  <div className="mb-5">
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/40 mb-1 block">
+                      {plan.name}
+                    </span>
+                    <div className="flex items-end gap-1.5">
+                      <span className="text-5xl font-extrabold text-white">{plan.price}</span>
+                      <span className="text-white/40 mb-2 text-sm font-medium">/ {plan.per}</span>
+                    </div>
+                    <p className="text-xs font-semibold text-white/30 mt-0.5">{plan.perUnit}</p>
+                  </div>
+                  <p className="text-white/50 text-sm mb-6">{plan.description}</p>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
+                        <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                          <FiCheck className="w-2.5 h-2.5 text-emerald-400" />
+                        </div>
                         {f}
                       </li>
-                    );
-                  })}
-                </ul>
-
-                {/* CTA — always at bottom */}
-                <Link
-                  href="/login"
-                  className={`block w-full text-center py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.98] ${
-                    p.popular
-                      ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25"
-                      : "bg-slate-900 hover:bg-slate-700 text-white"
-                  }`}
-                >
-                  Get Started →
-                </Link>
-              </div>
-            </Reveal>
-          ))}
+                    ))}
+                    {plan.missing.map((f) => (
+                      <li key={f} className="flex items-center gap-2.5 text-sm text-white/20">
+                        <div className="w-4 h-4 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                          <FiX className="w-2.5 h-2.5 text-white/20" />
+                        </div>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/login"
+                    className="block text-center py-3.5 rounded-xl border border-white/20 text-white/70 font-bold text-sm hover:border-white/40 hover:text-white hover:bg-white/10 transition-all duration-200"
+                  >
+                    {plan.cta}
+                  </Link>
+                </div>
+              </BlurFade>
+            ),
+          )}
         </div>
 
-        <Reveal className="text-center mt-8">
-          <p className="text-sm text-slate-500 flex items-center justify-center gap-2">
-            <FiShield size={14} className="text-emerald-600" />
-            Secure payment via Razorpay · No subscription, no renewal
-          </p>
-        </Reveal>
+        {/* Trust bar */}
+        <BlurFade delay={0.4}>
+          <div className="mt-12 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-white/40">
+            {[
+              { icon: FiShield, text: "PCI-DSS secured via Razorpay" },
+              { icon: FiCheck, text: "Zero hidden fees — ever" },
+              { icon: FiDownload, text: "PDF instant on payment" },
+              { icon: FiUsers, text: "10,000+ happy users" },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-2">
+                <Icon className="w-4 h-4 text-emerald-400/80" />
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
+        </BlurFade>
       </div>
     </section>
   );
 }
 
-// ─── Testimonials ─────────────────────────────────────────────────────────────
 
-function Testimonials() {
-  const reviews = [
-    {
-      name: "Priya Sharma",
-      role: "Product Manager · Swiggy",
-      avatar: "PS",
-      stars: 5,
-      quote:
-        "I got 3 interview calls within a week. The AI understood the job description better than I did and crafted bullets that perfectly matched what the recruiter wanted.",
-    },
-    {
-      name: "Rahul Verma",
-      role: "Software Engineer · Zepto",
-      avatar: "RV",
-      stars: 5,
-      quote:
-        "Generated 5 tailored resumes for 5 different roles in under an hour. Got my dream job at a startup in Bangalore. Worth every rupee at ₹39.",
-    },
-    {
-      name: "Neha Patel",
-      role: "Data Scientist · PhonePe",
-      avatar: "NP",
-      stars: 5,
-      quote:
-        "The ATS optimization is real. My previous resume had 0 callbacks. With the AI-optimized version, I got shortlisted at 4 out of 6 companies I applied to.",
-    },
-  ];
+/* ─── Testimonials ──────────────────────────────────────────────────────── */
+
+function TestimonialsSection() {
+  const half = Math.ceil(testimonials.length / 2);
+  const row1 = testimonials.slice(0, half);
+  const row2 = testimonials.slice(half);
 
   return (
-    <section className="bg-white py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center mb-14">
-          <SectionBadge label="Testimonials" />
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Loved by Job Seekers Across India
-          </h2>
-        </Reveal>
-
-        <div className="grid md:grid-cols-3 gap-5">
-          {reviews.map((r, i) => (
-            <Reveal key={r.name} delay={i * 100} dir="scale">
-              <div className="flex flex-col bg-slate-50 rounded-2xl p-6 border border-slate-200 hover:border-emerald-200 hover:shadow-md transition-all duration-300 h-full">
-                {/* Stars */}
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(r.stars)].map((_, j) => (
-                    <FiStar
-                      key={j}
-                      size={13}
-                      className="text-amber-400 fill-amber-400"
-                    />
-                  ))}
-                </div>
-
-                {/* Quote */}
-                <p className="text-sm text-slate-700 leading-relaxed flex-1 mb-5">
-                  &ldquo;{r.quote}&rdquo;
-                </p>
-
-                {/* Author */}
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
-                  <div className="w-9 h-9 rounded-full bg-linear-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {r.avatar}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 leading-tight">
-                      {r.name}
-                    </p>
-                    <p className="text-xs text-slate-500">{r.role}</p>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          ))}
+    <section className="py-24 section-lavender overflow-hidden">
+      <div className={CONTAINER}>
+        <div className="text-center mb-16">
+          <BlurFade>
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-violet-100 border border-violet-200 text-violet-700 text-xs font-bold uppercase tracking-widest mb-4">
+              Testimonials
+            </span>
+          </BlurFade>
+          <BlurFade delay={0.1}>
+            <h2 className="font-heading text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
+              Loved by{" "}
+              <span className="text-gradient-gl">10,000+ Professionals</span>
+            </h2>
+          </BlurFade>
         </div>
+      </div>
+
+      {/* Marquee rows */}
+      <div className="space-y-4">
+        <Marquee speed={40} pauseOnHover>
+          {[...row1, ...row1].map((t, i) => (
+            <TestimonialCard key={`r1-${i}`} t={t} />
+          ))}
+        </Marquee>
+        <Marquee speed={32} reverse pauseOnHover>
+          {[...row2, ...row2].map((t, i) => (
+            <TestimonialCard key={`r2-${i}`} t={t} />
+          ))}
+        </Marquee>
       </div>
     </section>
   );
 }
 
-// ─── FAQ ──────────────────────────────────────────────────────────────────────
+function TestimonialCard({ t }: { t: (typeof testimonials)[0] }) {
+  return (
+    <div className="w-72 shrink-0 bg-white rounded-2xl border border-violet-100 p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center gap-1 mb-3">
+        {[...Array(t.rating)].map((_, i) => (
+          <FiStar key={i} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+        ))}
+      </div>
+      <p className="text-sm text-slate-600 leading-relaxed mb-4 line-clamp-3">&ldquo;{t.text}&rdquo;</p>
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-full bg-linear-to-br from-violet-500 to-emerald-500 flex items-center justify-center text-white text-xs font-bold">
+          {t.initials}
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-900">{t.name}</p>
+          <p className="text-xs text-slate-400">
+            {t.role} · {t.company}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-function FAQ() {
+/* ─── FAQ ───────────────────────────────────────────────────────────────── */
+
+function FAQSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
-  const items = [
-    {
-      q: "How does the AI generate my resume?",
-      a: "You provide the job description and your work history. Our AI agents analyze the job requirements, extract key skills and keywords, then write tailored resume bullets that demonstrate how your experience matches the role. It takes under 30 seconds.",
-    },
-    {
-      q: "What is ATS optimization and why does it matter?",
-      a: "ATS (Applicant Tracking Systems) are used by companies to filter resumes before a human sees them. Studies show 75% of resumes are rejected by ATS. Our AI ensures your resume has the right keywords, formatting, and structure to pass these filters.",
-    },
-    {
-      q: "Do I need a subscription?",
-      a: "No. We use a pay-per-resume model: ₹9 for 1 resume, ₹39 for 5 resumes, or ₹69 for 10 resumes. It's a one-time payment with absolutely no recurring charges.",
-    },
-    {
-      q: "Can I generate resumes for different jobs?",
-      a: "Absolutely. Each resume is tailored specifically to the job description you provide — different keywords, different emphasis, same experience presented differently for each target role.",
-    },
-    {
-      q: "What format do I get the resume in?",
-      a: "You receive a professionally designed PDF ready for immediate download. All templates are clean, modern, and optimized for both ATS systems and human recruiters.",
-    },
-  ];
-
   return (
-    <section
-      id="faq"
-      className="bg-emerald-50/50 py-24 border-y border-emerald-100/60"
-    >
-      <div className="max-w-2xl mx-auto px-4 sm:px-6">
-        <Reveal className="text-center mb-12">
-          <SectionBadge label="FAQ" />
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Frequently Asked Questions
-          </h2>
-        </Reveal>
+    <section id="faq" className="py-24 bg-white">
+      <div className={CONTAINER}>
+        <div className="text-center mb-16">
+          <BlurFade>
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold uppercase tracking-widest mb-4">
+              FAQ
+            </span>
+          </BlurFade>
+          <BlurFade delay={0.1}>
+            <h2 className="font-heading text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
+              Questions?{" "}
+              <span className="text-gradient-gl">We&apos;ve got answers.</span>
+            </h2>
+          </BlurFade>
+        </div>
 
-        <div className="space-y-3">
-          {items.map((item, i) => (
-            <Reveal key={i} delay={i * 50}>
+        <div className="max-w-3xl mx-auto space-y-3">
+          {faqs.map((faq, i) => (
+            <BlurFade key={i} delay={i * 0.07}>
               <div
-                className={`bg-white rounded-2xl border overflow-hidden transition-all duration-200 ${
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                   openIdx === i
-                    ? "border-emerald-300 shadow-md"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-violet-300 bg-violet-50/60"
+                    : "border-slate-200 bg-white hover:border-violet-200"
                 }`}
               >
                 <button
                   onClick={() => setOpenIdx(openIdx === i ? null : i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
+                  className="w-full flex items-center justify-between gap-4 p-5 text-left"
                 >
-                  <span className="font-semibold text-slate-900 text-sm leading-snug">
-                    {item.q}
-                  </span>
-                  <FiChevronDown
-                    size={17}
-                    className={`shrink-0 transition-transform duration-300 ${
-                      openIdx === i
-                        ? "rotate-180 text-emerald-600"
-                        : "text-slate-400"
+                  <span
+                    className={`font-semibold text-sm md:text-base ${
+                      openIdx === i ? "text-violet-800" : "text-slate-900"
                     }`}
-                  />
+                  >
+                    {faq.q}
+                  </span>
+                  <motion.div
+                    animate={{ rotate: openIdx === i ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="shrink-0"
+                  >
+                    <FiChevronDown
+                      className={`w-5 h-5 ${openIdx === i ? "text-violet-600" : "text-slate-400"}`}
+                    />
+                  </motion.div>
                 </button>
-                {openIdx === i && (
-                  <div className="px-5 pb-5 animate-fade-up">
-                    <p className="text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
-                      {item.a}
-                    </p>
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {openIdx === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                    >
+                      <p className="px-5 pb-5 text-sm text-slate-600 leading-relaxed">
+                        {faq.a}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </Reveal>
+            </BlurFade>
           ))}
         </div>
       </div>
@@ -1002,134 +1590,195 @@ function FAQ() {
   );
 }
 
-// ─── Final CTA ────────────────────────────────────────────────────────────────
+/* ─── CTA ───────────────────────────────────────────────────────────────── */
 
-function FinalCTA() {
+function CTASection() {
   return (
-    <section className="cta-gradient py-24 relative overflow-hidden">
+    <section className="py-24 relative overflow-hidden">
+      {/* Background */}
       <div
-        className="absolute inset-0 opacity-[0.06]"
+        className="absolute inset-0 animate-gradient-flow"
         style={{
-          backgroundImage:
-            "radial-gradient(rgba(255,255,255,0.5) 1px,transparent 1px)",
-          backgroundSize: "28px 28px",
+          background:
+            "linear-gradient(135deg, #4c1d95, #1e1b4b, #065f46, #1e1b4b, #4c1d95)",
+          backgroundSize: "300% 300%",
         }}
       />
-      <div className="absolute top-0 left-1/4 w-72 h-72 bg-emerald-400/15 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-teal-400/10 rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,92,246,0.4),transparent)]" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <Meteors number={12} />
+      </div>
 
-      <div className="relative max-w-2xl mx-auto px-4 sm:px-6 text-center">
-        <Reveal>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full mb-6">
-            <FiAward size={13} className="text-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-400">
-              Start Your Career Growth Today
+      <div className={`relative ${CONTAINER} text-center`}>
+        <BlurFade>
+          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 text-white/80 text-xs font-bold uppercase tracking-widest mb-6">
+            <FiAward className="w-3.5 h-3.5" /> Start Today
+          </span>
+        </BlurFade>
+
+        <BlurFade delay={0.1}>
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
+            Your Dream Job Is{" "}
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-300 via-violet-300 to-emerald-300">
+              One Resume Away
             </span>
-          </div>
-
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-5 leading-tight">
-            Your Dream Job Is One
-            <br />
-            <span className="text-gradient">Resume Away</span>
           </h2>
+        </BlurFade>
 
-          <p className="text-base sm:text-lg text-slate-300 mb-8 max-w-lg mx-auto leading-relaxed">
-            Join thousands of professionals who landed better jobs with
-            AI-crafted resumes. Start for just ₹9 — no risk, no subscription.
+        <BlurFade delay={0.2}>
+          <p className="text-xl text-white/70 mb-10 max-w-xl mx-auto">
+            Join 10,000+ professionals who landed their dream jobs with
+            AI-powered, ATS-optimized resumes. Starting at just ₹9.
           </p>
+        </BlurFade>
 
-          <Link
-            href="/login"
-            className="group inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-2xl shadow-xl shadow-emerald-600/30 transition-all active:scale-[0.98]"
-          >
-            Build My Resume Now
-            <FiArrowRight
-              size={17}
-              className="group-hover:translate-x-0.5 transition-transform"
-            />
-          </Link>
-
-          <div className="mt-7 flex items-center justify-center flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400">
-            {["No subscription", "Secure payment", "Instant download"].map(
-              (t) => (
-                <span key={t} className="flex items-center gap-1.5">
-                  <FiCheck size={13} className="text-emerald-500" />
-                  {t}
-                </span>
-              ),
-            )}
+        <BlurFade delay={0.3}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/login">
+              <ShimmerButton
+                background="linear-gradient(135deg,#10b981,#059669)"
+                className="text-lg px-10 py-5 rounded-full shadow-2xl shadow-emerald-500/40 font-bold"
+              >
+                Build My Resume Now
+                <FiArrowRight className="w-5 h-5" />
+              </ShimmerButton>
+            </Link>
           </div>
-        </Reveal>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-white/60">
+            {[
+              { icon: FiCheck, text: "No subscription required" },
+              { icon: FiShield, text: "Secure Razorpay payment" },
+              { icon: FiDownload, text: "Instant PDF download" },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-1.5">
+                <Icon className="w-4 h-4 text-emerald-400" />
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
+        </BlurFade>
       </div>
     </section>
   );
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+/* ─── Footer ────────────────────────────────────────────────────────────── */
 
 function Footer() {
-  const cols = {
-    Product: ["Features", "Pricing", "Templates", "How It Works"],
-    Company: ["About", "Blog", "Careers", "Press"],
-    Support: [
-      "Help Center",
-      "Contact Us",
-      "Privacy Policy",
-      "Terms of Service",
-    ],
-  };
+  const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-950 border-t border-white/5 py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+    <footer className="bg-slate-950 text-slate-400">
+      <div className={`${CONTAINER} py-16`}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 pb-12 border-b border-slate-800">
           {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/30">
-                <FiLayers size={18} />
+          <div className="col-span-2 sm:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-500 to-violet-500 flex items-center justify-center">
+                <FiFileText className="w-4 h-4 text-white" />
               </div>
-              <span className="text-xl font-extrabold text-white tracking-tight">
-                SAAS<span className="text-emerald-400">IO</span>
-              </span>
+              <span className="text-xl font-extrabold text-white">SAASIO</span>
             </div>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              AI-powered resume builder helping Indian professionals land their
-              dream jobs. Fast, affordable, effective.
+            <p className="text-sm leading-relaxed mb-4">
+              AI-powered resume builder for Indian job seekers. Get ATS-optimized resumes
+              in under 30 seconds.
             </p>
+            <div className="flex items-center gap-2">
+              <FiShield className="w-4 h-4 text-emerald-500" />
+              <span className="text-xs text-slate-500">Secured by Razorpay · Made in India 🇮🇳</span>
+            </div>
           </div>
 
-          {/* Link columns */}
-          {Object.entries(cols).map(([group, items]) => (
-            <div key={group}>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">
-                {group}
-              </h4>
-              <ul className="space-y-2.5">
-                {items.map((item) => (
-                  <li key={item}>
-                    <Link
-                      href="/login"
-                      className="text-sm text-slate-400 hover:text-white transition-colors"
-                    >
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* Product */}
+          <div>
+            <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-widest">
+              Product
+            </h4>
+            <ul className="space-y-2.5">
+              {[
+                { label: "Features", href: "#features" },
+                { label: "How It Works", href: "#how-it-works" },
+                { label: "Pricing", href: "#pricing" },
+                { label: "Templates", href: "/login" },
+                { label: "ATS Checker", href: "/login" },
+              ].map((l) => (
+                <li key={l.label}>
+                  <a
+                    href={l.href}
+                    className="text-sm hover:text-white transition-colors"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-widest">
+              Company
+            </h4>
+            <ul className="space-y-2.5">
+              {[
+                { label: "About Us", href: "#" },
+                { label: "Blog", href: "#" },
+                { label: "Contact", href: "#" },
+                { label: "Support", href: "#" },
+              ].map((l) => (
+                <li key={l.label}>
+                  <a
+                    href={l.href}
+                    className="text-sm hover:text-white transition-colors"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-widest">
+              Legal
+            </h4>
+            <ul className="space-y-2.5">
+              {[
+                { label: "Terms & Conditions", href: "/terms" },
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Refund Policy", href: "/terms#refund" },
+                { label: "Shipping Policy", href: "/terms#shipping" },
+              ].map((l) => (
+                <li key={l.label}>
+                  <Link
+                    href={l.href}
+                    className="text-sm hover:text-violet-400 transition-colors"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} SAASIO. All rights reserved.
+        {/* Bottom */}
+        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-slate-600">
+            © {currentYear} SAASIO. All rights reserved.
           </p>
-          <div className="flex items-center gap-1.5">
-            <FiShield size={11} className="text-emerald-600" />
-            <p className="text-xs text-slate-500">
-              Secured payments via Razorpay · Made in India 🇮🇳
-            </p>
+          <div className="flex items-center gap-4 text-xs text-slate-600">
+            <Link href="/terms" className="hover:text-slate-400 transition-colors">
+              Terms
+            </Link>
+            <span>·</span>
+            <Link href="/privacy" className="hover:text-slate-400 transition-colors">
+              Privacy
+            </Link>
+            <span>·</span>
+            <span>support@saasio.in</span>
           </div>
         </div>
       </div>
@@ -1137,20 +1786,20 @@ function Footer() {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+/* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   return (
-    <main className="overflow-x-hidden">
+    <main className="min-h-screen">
       <Navbar />
-      <Hero />
-      <Stats />
-      <HowItWorks />
-      <Features />
-      <Pricing />
-      <Testimonials />
-      <FAQ />
-      <FinalCTA />
+      <HeroSection />
+      <StatsSection />
+      <HowItWorksSection />
+      <FeaturesSection />
+      <PricingSection />
+      <TestimonialsSection />
+      <FAQSection />
+      <CTASection />
       <Footer />
     </main>
   );

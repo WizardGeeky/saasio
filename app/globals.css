@@ -129,6 +129,13 @@
   }
 }
 
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-syne), 'Syne', ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
 @keyframes toast-progress {
   from { width: 100%; }
   to   { width: 0%; }
@@ -197,6 +204,46 @@
 .animate-slide-left  { animation: slide-left 0.6s ease-out forwards; }
 .animate-ticker      { animation: ticker 28s linear infinite; }
 .animate-blink       { animation: blink-cursor 1s step-end infinite; }
+.animate-spin-slow   { animation: spin-slow 4s linear infinite; }
+
+/* ── Magic UI animations ─────────────────────────────────────── */
+@keyframes meteor {
+  0%        { transform: rotate(215deg) translateX(0); opacity: 1; }
+  70%       { opacity: 1; }
+  100%      { transform: rotate(215deg) translateX(-600px); opacity: 0; }
+}
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes shimmer-traverse {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+@keyframes gradient-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+@keyframes border-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(1.05); }
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+}
+
+.animate-meteor          { animation: meteor 5s linear infinite; }
+.animate-marquee-scroll  { animation: marquee-scroll 35s linear infinite; }
+.animate-shimmer-btn     { animation: shimmer-traverse 2.5s ease-in-out infinite; }
+.animate-gradient-flow   { animation: gradient-flow 6s ease infinite; background-size: 200% 200%; }
+.animate-border-spin     { animation: border-spin 4s linear infinite; }
+.animate-glow-pulse      { animation: glow-pulse 3s ease-in-out infinite; }
+.animate-orbit           { animation: orbit 8s linear infinite; }
 
 /* Dark lavender — hero, footer, CTA */
 .lavender-dark {
@@ -211,6 +258,13 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+/* Gradient text — green to lavender */
+.text-gradient-gl {
+  background: linear-gradient(135deg, #10b981 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 /* Legacy alias kept for any remaining usage */
 .hero-gradient  { background: #1a1040; }
 .cta-gradient   { background: #1a1040; }
@@ -218,4 +272,36 @@
   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
   background-size: 400px 100%;
   animation: shimmer-move 2.4s linear infinite;
+}
+
+/* ── Custom container widths ─────────────────────────────────── */
+.max-w-9xl { max-width: 96rem; } /* 1536px — matches nav */
+
+/* ── New theme helpers ───────────────────────────────────────── */
+.bg-hero-radial {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(139,92,246,0.12) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 40% at 80% 60%, rgba(16,185,129,0.08) 0%, transparent 50%),
+              #ffffff;
+}
+.section-lavender {
+  background: linear-gradient(180deg, #f5f3ff 0%, #faf5ff 100%);
+}
+.gradient-border-card {
+  position: relative;
+  padding: 2px;
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+.gradient-border-card::before {
+  content: '';
+  position: absolute;
+  inset: -150%;
+  background: conic-gradient(from 0deg, #10b981 0%, #8b5cf6 30%, #a78bfa 50%, #10b981 100%);
+  animation: border-spin 4s linear infinite;
+  border-radius: inherit;
+}
+.gradient-border-inner {
+  position: relative;
+  background: #ffffff;
+  border-radius: calc(1.25rem - 2px);
 }
