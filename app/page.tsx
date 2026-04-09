@@ -275,14 +275,7 @@ function Navbar() {
         <div className="flex items-center justify-between h-16 sm:h-18">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 400 }}
-              className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-500 to-violet-500 flex items-center justify-center shadow-md"
-            >
-              <FiFileText className="w-4 h-4 text-white" />
-            </motion.div>
-            <span className="text-xl font-extrabold text-gradient-gl">SAASIO</span>
+            <span className="text-2xl font-extrabold text-gradient-gl">SAASIO</span>
           </Link>
 
           {/* Desktop links */}

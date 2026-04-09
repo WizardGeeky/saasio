@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Nunito, Geist_Mono, Syne } from "next/font/google";
+import { Inter, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import initApp from "./utils/init";
 import { ToastProvider } from "@/components/ui/toast";
 initApp();
 
-const nunito = Nunito({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
@@ -17,10 +17,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const syne = Syne({
-  variable: "--font-syne",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -54,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${geistMono.variable} ${syne.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ToastProvider>{children}</ToastProvider>

@@ -94,9 +94,9 @@ function BrandPanel() {
         transition={{ duration: 0.5 }}
         className="relative flex items-center gap-3"
       >
-        <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-violet-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+        {/* <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-violet-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
           <FiZap className="w-5 h-5 text-white" />
-        </div>
+        </div> */}
         <span className="text-2xl font-extrabold text-white tracking-tight font-heading">SAASIO</span>
       </motion.div>
 
