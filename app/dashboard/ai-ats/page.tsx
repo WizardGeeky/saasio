@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getStoredToken } from "@/app/utils/token";
 import { useToast } from "@/components/ui/toast";
+import { usePrivilege } from "@/app/utils/usePrivilege";
 import {
     FiZap,
     FiPlus,
@@ -21,6 +22,7 @@ import {
     FiChevronDown,
     FiCheck,
     FiCpu,
+    FiLock,
 } from "react-icons/fi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,7 +64,11 @@ function formatTime(iso: string) {
 
 export default function AiAtsPage() {
     const { success: toastSuccess, error: toastError } = useToast();
+    const { can, isLoading: privLoading } = usePrivilege();
     const token = getStoredToken();
+
+    const canRead   = !privLoading && can("GET",  "/api/v1/private/ai-ats");
+    const canCreate = !privLoading && can("POST", "/api/v1/private/ai-ats");
 
     const [modalOpen, setModalOpen]       = useState(false);
     const [history, setHistory]           = useState<AtsHistoryRecord[]>([]);
@@ -143,6 +149,16 @@ export default function AiAtsPage() {
         { label: "This Week",        value: historyLoading ? "—" : thisWeek,      icon: <FiTrendingUp size={16} />,color: "text-orange-600",  bg: "bg-orange-50"  },
     ];
 
+    if (!privLoading && !canRead) return (
+        <div className="flex flex-col items-center justify-center min-h-[65vh] gap-4 px-4 animate-in fade-in duration-500">
+            <div className="p-5 bg-red-100 rounded-2xl"><FiLock size={36} className="text-red-500" /></div>
+            <div className="text-center">
+                <h2 className="text-xl font-bold text-gray-800">Access Denied</h2>
+                <p className="text-gray-500 text-sm mt-1 max-w-sm">You don&apos;t have permission to use the AI ATS Analyzer.</p>
+            </div>
+        </div>
+    );
+
     return (
         <div className="w-full mx-auto space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 mb-10">
 
@@ -159,14 +175,16 @@ export default function AiAtsPage() {
                         Match your resume against job descriptions with AI-powered analysis.
                     </p>
                 </div>
-                <div className="ml-[calc(2rem+12px)] sm:ml-0 shrink-0">
-                    <button
-                        onClick={() => setModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] rounded-xl shadow-md shadow-emerald-600/25 transition-all"
-                    >
-                        <FiPlus size={15} /> Analyze Resume
-                    </button>
-                </div>
+                {canCreate && (
+                    <div className="ml-[calc(2rem+12px)] sm:ml-0 shrink-0">
+                        <button
+                            onClick={() => setModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] rounded-xl shadow-md shadow-emerald-600/25 transition-all"
+                        >
+                            <FiPlus size={15} /> Analyze Resume
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ── Analytics cards ── */}

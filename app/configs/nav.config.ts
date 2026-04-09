@@ -84,13 +84,18 @@ export const NAV_CONFIG: NavConfig[] = [
         name: "AI ATS",
         href: "/dashboard/ai-ats",
         icon: FiZap,
-        privileges: [],
+        privileges: [
+            { method: "GET",  apiPath: "/api/v1/private/ai-ats" },
+            { method: "POST", apiPath: "/api/v1/private/ai-ats" },
+        ],
     },
     {
         name: "ATS History",
         href: "/dashboard/ats-history",
         icon: FiClock,
-        privileges: [],
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/ai-ats" },
+        ],
     },
     {
         name: "My Transactions",
