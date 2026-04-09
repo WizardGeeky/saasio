@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { getStoredToken } from "@/app/utils/token";
+import { useToast } from "@/components/ui/toast";
 import {
     FiZap,
     FiPlus,
@@ -22,60 +23,22 @@ import {
     FiCpu,
 } from "react-icons/fi";
 
-// ─── Mock history data ────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const MOCK_HISTORY = [
-    {
-        id: "1",
-        jobTitle: "Senior Frontend Engineer",
-        company: "Stripe",
-        score: 87,
-        matchedKeywords: 23,
-        missingKeywords: 4,
-        analyzedAt: "2026-04-08T10:32:00Z",
-        status: "high",
-    },
-    {
-        id: "2",
-        jobTitle: "Full Stack Developer",
-        company: "Notion",
-        score: 71,
-        matchedKeywords: 18,
-        missingKeywords: 9,
-        analyzedAt: "2026-04-07T15:14:00Z",
-        status: "medium",
-    },
-    {
-        id: "3",
-        jobTitle: "React Developer",
-        company: "Vercel",
-        score: 94,
-        matchedKeywords: 31,
-        missingKeywords: 2,
-        analyzedAt: "2026-04-06T09:05:00Z",
-        status: "high",
-    },
-    {
-        id: "4",
-        jobTitle: "Software Engineer",
-        company: "Linear",
-        score: 58,
-        matchedKeywords: 14,
-        missingKeywords: 13,
-        analyzedAt: "2026-04-05T18:47:00Z",
-        status: "low",
-    },
-    {
-        id: "5",
-        jobTitle: "UI/UX Engineer",
-        company: "Figma",
-        score: 76,
-        matchedKeywords: 20,
-        missingKeywords: 7,
-        analyzedAt: "2026-04-04T12:20:00Z",
-        status: "medium",
-    },
-];
+interface AtsHistoryRecord {
+    _id: string;
+    jobRoleName: string;
+    fileName: string;
+    analysis: {
+        score: number;
+        matchedKeywords: string[];
+        missingKeywords: string[];
+        sectionScores: { skills: number; experience: number; projects: number; education: number };
+        suggestions: string[];
+    };
+    modelId: { displayName: string; provider: string; modelName: string } | null;
+    createdAt: string;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -98,7 +61,13 @@ function formatTime(iso: string) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AiAtsPage() {
-    const [modalOpen, setModalOpen] = useState(false);
+    const { success: toastSuccess, error: toastError } = useToast();
+    const token = getStoredToken();
+
+    const [modalOpen, setModalOpen]       = useState(false);
+    const [history, setHistory]           = useState<AtsHistoryRecord[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(true);
+    const [isAnalyzing, setIsAnalyzing]   = useState(false);
     const [form, setForm] = useState<{ jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string }>({
         jobRoleName: "",
         jobDescription: "",
@@ -106,38 +75,72 @@ export default function AiAtsPage() {
         aiModel: "",
     });
 
-    const avgScore = Math.round(MOCK_HISTORY.reduce((s, r) => s + r.score, 0) / MOCK_HISTORY.length);
-    const highMatch = MOCK_HISTORY.filter(r => r.score >= 80).length;
+    const fetchHistory = async () => {
+        setHistoryLoading(true);
+        try {
+            const res = await fetch("/api/v1/private/ai-ats", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (res.ok) setHistory(data.records ?? []);
+        } catch { /* silently ignore */ }
+        finally { setHistoryLoading(false); }
+    };
+
+    useEffect(() => { fetchHistory(); }, []);
+
+    const handleRunAnalysis = async () => {
+        if (!form.resumeFile) return;
+        setIsAnalyzing(true);
+        try {
+            // Convert PDF to base64
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve((reader.result as string).split(",")[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(form.resumeFile!);
+            });
+
+            const res = await fetch("/api/v1/private/ai-ats", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    modelId:        form.aiModel,
+                    jobRoleName:    form.jobRoleName,
+                    jobDescription: form.jobDescription,
+                    resumeBase64:   base64,
+                    fileName:       form.resumeFile.name,
+                }),
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                toastSuccess("Analysis complete!");
+                setModalOpen(false);
+                setForm({ jobRoleName: "", jobDescription: "", resumeFile: null, aiModel: "" });
+                fetchHistory();
+            } else {
+                toastError(data.message ?? "Analysis failed");
+            }
+        } catch {
+            toastError("Unexpected error. Please try again.");
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    // ── Computed stats ──
+    const total    = history.length;
+    const avgScore = total > 0 ? Math.round(history.reduce((s, r) => s + r.analysis.score, 0) / total) : 0;
+    const highMatch = history.filter(r => r.analysis.score >= 80).length;
+    const weekAgo   = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const thisWeek  = history.filter(r => new Date(r.createdAt) >= weekAgo).length;
 
     const STATS = [
-        {
-            label: "Total Analyses",
-            value: MOCK_HISTORY.length,
-            icon: <FiBarChart2 size={16} />,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
-        },
-        {
-            label: "Average Score",
-            value: `${avgScore}%`,
-            icon: <FiTarget size={16} />,
-            color: "text-blue-600",
-            bg: "bg-blue-50",
-        },
-        {
-            label: "High Match (≥80%)",
-            value: highMatch,
-            icon: <FiAward size={16} />,
-            color: "text-purple-600",
-            bg: "bg-purple-50",
-        },
-        {
-            label: "This Week",
-            value: "5",
-            icon: <FiTrendingUp size={16} />,
-            color: "text-orange-600",
-            bg: "bg-orange-50",
-        },
+        { label: "Total Analyses",  value: historyLoading ? "—" : total,          icon: <FiBarChart2 size={16} />, color: "text-emerald-600", bg: "bg-emerald-50" },
+        { label: "Average Score",   value: historyLoading ? "—" : `${avgScore}%`, icon: <FiTarget size={16} />,    color: "text-blue-600",    bg: "bg-blue-50"    },
+        { label: "High Match (≥80%)",value: historyLoading ? "—" : highMatch,     icon: <FiAward size={16} />,     color: "text-purple-600",  bg: "bg-purple-50"  },
+        { label: "This Week",        value: historyLoading ? "—" : thisWeek,      icon: <FiTrendingUp size={16} />,color: "text-orange-600",  bg: "bg-orange-50"  },
     ];
 
     return (
@@ -174,117 +177,160 @@ export default function AiAtsPage() {
                             <div className={`p-1.5 rounded-lg ${s.bg}`}>
                                 <span className={s.color}>{s.icon}</span>
                             </div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide leading-tight">
-                                {s.label}
-                            </p>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide leading-tight">{s.label}</p>
                         </div>
                         <p className="text-3xl font-bold text-gray-900">{s.value}</p>
                     </div>
                 ))}
             </div>
 
-            
+            {/* ── Score distribution bar ── */}
+            {!historyLoading && total > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+                    <h2 className="text-sm font-semibold text-gray-700 mb-4">Score Distribution</h2>
+                    <div className="space-y-3">
+                        {[
+                            { label: "High Match (80–100%)", count: history.filter(r => r.analysis.score >= 80).length,                                 color: "bg-emerald-500", textColor: "text-emerald-700" },
+                            { label: "Medium Match (60–79%)", count: history.filter(r => r.analysis.score >= 60 && r.analysis.score < 80).length,       color: "bg-amber-400",   textColor: "text-amber-700"   },
+                            { label: "Low Match (< 60%)",     count: history.filter(r => r.analysis.score < 60).length,                                 color: "bg-red-400",     textColor: "text-red-700"     },
+                        ].map((band) => (
+                            <div key={band.label} className="flex items-center gap-3">
+                                <p className={`text-xs font-medium w-44 shrink-0 ${band.textColor}`}>{band.label}</p>
+                                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className={`h-full rounded-full ${band.color} transition-all duration-700`} style={{ width: `${(band.count / total) * 100}%` }} />
+                                </div>
+                                <span className="text-xs font-bold text-gray-600 w-6 text-right">{band.count}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* ── History table ── */}
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                     <h2 className="font-semibold text-gray-800">Analysis History</h2>
                     <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                        {MOCK_HISTORY.length} records
+                        {historyLoading ? "…" : `${total} record${total !== 1 ? "s" : ""}`}
                     </span>
                 </div>
 
-                {/* Mobile cards */}
-                <div className="sm:hidden divide-y divide-gray-100">
-                    {MOCK_HISTORY.map((record) => {
-                        const s = scoreStyle(record.score);
-                        return (
-                            <div key={record.id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0">
-                                        <p className="font-semibold text-sm text-gray-900 truncate">{record.jobTitle}</p>
-                                        <p className="text-xs text-gray-400 mt-0.5">{record.company}</p>
-                                    </div>
-                                    <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${s.bg} ${s.text} ${s.border}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                                        {record.score}%
-                                    </span>
+                {historyLoading ? (
+                    <div className="p-5 space-y-3">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="animate-pulse flex gap-4 items-center p-4 rounded-xl border border-gray-100">
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-3 w-1/3 rounded bg-gray-200" />
+                                    <div className="h-3 w-1/5 rounded bg-gray-200" />
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 bg-gray-50 rounded-xl p-2.5">
-                                    <div className="text-center">
-                                        <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Matched</p>
-                                        <p className="text-sm font-bold text-emerald-600 mt-0.5">{record.matchedKeywords}</p>
-                                    </div>
-                                    <div className="text-center border-x border-gray-200">
-                                        <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Missing</p>
-                                        <p className="text-sm font-bold text-red-500 mt-0.5">{record.missingKeywords}</p>
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Date</p>
-                                        <p className="text-xs font-semibold text-gray-600 mt-0.5">{formatDate(record.analyzedAt)}</p>
-                                    </div>
-                                </div>
+                                <div className="h-6 w-16 rounded-full bg-gray-200" />
+                                <div className="h-4 w-24 rounded bg-gray-200" />
+                                <div className="h-4 w-24 rounded bg-gray-200" />
+                                <div className="h-4 w-28 rounded bg-gray-200" />
                             </div>
-                        );
-                    })}
-                </div>
-
-                {/* Desktop table */}
-                <div className="hidden sm:block overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
-                                {["Job Title", "Score", "Matched Keywords", "Missing Keywords", "Date & Time"].map((h) => (
-                                    <th
-                                        key={h}
-                                        className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                                    >
-                                        {h}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {MOCK_HISTORY.map((record) => {
-                                const s = scoreStyle(record.score);
+                        ))}
+                    </div>
+                ) : total === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 px-4 gap-4">
+                        <div className="p-5 bg-gray-100 rounded-2xl"><FiZap size={32} className="text-gray-400" /></div>
+                        <div className="text-center">
+                            <p className="text-gray-700 font-semibold">No analyses yet</p>
+                            <p className="text-gray-400 text-xs mt-1">Click &quot;Analyze Resume&quot; to run your first ATS analysis.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Mobile cards */}
+                        <div className="sm:hidden divide-y divide-gray-100">
+                            {history.map((record) => {
+                                const s = scoreStyle(record.analysis.score);
                                 return (
-                                    <tr key={record.id} className="hover:bg-gray-50/70 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <p className="font-semibold text-gray-900">{record.jobTitle}</p>
-                                            <p className="text-xs text-gray-400 mt-0.5">{record.company}</p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${s.bg} ${s.text} ${s.border}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                                                {record.score}%
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
-                                                <FiCheckCircle size={13} />
-                                                {record.matchedKeywords} keywords
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-500">
-                                                <FiAlertCircle size={13} />
-                                                {record.missingKeywords} keywords
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                <FiCalendar size={12} />
-                                                <span className="font-medium">{formatDate(record.analyzedAt)}</span>
-                                                <span className="text-gray-300">·</span>
-                                                <span>{formatTime(record.analyzedAt)}</span>
+                                    <div key={record._id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
+                                        {/* Title + score */}
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-sm text-gray-900 truncate">{record.jobRoleName}</p>
+                                                <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
+                                                    <FiCalendar size={10} />
+                                                    {formatDate(record.createdAt)} · {formatTime(record.createdAt)}
+                                                </div>
                                             </div>
-                                        </td>
-                                    </tr>
+                                            <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${s.bg} ${s.text} ${s.border}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                                                {record.analysis.score}%
+                                            </span>
+                                        </div>
+                                        {/* Matched keywords */}
+                                        <div className="space-y-1.5">
+                                            <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide flex items-center gap-1">
+                                                <FiCheckCircle size={10} /> Matched ({record.analysis.matchedKeywords.length})
+                                            </p>
+                                            <KeywordChips keywords={record.analysis.matchedKeywords} variant="matched" limit={5} />
+                                        </div>
+                                        {/* Missing keywords */}
+                                        <div className="space-y-1.5">
+                                            <p className="text-[10px] font-semibold text-red-500 uppercase tracking-wide flex items-center gap-1">
+                                                <FiAlertCircle size={10} /> Missing ({record.analysis.missingKeywords.length})
+                                            </p>
+                                            <KeywordChips keywords={record.analysis.missingKeywords} variant="missing" limit={5} />
+                                        </div>
+                                    </div>
                                 );
                             })}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
+
+                        {/* Desktop table */}
+                        <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50 border-b border-gray-100">
+                                        {["Job Role", "Score", "Matched Keywords", "Missing Keywords", "Date & Time"].map((h) => (
+                                            <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {history.map((record) => {
+                                        const s = scoreStyle(record.analysis.score);
+                                        return (
+                                            <tr key={record._id} className="hover:bg-gray-50/70 transition-colors align-top">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-semibold text-gray-900">{record.jobRoleName}</p>
+                                                    <p className="text-xs text-gray-400 mt-0.5 font-mono truncate max-w-[180px]">{record.fileName}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${s.bg} ${s.text} ${s.border}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                                                        {record.analysis.score}%
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 max-w-[220px]">
+                                                    <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide mb-1.5">
+                                                        {record.analysis.matchedKeywords.length} matched
+                                                    </p>
+                                                    <KeywordChips keywords={record.analysis.matchedKeywords} variant="matched" limit={4} />
+                                                </td>
+                                                <td className="px-6 py-4 max-w-[220px]">
+                                                    <p className="text-[10px] font-semibold text-red-500 uppercase tracking-wide mb-1.5">
+                                                        {record.analysis.missingKeywords.length} missing
+                                                    </p>
+                                                    <KeywordChips keywords={record.analysis.missingKeywords} variant="missing" limit={4} />
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                                        <FiCalendar size={12} />
+                                                        <span className="font-medium">{formatDate(record.createdAt)}</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400 mt-0.5 ml-[18px]">{formatTime(record.createdAt)}</p>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* ── Modal ── */}
@@ -292,7 +338,9 @@ export default function AiAtsPage() {
                 <AnalyzeModal
                     form={form}
                     setForm={setForm}
-                    onClose={() => setModalOpen(false)}
+                    isAnalyzing={isAnalyzing}
+                    onClose={() => { if (!isAnalyzing) { setModalOpen(false); } }}
+                    onSubmit={handleRunAnalysis}
                 />
             )}
         </div>
@@ -304,11 +352,15 @@ export default function AiAtsPage() {
 function AnalyzeModal({
     form,
     setForm,
+    isAnalyzing,
     onClose,
+    onSubmit,
 }: {
     form: { jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string };
     setForm: React.Dispatch<React.SetStateAction<{ jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string }>>;
+    isAnalyzing: boolean;
     onClose: () => void;
+    onSubmit: () => void;
 }) {
     const [dragOver, setDragOver] = useState(false);
     const [aiModels, setAiModels] = useState<{ _id: string; displayName: string; modelName: string; provider: string }[]>([]);
@@ -492,11 +544,14 @@ function AnalyzeModal({
                         </button>
                         <button
                             type="button"
-                            disabled={!canSubmit}
+                            onClick={onSubmit}
+                            disabled={!canSubmit || isAnalyzing}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
                         >
-                            <FiZap size={14} />
-                            Run Analysis
+                            {isAnalyzing
+                                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Analyzing…</>
+                                : <><FiZap size={14} /> Run Analysis</>
+                            }
                         </button>
                     </div>
                 </div>
@@ -617,6 +672,53 @@ function ModelDropdown({
                 <p className="text-[11px] text-amber-500 flex items-center gap-1">
                     <FiCpu size={11} /> No AI models found. Configure one in AI Models settings.
                 </p>
+            )}
+        </div>
+    );
+}
+
+// ─── Keyword Chips ────────────────────────────────────────────────────────────
+
+function KeywordChips({
+    keywords,
+    variant,
+    limit = 4,
+}: {
+    keywords: string[];
+    variant: "matched" | "missing";
+    limit?: number;
+}) {
+    const visible = keywords.slice(0, limit);
+    const overflow = keywords.length - limit;
+
+    const chip =
+        variant === "matched"
+            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+            : "bg-red-50 text-red-600 border-red-200";
+
+    const more =
+        variant === "matched"
+            ? "bg-emerald-100 text-emerald-600"
+            : "bg-red-100 text-red-500";
+
+    if (keywords.length === 0) {
+        return <p className="text-[11px] text-gray-400 italic">None</p>;
+    }
+
+    return (
+        <div className="flex flex-wrap gap-1">
+            {visible.map((kw) => (
+                <span
+                    key={kw}
+                    className={`inline-block px-2 py-0.5 rounded-md border text-[11px] font-medium ${chip}`}
+                >
+                    {kw}
+                </span>
+            ))}
+            {overflow > 0 && (
+                <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold ${more}`}>
+                    +{overflow} more
+                </span>
             )}
         </div>
     );

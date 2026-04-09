@@ -16,6 +16,7 @@ export interface IAtsReport {
 export interface IAtsRecord extends Document {
     userId: mongoose.Types.ObjectId;
     userEmail: string; // stored encrypted
+    jobRoleName: string;
     jobDescription: string;
     resumeText: string;
     structuredData: any; // Result from Gemini extraction
@@ -30,6 +31,7 @@ const AtsRecordSchema = new Schema<IAtsRecord>(
     {
         userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
         userEmail: { type: String, required: true },
+        jobRoleName: { type: String, trim: true, default: "" },
         jobDescription: { type: String, required: true },
         resumeText: { type: String, required: true },
         structuredData: { type: Schema.Types.Mixed, required: true },
