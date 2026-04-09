@@ -720,7 +720,7 @@ function HeroSection() {
                 <Link href="/login" className="w-full sm:w-auto">
                   <ShimmerButton
                     background="linear-gradient(135deg,#10b981,#059669)"
-                    className="w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-4 rounded-full shadow-xl shadow-emerald-500/30 justify-center"
+                    className="w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-4 border-3 rounded-full shadow-xl shadow-emerald-500/30 justify-center"
                   >
                     Start Building
                     <FiArrowRight className="w-4 h-4" />
@@ -728,7 +728,7 @@ function HeroSection() {
                 </Link>
                 <a
                   href="#how-it-works"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-4.5  px-6 sm:px-8 sm:py-4 rounded-full border-3 border-violet-200 text-violet-700 font-semibold text-sm sm:text-base hover:bg-violet-50 hover:border-violet-300 transition-all duration-200"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-5  px-6 sm:px-8 sm:py-4 rounded-full border-3 border-violet-200 text-violet-700 font-semibold text-sm sm:text-base hover:bg-violet-50 hover:border-violet-300 transition-all duration-200"
                 >
                   See How It Works
                 </a>
