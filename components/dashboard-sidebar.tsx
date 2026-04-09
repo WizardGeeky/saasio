@@ -142,9 +142,6 @@ export function DashboardSidebar({ navItems, isOpen, onClose }: DashboardSidebar
           onClick={onClose}
           className="flex items-center gap-3 text-2xl font-extrabold text-slate-900 tracking-tight decoration-transparent"
         >
-          <div className="flex items-center justify-center p-2 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 text-white">
-            <FiLayers size={22} />
-          </div>
           SAASIO
         </Link>
         {/* Close button — mobile only */}
