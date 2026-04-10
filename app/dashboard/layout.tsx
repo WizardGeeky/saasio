@@ -6,6 +6,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard-topbar";
 import { useAuthGuard } from "@/app/utils/useAuthGuard";
 import { PrivilegeProvider, usePrivilegeContext } from "@/app/contexts/PrivilegeContext";
+import { DashThemeProvider, useDashTheme } from "@/app/contexts/DashThemeContext";
 import { NAV_CONFIG, NavConfig } from "@/app/configs/nav.config";
 import { NavItem } from "@/components/dashboard-sidebar";
 import { getStoredToken, decodeToken } from "@/app/utils/token";
@@ -15,6 +16,7 @@ import { getStoredToken, decodeToken } from "@/app/utils/token";
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useAuthGuard("requireAuth");
 
+  const { isDark } = useDashTheme();
   const { hasPrivilege, isLoading } = usePrivilegeContext();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -67,7 +69,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [hasPrivilege, isLoading]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-100 font-sans">
+    <div className={`flex h-screen w-full overflow-hidden bg-gray-100 font-sans transition-colors duration-300 ${isDark ? "db-dark" : ""}`}>
       {/* Mobile Overlay */}
       <div
         className={`fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -100,8 +102,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: ${isDark ? "#2d3050" : "#cbd5e1"}; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: ${isDark ? "#404570" : "#94a3b8"}; }
       `}} />
     </div>
   );
@@ -111,8 +113,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <PrivilegeProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
-    </PrivilegeProvider>
+    <DashThemeProvider>
+      <PrivilegeProvider>
+        <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      </PrivilegeProvider>
+    </DashThemeProvider>
   );
 }

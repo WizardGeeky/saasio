@@ -310,7 +310,7 @@ export default function PrivilegesPage() {
                                                 </span>
                                             </div>
                                         )}
-                                        <div className="px-4 py-3 hover:bg-gray-50/60 transition-colors border-b border-gray-100 last:border-b-0">
+                                        <div className="px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
                                             <div className="flex items-center justify-between gap-3">
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <span className={`shrink-0 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded border ${METHOD_STYLES[p.method] ?? "bg-gray-100 text-gray-600"}`}>
@@ -366,7 +366,7 @@ export default function PrivilegesPage() {
                                         return (
                                             <React.Fragment key={p._id}>
                                                 {isNewGroup && (
-                                                    <tr className="bg-gray-50/80 border-y border-gray-200">
+                                                    <tr className="bg-gray-50 border-y border-gray-200">
                                                         <td colSpan={6} className="px-5 py-2">
                                                             <div className="flex items-center gap-2.5">
                                                                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-100 shrink-0">
@@ -381,7 +381,7 @@ export default function PrivilegesPage() {
                                                         </td>
                                                     </tr>
                                                 )}
-                                                <tr className="hover:bg-gray-50/70 transition-colors border-b border-gray-100">
+                                                <tr className="hover:bg-gray-50 transition-colors border-b border-gray-100">
                                                     <td className="px-5 py-3 whitespace-nowrap">
                                                         <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${METHOD_STYLES[p.method] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
                                                             {p.method}

@@ -458,7 +458,7 @@ export default function AtsHistoryPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen">
       <div className="w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between">
@@ -836,7 +836,7 @@ export default function AtsHistoryPage() {
 
           {/* Pagination */}
           {pagination.pages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
               <span className="text-xs text-gray-500">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–
                 {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}

@@ -1,7 +1,8 @@
 "use client";
 
-import { FiMenu, FiBell } from "react-icons/fi";
+import { FiMenu, FiBell, FiSun, FiMoon } from "react-icons/fi";
 import Link from "next/link";
+import { useDashTheme } from "@/app/contexts/DashThemeContext";
 
 interface DashboardTopbarProps {
   onMobileMenuToggle: () => void;
@@ -14,6 +15,8 @@ export function DashboardTopbar({
   userName = "Admin",
   userRole = "",
 }: DashboardTopbarProps) {
+  const { isDark, toggle } = useDashTheme();
+
   const initials = userName
     .split(" ")
     .map((n) => n[0] ?? "")
@@ -22,7 +25,7 @@ export function DashboardTopbar({
     .slice(0, 2);
 
   return (
-    <header className="flex h-14 sm:h-20 items-center justify-between bg-white px-4 lg:px-8 z-30 border-b border-gray-200 shadow-sm shrink-0">
+    <header className="flex h-14 sm:h-20 items-center justify-between bg-white px-4 lg:px-8 z-30 border-b border-gray-200 shadow-sm shrink-0 transition-colors duration-300">
       {/* Mobile menu toggle */}
       <button
         className="flex lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
@@ -40,6 +43,20 @@ export function DashboardTopbar({
 
       {/* Right actions */}
       <div className="flex items-center gap-2">
+        {/* Theme toggle */}
+        <button
+          onClick={toggle}
+          aria-label="Toggle theme"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+            isDark
+              ? "border-slate-600 bg-slate-800 text-slate-300 hover:border-emerald-500 hover:text-emerald-400"
+              : "border-slate-200 bg-slate-50 text-slate-500 hover:border-emerald-300 hover:text-emerald-600"
+          }`}
+        >
+          {isDark ? <FiSun size={13} /> : <FiMoon size={13} />}
+          <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
+        </button>
+
         {/* Notifications bell */}
         <Link
           href="/dashboard/notifications"

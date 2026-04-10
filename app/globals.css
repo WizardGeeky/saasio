@@ -424,3 +424,146 @@
 /* ATS ring track */
 .lp-dark circle[stroke="#f0fdf4"] { stroke: #0a2e1e; }
 .lp-dark circle[stroke="#d1fae5"] { stroke: #0a2e1e; }
+
+/* ─── .db-dark scoped overrides (dashboard dark theme) ─────────────────────
+   Higher specificity (2 classes) beats Tailwind's utilities layer.
+   Same dark palette as .lp-dark for visual consistency.              ──── */
+
+/* Main surfaces */
+.db-dark .bg-white        { background-color: #0d0e1c; }
+.db-dark .bg-gray-50      { background-color: #111220; }
+.db-dark .bg-gray-100     { background-color: #0e0f1e; }
+.db-dark .bg-gray-200     { background-color: #1e2035; }
+.db-dark .bg-gray-300     { background-color: #252843; }
+.db-dark .bg-gray-400     { background-color: #303452; }
+.db-dark .bg-slate-50     { background-color: #111220; }
+.db-dark .bg-slate-100    { background-color: #181930; }
+.db-dark .bg-slate-200    { background-color: #1e2035; }
+
+/* Primary text */
+.db-dark .text-gray-900   { color: #f1f5f9; }
+.db-dark .text-gray-800   { color: #e2e8f0; }
+.db-dark .text-gray-700   { color: #cbd5e1; }
+.db-dark .text-gray-600   { color: #94a3b8; }
+.db-dark .text-gray-500   { color: #6b7a96; }
+.db-dark .text-gray-400   { color: #4e5a70; }
+.db-dark .text-gray-300   { color: #3a4560; }
+
+.db-dark .text-slate-900  { color: #f1f5f9; }
+.db-dark .text-slate-800  { color: #e2e8f0; }
+.db-dark .text-slate-700  { color: #cbd5e1; }
+.db-dark .text-slate-600  { color: #94a3b8; }
+.db-dark .text-slate-500  { color: #6b7a96; }
+.db-dark .text-slate-400  { color: #4e5a70; }
+
+/* Borders */
+.db-dark .border-gray-50  { border-color: #181930; }
+.db-dark .border-gray-100 { border-color: #1a1b2e; }
+.db-dark .border-gray-200 { border-color: #1e2035; }
+.db-dark .border-gray-300 { border-color: #252843; }
+.db-dark .border-slate-100 { border-color: #1a1b2e; }
+.db-dark .border-slate-200 { border-color: #1e2035; }
+.db-dark .border-slate-300 { border-color: #252843; }
+.db-dark .border-slate-400 { border-color: #303452; }
+
+/* Emerald — active nav, success badges */
+.db-dark .bg-green-50     { background-color: #051c14; }
+.db-dark .bg-green-100    { background-color: #0a2e1e; }
+.db-dark .bg-emerald-50   { background-color: #051c14; }
+.db-dark .bg-emerald-100  { background-color: #0a2e1e; }
+.db-dark .bg-emerald-200  { background-color: #0d3a26; }
+.db-dark .text-emerald-700 { color: #34d399; }
+.db-dark .text-emerald-800 { color: #6ee7b7; }
+.db-dark .text-emerald-900 { color: #a7f3d0; }
+.db-dark .border-emerald-100 { border-color: #083320; }
+.db-dark .border-emerald-200 { border-color: #0a3a26; }
+.db-dark .border-emerald-300 { border-color: #0d4530; }
+.db-dark .border-emerald-400 { border-color: #10573c; }
+
+/* Red — danger, error, logout */
+.db-dark .bg-red-50       { background-color: #1a0808; }
+.db-dark .bg-red-100      { background-color: #220d0d; }
+.db-dark .bg-red-200      { background-color: #2e1212; }
+.db-dark .text-red-700    { color: #f87171; }
+.db-dark .text-red-800    { color: #fca5a5; }
+.db-dark .border-red-100  { border-color: #2a1010; }
+.db-dark .border-red-200  { border-color: #331515; }
+.db-dark .border-red-300  { border-color: #3d1a1a; }
+
+/* Amber — warning */
+.db-dark .bg-amber-50     { background-color: #160f08; }
+.db-dark .bg-amber-100    { background-color: #201600; }
+.db-dark .text-amber-700  { color: #fbbf24; }
+.db-dark .text-amber-800  { color: #fcd34d; }
+.db-dark .border-amber-100 { border-color: #1c1200; }
+.db-dark .border-amber-200 { border-color: #241800; }
+.db-dark .border-amber-300 { border-color: #2e2000; }
+
+/* Blue — info */
+.db-dark .bg-blue-50      { background-color: #090f1e; }
+.db-dark .bg-blue-100     { background-color: #0d1830; }
+.db-dark .text-blue-600   { color: #60a5fa; }
+.db-dark .text-blue-700   { color: #93c5fd; }
+.db-dark .border-blue-100 { border-color: #0a1a30; }
+.db-dark .border-blue-200 { border-color: #0f2040; }
+.db-dark .border-blue-400 { border-color: #1e3a6a; }
+
+/* Indigo */
+.db-dark .bg-indigo-50    { background-color: #090b24; }
+.db-dark .bg-indigo-100   { background-color: #10123a; }
+.db-dark .text-indigo-600 { color: #818cf8; }
+.db-dark .text-indigo-700 { color: #a5b4fc; }
+.db-dark .border-indigo-100 { border-color: #0c0d30; }
+.db-dark .border-indigo-200 { border-color: #12154a; }
+.db-dark .border-indigo-400 { border-color: #2a2e7a; }
+
+/* Purple / Violet */
+.db-dark .bg-purple-50    { background-color: #100a1e; }
+.db-dark .bg-purple-100   { background-color: #1a1030; }
+.db-dark .bg-violet-50    { background-color: #130f2b; }
+.db-dark .bg-violet-100   { background-color: #1c1440; }
+.db-dark .text-purple-600 { color: #c084fc; }
+.db-dark .text-purple-700 { color: #d8b4fe; }
+.db-dark .text-violet-600 { color: #a78bfa; }
+.db-dark .text-violet-700 { color: #c4b5fd; }
+.db-dark .border-purple-100 { border-color: #1a0e2e; }
+.db-dark .border-purple-200 { border-color: #22144a; }
+.db-dark .border-violet-100 { border-color: #1e1b4b; }
+.db-dark .border-violet-200 { border-color: #2d2060; }
+
+/* Teal / Cyan */
+.db-dark .bg-teal-50      { background-color: #05181a; }
+.db-dark .bg-cyan-50      { background-color: #051820; }
+.db-dark .text-teal-600   { color: #2dd4bf; }
+.db-dark .text-cyan-700   { color: #22d3ee; }
+.db-dark .border-teal-100 { border-color: #062022; }
+.db-dark .border-cyan-200 { border-color: #082a35; }
+
+/* Orange */
+.db-dark .bg-orange-50    { background-color: #160c08; }
+.db-dark .bg-orange-100   { background-color: #201005; }
+.db-dark .text-orange-600 { color: #fb923c; }
+.db-dark .border-orange-200 { border-color: #241208; }
+
+/* Hover overrides for sidebar & topbar interactive elements */
+.db-dark .hover\:bg-slate-100:hover  { background-color: #181930; }
+.db-dark .hover\:bg-gray-50:hover    { background-color: #111220; }
+.db-dark .hover\:bg-red-100:hover    { background-color: #220d0d; }
+.db-dark .hover\:bg-emerald-50:hover { background-color: #051c14; }
+
+/* Divide lines */
+.db-dark .divide-gray-100 > * + * { border-color: #1a1b2e; }
+.db-dark .divide-gray-200 > * + * { border-color: #1e2035; }
+
+/* Red text variants */
+.db-dark .text-red-500   { color: #f87171; }
+.db-dark .text-red-600   { color: #ef4444; }
+
+/* Amber text variants */
+.db-dark .text-amber-600 { color: #f59e0b; }
+
+/* Indigo text variants */
+.db-dark .text-indigo-500 { color: #818cf8; }
+
+/* Hover overrides for gray-100 (pagination, modal buttons) */
+.db-dark .hover\:bg-gray-100:hover { background-color: #181930; }
