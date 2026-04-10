@@ -37,6 +37,7 @@ import {
     FiPackage,
     FiBookmark,
     FiPieChart,
+    FiFileText,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -100,6 +101,12 @@ export const NAV_CONFIG: NavConfig[] = [
         privileges: [
             { method: "GET", apiPath: "/api/v1/private/ai-ats" },
         ],
+    },
+    {
+        name: "Resume Config",
+        href: "/dashboard/resume-config",
+        icon: FiFileText,
+        privileges: [],
     },
     {
         name: "Subscriptions",

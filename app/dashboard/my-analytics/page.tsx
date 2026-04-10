@@ -104,7 +104,7 @@ function DonutChart({ title, subtitle, data }: {
     return (
         <ChartCard title={title} subtitle={subtitle}>
             <div className="h-36 w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <PieChart>
                         <Pie data={data} cx="50%" cy="50%" innerRadius={40} outerRadius={58}
                             paddingAngle={2} dataKey="value" strokeWidth={0}>
@@ -269,7 +269,7 @@ export default function MyAnalyticsPage() {
                 <>
                     {/* ═══ 1. Profile Card ═══ */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-5">
-                        <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                        <div className="shrink-0 h-16 w-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
                             <FiUser size={28} />
                         </div>
                         <div className="flex-1 min-w-0">

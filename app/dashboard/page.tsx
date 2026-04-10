@@ -128,7 +128,7 @@ function DonutChart({ title, subtitle, data }: {
     return (
         <ChartCard title={title} subtitle={subtitle}>
             <div className="h-40 w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <PieChart>
                         <Pie
                             data={data}
