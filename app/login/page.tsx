@@ -16,6 +16,8 @@ import {
   FiGlobe,
   FiInfo,
   FiZap,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 import { useToast } from "@/components/ui/toast";
 import { useAuthGuard } from "@/app/utils/useAuthGuard";
@@ -215,6 +217,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const { error: toastError, success: toastSuccess } = useToast();
 
+  const [isDark, setIsDark] = useState(false);
   const [mode, setMode] = useState<AuthMode>("login");
   const [step, setStep] = useState<AuthStep>("form");
   const [isLoading, setIsLoading] = useState(false);
@@ -345,11 +348,24 @@ function LoginContent() {
     );
 
   return (
-    <div className="min-h-screen w-full flex bg-white font-sans">
+    <div className={`min-h-screen w-full flex bg-white font-sans transition-colors duration-300 ${isDark ? "lp-dark" : ""}`}>
       <BrandPanel />
 
       {/* ── Right panel ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative p-6 sm:p-12 overflow-y-auto bg-hero-radial">
+      <div className={`flex-1 flex flex-col items-center justify-center relative p-6 sm:p-12 overflow-y-auto transition-colors duration-300 ${isDark ? "bg-hero-radial-dark" : "bg-hero-radial"}`}>
+        {/* Theme toggle */}
+        <button
+          onClick={() => setIsDark((d) => !d)}
+          className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all backdrop-blur-sm shadow-sm ${
+            isDark
+              ? "border-slate-600 bg-slate-800/80 text-slate-300 hover:border-violet-400 hover:text-violet-300"
+              : "border-slate-200 bg-white/80 text-slate-500 hover:border-violet-300 hover:text-violet-600"
+          }`}
+        >
+          {isDark ? <FiSun size={13} /> : <FiMoon size={13} />}
+          {isDark ? "Light" : "Dark"}
+        </button>
+
         {/* Subtle blurs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -right-20 w-80 h-80 bg-violet-100/40 rounded-full blur-3xl" />
