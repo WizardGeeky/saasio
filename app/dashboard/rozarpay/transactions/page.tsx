@@ -5,7 +5,8 @@ import {
     FiList, FiRefreshCw, FiSearch, FiDownload, FiEye,
     FiCheckCircle, FiClock, FiXCircle, FiTrendingUp,
     FiChevronLeft, FiChevronRight, FiCopy, FiCheck,
-    FiX, FiPrinter, FiFilter,
+    FiX, FiPrinter, FiFilter, FiCreditCard, FiWifi,
+    FiDollarSign, FiSmartphone,
 } from "react-icons/fi";
 import { useToast } from "@/components/ui/toast";
 import { getStoredToken } from "@/app/utils/token";
@@ -24,6 +25,8 @@ interface Transaction {
     amount: number;
     currency: string;
     status: PaymentStatus;
+    paymentMethod?: string;
+    paymentChannel?: string;
     description?: string;
     notes?: Record<string, string>;
     createdAt: string;
@@ -84,6 +87,30 @@ const STATUS_CFG: Record<PaymentStatus, { label: string; bg: string; text: strin
     FAILED:  { label: "Failed",  bg: "bg-red-50",      text: "text-red-700",     dot: "bg-red-500",     icon: <FiXCircle size={11} /> },
 };
 
+// ─── Payment method helpers ───────────────────────────────────────────────────
+
+const METHOD_CFG: Record<string, { label: string; bg: string; text: string; icon: React.ReactNode }> = {
+    card:       { label: "Card",        bg: "bg-violet-50",  text: "text-violet-700", icon: <FiCreditCard size={10} /> },
+    upi:        { label: "UPI",         bg: "bg-cyan-50",    text: "text-cyan-700",   icon: <FiWifi size={10} /> },
+    netbanking: { label: "Net Banking", bg: "bg-blue-50",    text: "text-blue-700",   icon: <FiDollarSign size={10} /> },
+    wallet:     { label: "Wallet",      bg: "bg-orange-50",  text: "text-orange-700", icon: <FiSmartphone size={10} /> },
+};
+
+function MethodBadge({ method }: { method?: string }) {
+    if (!method) return <span className="text-gray-300 text-xs">—</span>;
+    const cfg = METHOD_CFG[method.toLowerCase()] ?? {
+        label: method,
+        bg: "bg-gray-100",
+        text: "text-gray-600",
+        icon: <FiCreditCard size={10} />,
+    };
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}>
+            {cfg.icon} {cfg.label}
+        </span>
+    );
+}
+
 // ─── Copy Cell ────────────────────────────────────────────────────────────────
 
 function CopyCell({ value }: { value?: string }) {
@@ -123,7 +150,7 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
 function Avatar({ name }: { name: string }) {
     const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
     return (
-        <div className="shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
+        <div className="shrink-0 h-8 w-8 rounded-full bg-linear-to-br from-indigo-400 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
             {initials}
         </div>
     );
@@ -509,7 +536,7 @@ export default function TransactionsPage() {
                         </button>
 
                         {/* Status filter */}
-                        <div className={`hidden sm:flex items-center gap-2 ${showFilter ? "!flex flex-wrap" : ""}`}>
+                        <div className={`hidden sm:flex items-center gap-2 ${showFilter ? "flex flex-wrap" : ""}`}>
                             {statusOptions.map((s) => (
                                 <button
                                     key={s}
@@ -613,6 +640,7 @@ export default function TransactionsPage() {
                                         { label: "Customer",   cls: "" },
                                         { label: "Amount",     cls: "" },
                                         { label: "Status",     cls: "" },
+                                        { label: "Method",     cls: "hidden sm:table-cell" },
                                         { label: "Payment ID", cls: "hidden lg:table-cell" },
                                         { label: "Order ID",   cls: "hidden xl:table-cell" },
                                         { label: "Date",       cls: "hidden md:table-cell" },
@@ -660,6 +688,11 @@ export default function TransactionsPage() {
                                         {/* Status */}
                                         <td className="px-4 py-3.5">
                                             <StatusBadge status={t.status} />
+                                        </td>
+
+                                        {/* Method */}
+                                        <td className="hidden sm:table-cell px-4 py-3.5">
+                                            <MethodBadge method={t.paymentMethod} />
                                         </td>
 
                                         {/* Payment ID */}

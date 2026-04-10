@@ -34,6 +34,9 @@ import {
     FiMessageSquare,
     FiZap,
     FiClock,
+    FiPackage,
+    FiBookmark,
+    FiPieChart,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -60,6 +63,14 @@ export const NAV_CONFIG: NavConfig[] = [
         name: "Analytics",
         href: "/dashboard",
         icon: FiBarChart2,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/analytics" },
+        ],
+    },
+    {
+        name: "My Analytics",
+        href: "/dashboard/my-analytics",
+        icon: FiPieChart,
         privileges: [],
     },
     {
@@ -88,6 +99,23 @@ export const NAV_CONFIG: NavConfig[] = [
         icon: FiClock,
         privileges: [
             { method: "GET", apiPath: "/api/v1/private/ai-ats" },
+        ],
+    },
+    {
+        name: "Subscriptions",
+        href: "/dashboard/subscriptions",
+        icon: FiPackage,
+        privileges: [
+            { method: "POST", apiPath: "/api/v1/private/subscriptions" },
+            { method: "GET",  apiPath: "/api/v1/private/subscriptions/my" },
+        ],
+    },
+    {
+        name: "My Subscription",
+        href: "/dashboard/my-subscription",
+        icon: FiBookmark,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/subscriptions/my" },
         ],
     },
     {

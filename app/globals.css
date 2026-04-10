@@ -306,3 +306,120 @@
   background: #ffffff;
   border-radius: calc(1.25rem - 2px);
 }
+
+/* ─── Landing page dark theme backgrounds ──────────────────────── */
+.bg-hero-radial-dark {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(139,92,246,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 60%,  rgba(16,185,129,0.12) 0%, transparent 50%),
+    #08090f;
+}
+.section-lavender-dark {
+  background: linear-gradient(180deg, #0c0d1e 0%, #0e0f22 100%);
+}
+
+/* ─── .lp-dark scoped overrides ────────────────────────────────── */
+/* Higher specificity (2 classes) beats Tailwind's utilities layer  */
+
+/* Section/card backgrounds */
+.lp-dark .bg-white        { background-color: #0d0e1c; }
+.lp-dark .bg-slate-50     { background-color: #111220; }
+.lp-dark .bg-slate-100    { background-color: #181930; }
+
+/* Accent card fills */
+.lp-dark .bg-violet-50    { background-color: #130f2b; }
+.lp-dark .bg-violet-100   { background-color: #1c1440; }
+.lp-dark .bg-emerald-50   { background-color: #051c14; }
+.lp-dark .bg-emerald-100  { background-color: #0a2e1e; }
+.lp-dark .bg-amber-50     { background-color: #160f08; }
+.lp-dark .bg-amber-100    { background-color: #201600; }
+.lp-dark .bg-blue-50      { background-color: #090f1e; }
+.lp-dark .bg-blue-100     { background-color: #0d1830; }
+.lp-dark .bg-pink-50      { background-color: #160812; }
+.lp-dark .bg-pink-100     { background-color: #22101e; }
+.lp-dark .bg-indigo-50    { background-color: #090b24; }
+.lp-dark .bg-indigo-100   { background-color: #10123a; }
+.lp-dark .bg-teal-50      { background-color: #05181a; }
+
+/* Decorative resume-skeleton colors in AI scanner / mockups */
+.lp-dark .bg-violet-200   { background-color: #2d1f6b; }
+.lp-dark .bg-emerald-200  { background-color: #0a3222; }
+.lp-dark .bg-slate-200    { background-color: #1e2235; }
+.lp-dark .bg-slate-300    { background-color: #252840; }
+.lp-dark .bg-slate-700    { background-color: #374151; }
+
+/* Primary text */
+.lp-dark .text-slate-900  { color: #f1f5f9; }
+.lp-dark .text-slate-800  { color: #e2e8f0; }
+.lp-dark .text-slate-700  { color: #cbd5e1; }
+.lp-dark .text-slate-600  { color: #94a3b8; }
+.lp-dark .text-slate-500  { color: #64748b; }
+.lp-dark .text-slate-400  { color: #4e5a70; }
+
+/* Accent text that appears on light backgrounds */
+.lp-dark .text-violet-800 { color: #c4b5fd; }
+.lp-dark .text-violet-700 { color: #a78bfa; }
+.lp-dark .text-blue-600   { color: #60a5fa; }
+.lp-dark .text-pink-600   { color: #f472b6; }
+.lp-dark .text-indigo-600 { color: #818cf8; }
+
+/* Borders */
+.lp-dark .border-slate-100  { border-color: #181930; }
+.lp-dark .border-slate-200  { border-color: #1e2030; }
+.lp-dark .border-violet-100 { border-color: #1e1b4b; }
+.lp-dark .border-violet-200 { border-color: #2d2060; }
+.lp-dark .border-violet-300 { border-color: #3730a3; }
+.lp-dark .border-emerald-100 { border-color: #083320; }
+.lp-dark .border-amber-100   { border-color: #1c1200; }
+.lp-dark .border-blue-100    { border-color: #0a1a30; }
+.lp-dark .border-pink-100    { border-color: #1a0a15; }
+.lp-dark .border-indigo-100  { border-color: #0c0d30; }
+
+/* FAQ open state */
+.lp-dark .bg-violet-50\/60   { background-color: #130f2b; }
+
+/* Opacity border variants */
+.lp-dark .border-violet-100\/80 { border-color: rgb(30 27 75 / 0.8); }
+
+/* Hover border in dark */
+.lp-dark .hover\:border-violet-200:hover { border-color: #2d2060; }
+
+/* Gradient border card inner panel */
+.lp-dark .gradient-border-inner { background: #0d0e1c; }
+
+/* How It Works orb blurs — swap to dark tones */
+.lp-dark .bg-violet-50.rounded-full  { background-color: #130f2b; }
+.lp-dark .bg-emerald-50.rounded-full { background-color: #051c14; }
+
+/* Testimonial cards */
+.lp-dark .w-72.bg-white { background-color: #0d0e1c; }
+
+/* Section heading badge overrides */
+.lp-dark .bg-emerald-50.border-emerald-200 { background-color: #051c14; border-color: #083320; }
+.lp-dark .bg-violet-100.border-violet-200  { background-color: #1c1440; border-color: #2d2060; }
+.lp-dark .text-emerald-700  { color: #34d399; }
+
+/* Steps – section number decoration */
+.lp-dark .text-violet-100 { color: #1c1440; }
+.lp-dark .text-emerald-100 { color: #0a2e1e; }
+
+/* Version tracking pills */
+.lp-dark .bg-violet-100.text-violet-700.border-violet-200 {
+  background-color: #1c1440;
+  color: #a78bfa;
+  border-color: #2d2060;
+}
+.lp-dark .bg-emerald-100.text-emerald-700.border-emerald-200 {
+  background-color: #0a2e1e;
+  color: #34d399;
+  border-color: #083320;
+}
+.lp-dark .bg-blue-100.text-blue-700.border-blue-200 {
+  background-color: #0d1830;
+  color: #60a5fa;
+  border-color: #0a1a30;
+}
+
+/* ATS ring track */
+.lp-dark circle[stroke="#f0fdf4"] { stroke: #0a2e1e; }
+.lp-dark circle[stroke="#d1fae5"] { stroke: #0a2e1e; }

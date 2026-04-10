@@ -24,6 +24,8 @@ import {
   FiLayers,
   FiBriefcase,
   FiUser,
+  FiMoon,
+  FiSun,
 } from "react-icons/fi";
 import { BlurFade } from "@/components/magicui/blur-fade";
 import { NumberTicker } from "@/components/magicui/number-ticker";
@@ -244,9 +246,17 @@ const faqs = [
 /* ─── shared container ─────────────────────────────────────────────────── */
 const CONTAINER = "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10";
 
+/* ─── Landing theme context ─────────────────────────────────────────────── */
+const ThemeCtx = React.createContext<{ isDark: boolean; toggle: () => void }>({
+  isDark: false,
+  toggle: () => {},
+});
+const useTheme = () => React.useContext(ThemeCtx);
+
 /* ─── Navbar ────────────────────────────────────────────────────────────── */
 
 function Navbar() {
+  const { isDark, toggle } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -263,14 +273,12 @@ function Navbar() {
     { label: "FAQ", href: "#faq" },
   ];
 
+  const navScrolled = isDark
+    ? "bg-[#08090f]/95 backdrop-blur-xl shadow-sm border-b border-violet-900/30"
+    : "bg-white/90 backdrop-blur-xl shadow-sm border-b border-violet-100/60";
+
   return (
-    <nav
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/90 backdrop-blur-xl shadow-sm border-b border-violet-100/60"
-          : "bg-transparent"
-      }`}
-    >
+    <nav className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled ? navScrolled : "bg-transparent"}`}>
       <div className={CONTAINER}>
         <div className="flex items-center justify-between h-16 sm:h-18">
           {/* Logo */}
@@ -285,7 +293,7 @@ function Navbar() {
                 key={l.label}
                 href={l.href}
                 whileHover={{ y: -1 }}
-                className="text-sm font-semibold text-slate-600 hover:text-violet-600 transition-colors"
+                className={`text-sm font-semibold transition-colors ${isDark ? "text-slate-400 hover:text-violet-400" : "text-slate-600 hover:text-violet-600"}`}
               >
                 {l.label}
               </motion.a>
@@ -294,9 +302,22 @@ function Navbar() {
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3">
+            {/* Theme toggle */}
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-200 ${
+                isDark
+                  ? "border-violet-500/50 bg-violet-950/60 text-violet-300 hover:border-violet-400 hover:bg-violet-900/60 shadow-sm shadow-violet-500/20"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 shadow-sm"
+              }`}
+            >
+              {isDark ? <FiSun className="w-3.5 h-3.5" /> : <FiMoon className="w-3.5 h-3.5" />}
+              {isDark ? "Light" : "Dark"}
+            </button>
             <Link
               href="/login"
-              className="text-sm font-semibold text-slate-700 hover:text-violet-600 transition-colors px-4 py-2 rounded-full hover:bg-violet-50"
+              className={`text-sm font-semibold transition-colors px-4 py-2 rounded-full ${isDark ? "text-slate-300 hover:text-violet-400 hover:bg-violet-950/40" : "text-slate-700 hover:text-violet-600 hover:bg-violet-50"}`}
             >
               Sign In
             </Link>
@@ -310,24 +331,33 @@ function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile menu toggle */}
-          <button
-            className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-violet-50 transition-colors"
-            onClick={() => setOpen((o) => !o)}
-            aria-label="Toggle menu"
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={open ? "x" : "menu"}
-                initial={{ opacity: 0, rotate: -90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: 90 }}
-                transition={{ duration: 0.15 }}
-              >
-                {open ? <FiX className="w-5 h-5" /> : <FiMenu className="w-5 h-5" />}
-              </motion.div>
-            </AnimatePresence>
-          </button>
+          {/* Mobile: theme toggle + menu */}
+          <div className="md:hidden flex items-center gap-1">
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className={`p-2 rounded-xl transition-colors ${isDark ? "text-slate-400 hover:bg-violet-950/40" : "text-slate-500 hover:bg-violet-50"}`}
+            >
+              {isDark ? <FiSun className="w-4 h-4" /> : <FiMoon className="w-4 h-4" />}
+            </button>
+            <button
+              className={`p-2 rounded-xl transition-colors ${isDark ? "text-slate-400 hover:bg-violet-950/40" : "text-slate-600 hover:bg-violet-50"}`}
+              onClick={() => setOpen((o) => !o)}
+              aria-label="Toggle menu"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={open ? "x" : "menu"}
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {open ? <FiX className="w-5 h-5" /> : <FiMenu className="w-5 h-5" />}
+                </motion.div>
+              </AnimatePresence>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -339,7 +369,7 @@ function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="md:hidden border-t border-violet-100 bg-white/98 backdrop-blur-xl overflow-hidden"
+            className={`md:hidden border-t backdrop-blur-xl overflow-hidden ${isDark ? "border-violet-900/30 bg-[#0d0e1c]/98" : "border-violet-100 bg-white/98"}`}
           >
             <div className="px-4 py-4 space-y-1">
               {links.map((l, i) => (
@@ -350,7 +380,7 @@ function Navbar() {
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${isDark ? "text-slate-300 hover:bg-violet-950/40 hover:text-violet-400" : "text-slate-700 hover:bg-violet-50 hover:text-violet-700"}`}
                 >
                   {l.label}
                 </motion.a>
@@ -363,7 +393,7 @@ function Navbar() {
               >
                 <Link
                   href="/login"
-                  className="text-center px-4 py-3 rounded-xl text-sm font-semibold border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors"
+                  className={`text-center px-4 py-3 rounded-xl text-sm font-semibold border transition-colors ${isDark ? "border-violet-800 text-violet-400 hover:bg-violet-950/40" : "border-violet-200 text-violet-700 hover:bg-violet-50"}`}
                 >
                   Sign In
                 </Link>
@@ -665,8 +695,9 @@ function AIScannerAnimation() {
 }
 
 function HeroSection() {
+  const { isDark } = useTheme();
   return (
-    <section className="relative min-h-screen bg-hero-radial flex items-center pt-16 overflow-hidden">
+    <section className={`relative min-h-screen flex items-center pt-16 overflow-hidden ${isDark ? "bg-hero-radial-dark" : "bg-hero-radial"}`}>
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <Meteors number={18} />
@@ -769,8 +800,9 @@ function StatsSection() {
     { value: 50, suffix: "+", label: "Pro Templates", icon: FiLayers, color: "text-violet-500" },
   ];
 
+  const { isDark } = useTheme();
   return (
-    <section className="py-16 section-lavender border-y border-violet-100/60">
+    <section className={`py-16 border-y ${isDark ? "section-lavender-dark border-violet-900/20" : "section-lavender border-violet-100/60"}`}>
       <div className={CONTAINER}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {stats.map((s, i) => (
@@ -953,10 +985,11 @@ function DownloadMockup() {
 }
 
 function HowItWorksSection() {
+  const { isDark } = useTheme();
   const mockups = [<PasteMockup key="paste" />, <GenerateMockup key="gen" />, <DownloadMockup key="dl" />];
 
   return (
-    <section id="how-it-works" className="py-24 bg-white relative overflow-hidden">
+    <section id="how-it-works" className={`py-24 relative overflow-hidden ${isDark ? "bg-[#08090f]" : "bg-white"}`}>
       {/* Subtle background orbs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-50 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-50 rounded-full blur-[100px] pointer-events-none" />
@@ -1075,8 +1108,9 @@ function HowItWorksSection() {
 /* ─── Features ──────────────────────────────────────────────────────────── */
 
 function FeaturesSection() {
+  const { isDark } = useTheme();
   return (
-    <section id="features" className="py-24 bg-white relative overflow-hidden">
+    <section id="features" className={`py-24 relative overflow-hidden ${isDark ? "bg-[#08090f]" : "bg-white"}`}>
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-violet-50/80 rounded-full blur-[100px] pointer-events-none" />
 
       <div className={`relative ${CONTAINER}`}>
@@ -1448,8 +1482,9 @@ function TestimonialsSection() {
   const row1 = testimonials.slice(0, half);
   const row2 = testimonials.slice(half);
 
+  const { isDark } = useTheme();
   return (
-    <section className="py-24 section-lavender overflow-hidden">
+    <section className={`py-24 overflow-hidden ${isDark ? "section-lavender-dark" : "section-lavender"}`}>
       <div className={CONTAINER}>
         <div className="text-center mb-16">
           <BlurFade>
@@ -1510,10 +1545,11 @@ function TestimonialCard({ t }: { t: (typeof testimonials)[0] }) {
 /* ─── FAQ ───────────────────────────────────────────────────────────────── */
 
 function FAQSection() {
+  const { isDark } = useTheme();
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="py-24 bg-white">
+    <section id="faq" className={`py-24 ${isDark ? "bg-[#08090f]" : "bg-white"}`}>
       <div className={CONTAINER}>
         <div className="text-center mb-16">
           <BlurFade>
@@ -1780,18 +1816,23 @@ function Footer() {
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
+  const [isDark, setIsDark] = useState(false);
+  const toggle = React.useCallback(() => setIsDark((d) => !d), []);
+
   return (
-    <main className="min-h-screen">
-      <Navbar />
-      <HeroSection />
-      <StatsSection />
-      <HowItWorksSection />
-      <FeaturesSection />
-      <PricingSection />
-      <TestimonialsSection />
-      <FAQSection />
-      <CTASection />
-      <Footer />
-    </main>
+    <ThemeCtx.Provider value={{ isDark, toggle }}>
+      <main className={`min-h-screen transition-colors duration-300 ${isDark ? "lp-dark" : ""}`}>
+        <Navbar />
+        <HeroSection />
+        <StatsSection />
+        <HowItWorksSection />
+        <FeaturesSection />
+        <PricingSection />
+        <TestimonialsSection />
+        <FAQSection />
+        <CTASection />
+        <Footer />
+      </main>
+    </ThemeCtx.Provider>
   );
 }

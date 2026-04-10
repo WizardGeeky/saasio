@@ -637,7 +637,7 @@ export default function MyTransactionsPage() {
                                         { label: "#",         cls: "w-12 text-center" },
                                         { label: "Amount",    cls: "" },
                                         { label: "Status",    cls: "" },
-                                        { label: "Method",    cls: "hidden sm:table-cell" },
+                                        { label: "Method",    cls: "" },
                                         { label: "Payment ID", cls: "hidden lg:table-cell" },
                                         { label: "Order ID",  cls: "hidden xl:table-cell" },
                                         { label: "Date",      cls: "hidden md:table-cell" },
@@ -673,7 +673,7 @@ export default function MyTransactionsPage() {
                                             <StatusBadge status={t.status} />
                                         </td>
 
-                                        <td className="hidden sm:table-cell px-4 py-3.5">
+                                        <td className="px-4 py-3.5">
                                             <MethodBadge method={t.paymentMethod} />
                                         </td>
 
