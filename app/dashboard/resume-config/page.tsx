@@ -34,6 +34,73 @@ const BlobProvider = dynamic(
     { ssr: false }
 ) as any;
 
+// ── Mobile PDF canvas renderer ────────────────────────────────────────────────
+// PDF.js renders each page to a <canvas>, then we show them as <img> elements.
+// This is the only reliable approach for inline PDF preview on Android Chrome.
+
+function MobilePDFCanvas({ url }: { url: string }) {
+    const [pages, setPages] = useState<string[]>([]);
+    const [rendering, setRendering] = useState(true);
+
+    useEffect(() => {
+        if (!url) return;
+        let cancelled = false;
+
+        (async () => {
+            try {
+                // Lazy-import pdfjs-dist so it never runs on the server
+                const pdfjsLib = await import("pdfjs-dist");
+                // Use unpkg CDN for the worker — no webpack config needed
+                pdfjsLib.GlobalWorkerOptions.workerSrc =
+                    `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const scale = Math.min(window.devicePixelRatio || 1, 2);
+                const dataUrls: string[] = [];
+
+                for (let n = 1; n <= pdf.numPages; n++) {
+                    if (cancelled) return;
+                    const page = await pdf.getPage(n);
+                    const vp = page.getViewport({ scale });
+                    const canvas = document.createElement("canvas");
+                    canvas.width  = vp.width;
+                    canvas.height = vp.height;
+                    // pdfjs-dist v5: pass canvas directly (canvasContext is legacy)
+                    await page.render({ canvas, viewport: vp }).promise;
+                    dataUrls.push(canvas.toDataURL("image/png"));
+                }
+
+                if (!cancelled) { setPages(dataUrls); setRendering(false); }
+            } catch {
+                if (!cancelled) setRendering(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [url]);
+
+    if (rendering) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50">
+                <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-gray-400">Rendering preview…</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full h-full overflow-y-auto bg-gray-200 flex flex-col items-center gap-3 p-3"
+            style={{ scrollbarWidth: "thin" }}
+        >
+            {pages.map((src, i) => (
+                <img key={i} src={src} alt={`Page ${i + 1}`}
+                    className="w-full max-w-full shadow-md rounded bg-white"
+                />
+            ))}
+        </div>
+    );
+}
+
 function PDFLoader() {
     return (
         <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50">
@@ -1406,46 +1473,10 @@ export default function ResumeConfigPage() {
                         {!pdfReady || jsonError ? (
                             <PDFLoader />
                         ) : isMobile ? (
-                            /* ── Mobile: BlobProvider → open/download buttons ── */
+                            /* ── Mobile: BlobProvider → PDF.js canvas preview ── */
                             <BlobProvider document={<TemplateDoc data={resumeData} />}>
                                 {({ url, loading }: { url: string | null; loading: boolean }) =>
-                                    loading ? <PDFLoader /> : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center gap-5 p-6 bg-gray-50">
-                                            {/* Resume card icon */}
-                                            <div className="w-20 h-24 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5">
-                                                <FiFileText size={28} className="text-violet-400" />
-                                                <div className="flex flex-col gap-1 w-12">
-                                                    <div className="h-0.5 w-full bg-gray-200 rounded" />
-                                                    <div className="h-0.5 w-3/4 bg-gray-200 rounded" />
-                                                    <div className="h-0.5 w-full bg-gray-200 rounded" />
-                                                </div>
-                                            </div>
-
-                                            <div className="text-center">
-                                                <p className="text-sm font-semibold text-gray-800">{activeTpl.name}</p>
-                                                <p className="text-xs text-gray-400 mt-1">PDF ready • tap to open or download</p>
-                                            </div>
-
-                                            <div className="flex flex-col gap-3 w-full max-w-xs">
-                                                {/* Opens PDF in Android Chrome's native viewer */}
-                                                <a
-                                                    href={url ?? "#"}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-2 w-full px-5 py-3 bg-violet-600 text-white text-sm font-semibold rounded-xl shadow-sm active:bg-violet-700"
-                                                >
-                                                    <FiEye size={14} /> Open PDF
-                                                </a>
-                                                <a
-                                                    href={url ?? "#"}
-                                                    download={`${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`}
-                                                    className="flex items-center justify-center gap-2 w-full px-5 py-2.5 border border-violet-300 text-violet-600 text-sm font-medium rounded-xl active:bg-violet-50"
-                                                >
-                                                    <FiDownload size={13} /> Download PDF
-                                                </a>
-                                            </div>
-                                        </div>
-                                    )
+                                    loading || !url ? <PDFLoader /> : <MobilePDFCanvas url={url} />
                                 }
                             </BlobProvider>
                         ) : (
