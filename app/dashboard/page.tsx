@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
     AreaChart, Area, BarChart, Bar, ComposedChart, Line,
     PieChart, Pie, Cell,
@@ -13,7 +14,7 @@ import {
 import { usePrivilege } from "@/app/utils/usePrivilege";
 import { getStoredToken } from "@/app/utils/token";
 import {
-    FiLock, FiUsers, FiShield, FiKey, FiFolder,
+    FiUsers, FiShield, FiKey, FiFolder,
     FiCpu, FiMessageSquare, FiCreditCard, FiZap,
     FiPackage, FiDollarSign, FiAlertCircle, FiRefreshCw,
 } from "react-icons/fi";
@@ -128,7 +129,7 @@ function DonutChart({ title, subtitle, data }: {
     return (
         <ChartCard title={title} subtitle={subtitle}>
             <div className="h-40 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ResponsiveContainer width="100%" height={160} minWidth={0}>
                     <PieChart>
                         <Pie
                             data={data}
@@ -212,12 +213,20 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 export default function DashboardPage() {
     const { can, isLoading: privLoading } = usePrivilege();
+    const router = useRouter();
     const [period, setPeriod]   = useState<Period>("7d");
     const [data,   setData]     = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState<string | null>(null);
 
     const canView = !privLoading && can("GET", "/api/v1/private/analytics");
+
+    // Redirect non-admin users to their own analytics page
+    useEffect(() => {
+        if (!privLoading && !canView) {
+            router.replace("/dashboard/my-analytics");
+        }
+    }, [privLoading, canView, router]);
 
     const fetchData = useCallback(async () => {
         if (!canView) return;
@@ -242,22 +251,8 @@ export default function DashboardPage() {
         if (!privLoading) fetchData();
     }, [privLoading, fetchData]);
 
-    // ── Access denied ─────────────────────────────────────────────────────────
-    if (!privLoading && !canView) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[65vh] gap-4 px-4 animate-in fade-in duration-500">
-                <div className="p-5 bg-red-100 rounded-2xl">
-                    <FiLock size={36} className="text-red-500" />
-                </div>
-                <div className="text-center">
-                    <h2 className="text-xl font-bold text-gray-800">Access Denied</h2>
-                    <p className="text-gray-500 text-sm mt-1 max-w-sm">
-                        You don&apos;t have permission to view the analytics dashboard.
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    // While redirecting, render nothing
+    if (!privLoading && !canView) return null;
 
     const g = data?.global;
     const p = data?.periodStats;

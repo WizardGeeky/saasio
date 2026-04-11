@@ -35,6 +35,7 @@ interface PaymentPlan {
     price: number;
     currency: string;
     descriptions: string[];
+    maxUsage: number;
 }
 
 interface Project {
@@ -58,6 +59,8 @@ interface Subscription {
     razorpayOrderId: string;
     razorpayPaymentId: string;
     status: SubscriptionStatus;
+    usageCount: number;
+    maxUsage: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -240,6 +243,7 @@ export default function MySubscriptionPage() {
                     currency:          plan.currency,
                     razorpayOrderId:   paymentData.orderId,
                     razorpayPaymentId: paymentData.paymentId,
+                    maxUsage:          plan.maxUsage ?? 0,
                 }),
             });
             const result = await res.json();
@@ -360,7 +364,7 @@ export default function MySubscriptionPage() {
                                             </div>
 
                                             {plan.descriptions.length > 0 && (
-                                                <ul className="flex flex-col gap-2.5 mb-6 flex-1">
+                                                <ul className="flex flex-col gap-2.5 mb-3 flex-1">
                                                     {plan.descriptions.map((desc, i) => (
                                                         <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
                                                             <FiCheck size={14} className="mt-0.5 shrink-0 text-emerald-500" />
@@ -369,6 +373,19 @@ export default function MySubscriptionPage() {
                                                     ))}
                                                 </ul>
                                             )}
+
+                                            {/* Usage limit indicator */}
+                                            <div className="mb-5">
+                                                {(plan.maxUsage ?? 0) === 0 ? (
+                                                    <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                                        <FiCheckCircle size={10} /> Unlimited usage
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                                        {plan.maxUsage} uses included
+                                                    </span>
+                                                )}
+                                            </div>
 
                                             {isFree ? (
                                                 <button
@@ -515,6 +532,40 @@ export default function MySubscriptionPage() {
                                                 <Detail icon={<FiCreditCard size={13} />} label="Order ID"    value={sub.razorpayOrderId} mono />
                                                 <Detail icon={<FiCreditCard size={13} />} label="Payment ID"  value={sub.razorpayPaymentId} mono />
                                             </div>
+
+                                            {/* Usage progress bar — shown only for limited plans */}
+                                            {(sub.maxUsage ?? 0) > 0 && (
+                                                <div className="mt-4 pt-4 border-t border-slate-200">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-xs font-semibold text-slate-600">Plan Usage</span>
+                                                        <span className="text-xs font-mono text-slate-500">
+                                                            {sub.usageCount ?? 0} / {sub.maxUsage} uses
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            className={`h-2 rounded-full transition-all ${
+                                                                (sub.usageCount ?? 0) >= sub.maxUsage
+                                                                    ? "bg-red-500"
+                                                                    : (sub.usageCount ?? 0) >= sub.maxUsage * 0.8
+                                                                    ? "bg-amber-500"
+                                                                    : "bg-indigo-500"
+                                                            }`}
+                                                            style={{ width: `${Math.min(100, ((sub.usageCount ?? 0) / sub.maxUsage) * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <p className="text-xs text-slate-400 mt-1.5">
+                                                        {Math.max(0, sub.maxUsage - (sub.usageCount ?? 0))} use{Math.max(0, sub.maxUsage - (sub.usageCount ?? 0)) === 1 ? "" : "s"} remaining
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {(sub.maxUsage ?? 0) === 0 && (
+                                                <div className="mt-4 pt-4 border-t border-slate-200">
+                                                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+                                                        <FiCheckCircle size={11} /> Unlimited usage
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

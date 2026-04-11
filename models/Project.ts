@@ -7,6 +7,8 @@ export interface IPaymentPlan {
     price: number;
     currency: string;
     descriptions: string[];
+    /** Max number of feature uses included in this plan. 0 = unlimited. */
+    maxUsage: number;
 }
 
 export interface IProject {
@@ -24,6 +26,7 @@ const PaymentPlanSchema = new Schema<IPaymentPlan>(
         price:        { type: Number, required: true, min: 0 },
         currency:     { type: String, required: true, trim: true, default: "INR" },
         descriptions: [{ type: String, trim: true }],
+        maxUsage:     { type: Number, default: 0, min: 0 },
     },
     { _id: false }
 );

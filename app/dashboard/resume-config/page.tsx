@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Document,
     Page,
@@ -12,22 +12,14 @@ import {
 } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
 import {
-    FiFileText, FiCode, FiEye, FiCheckCircle, FiAlertCircle, FiDownload, FiLayers,
+    FiFileText, FiCode, FiEye, FiCheckCircle, FiAlertCircle, FiDownload, FiLayers, FiLock,
 } from "react-icons/fi";
+import { getStoredToken } from "@/app/utils/token";
+import { useToast } from "@/components/ui/toast";
 
 // ── Lazy PDF components ───────────────────────────────────────────────────────
 
-const PDFViewer = dynamic(
-    () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
-    { ssr: false, loading: () => <PDFLoader /> }
-);
-
-const PDFDownloadLink = dynamic(
-    () => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink),
-    { ssr: false }
-);
-
-/* BlobProvider — used for the mobile PDF experience (no iframe needed) */
+/* BlobProvider — used for PDF preview + download on both desktop and mobile */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BlobProvider = dynamic(
     () => import("@react-pdf/renderer").then((m) => ({ default: m.BlobProvider as any })),
@@ -945,12 +937,14 @@ interface TemplateInfo {
     bg:          string;
     component:   React.ComponentType<{ data: any }>;
     thumb:       React.ReactNode;
+    /** Premium templates require an active subscription to download. */
+    premium:     boolean;
 }
 
 const TEMPLATES: TemplateInfo[] = [
     {
         id: "classic", name: "Classic", description: "Serif, centered — timeless ATS pick",
-        accent: "#1e293b", bg: "#f8fafc", component: T1,
+        accent: "#1e293b", bg: "#f8fafc", component: T1, premium: true,
         thumb: (
             <div className="w-full h-full bg-white flex flex-col items-center pt-2 px-2 gap-1">
                 <div className="h-2 w-20 bg-gray-800 rounded-sm" />
@@ -970,7 +964,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "modern", name: "Modern Teal", description: "Sans-serif, teal accents, clean",
-        accent: "#0d9488", bg: "#f0fdfa", component: T2,
+        accent: "#0d9488", bg: "#f0fdfa", component: T2, premium: true,
         thumb: (
             <div className="w-full h-full bg-white flex flex-col">
                 <div className="h-1.5 w-full bg-teal-500" />
@@ -989,7 +983,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "professional", name: "Professional", description: "Dark header band, structured",
-        accent: "#1e3a5f", bg: "#eff6ff", component: T3,
+        accent: "#1e3a5f", bg: "#eff6ff", component: T3, premium: true,
         thumb: (
             <div className="w-full h-full bg-white flex flex-col">
                 <div className="bg-blue-900 px-2 py-2 flex flex-col gap-0.5">
@@ -1007,7 +1001,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "minimal", name: "Minimal", description: "Ultra-clean, generous whitespace",
-        accent: "#6b7280", bg: "#f9fafb", component: T4,
+        accent: "#6b7280", bg: "#f9fafb", component: T4, premium: true,
         thumb: (
             <div className="w-full h-full bg-white flex flex-col px-3 pt-3 gap-1">
                 <div className="h-3 w-24 bg-gray-900 rounded-sm" />
@@ -1022,7 +1016,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "executive", name: "Executive", description: "Bold serif, warm tones, premium",
-        accent: "#b45309", bg: "#fef3c7", component: T5,
+        accent: "#b45309", bg: "#fef3c7", component: T5, premium: true,
         thumb: (
             <div className="w-full h-full bg-stone-50 flex flex-col items-center pt-2 px-2 gap-0.5">
                 <div className="h-2.5 w-24 bg-stone-800 rounded-sm" />
@@ -1042,7 +1036,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "tech", name: "Tech / ATS", description: "Violet accent bar, ATS-optimised",
-        accent: "#7c3aed", bg: "#f5f3ff", component: T6,
+        accent: "#7c3aed", bg: "#f5f3ff", component: T6, premium: true,
         thumb: (
             <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
                 <div className="flex items-center gap-1">
@@ -1062,7 +1056,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "sidebar-teal", name: "Sidebar Teal", description: "2-col teal sidebar, ATS-safe",
-        accent: "#0f766e", bg: "#f0fdf4", component: T7,
+        accent: "#0f766e", bg: "#f0fdf4", component: T7, premium: true,
         thumb: (
             <div className="w-full h-full flex">
                 <div className="w-[35%] bg-teal-700 px-1.5 py-2 flex flex-col gap-0.5">
@@ -1090,7 +1084,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "sidebar-navy", name: "Sidebar Navy", description: "2-col dark sidebar, indigo accents",
-        accent: "#4f46e5", bg: "#eef2ff", component: T8,
+        accent: "#4f46e5", bg: "#eef2ff", component: T8, premium: true,
         thumb: (
             <div className="w-full h-full flex">
                 <div className="w-[32%] bg-slate-800 px-1.5 py-2 flex flex-col gap-0.5">
@@ -1118,7 +1112,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "emerald", name: "Emerald Clean", description: "Deep green accent, bold header bar",
-        accent: "#059669", bg: "#ecfdf5", component: T9,
+        accent: "#059669", bg: "#ecfdf5", component: T9, premium: true,
         thumb: (
             <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
                 <div className="h-2.5 w-24 bg-emerald-900 rounded-sm" />
@@ -1136,7 +1130,7 @@ const TEMPLATES: TemplateInfo[] = [
     },
     {
         id: "ats", name: "Pure ATS", description: "B&W, max density, ATS-optimised",
-        accent: "#111827", bg: "#f9fafb", component: T10,
+        accent: "#111827", bg: "#f9fafb", component: T10, premium: true,
         thumb: (
             <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
                 <div className="h-2 w-20 bg-black rounded-sm" />
@@ -1242,6 +1236,8 @@ const INITIAL_DATA = {
 type ActiveTab = "templates" | "editor" | "preview";
 
 export default function ResumeConfigPage() {
+    const { error: toastError } = useToast();
+
     const [resumeData,  setResumeData]  = useState(INITIAL_DATA);
     const [jsonInput,   setJsonInput]   = useState(() => JSON.stringify(INITIAL_DATA, null, 2));
     const [jsonError,   setJsonError]   = useState<string | null>(null);
@@ -1249,6 +1245,13 @@ export default function ResumeConfigPage() {
     const [mobileTab,   setMobileTab]   = useState<ActiveTab>("templates");
     const [pdfReady,    setPdfReady]    = useState(false);
     const [isMobile,    setIsMobile]    = useState(false);
+    const [downloading, setDownloading] = useState(false);
+    const [subStatus,   setSubStatus]   = useState<{
+        hasActive: boolean;
+        hasUsage:  boolean;
+        remaining: number | null;
+        loaded:    boolean;
+    }>({ hasActive: false, hasUsage: false, remaining: null, loaded: false });
 
     useEffect(() => {
         const t = setTimeout(() => setPdfReady(true), 300);
@@ -1262,6 +1265,56 @@ export default function ResumeConfigPage() {
         return () => window.removeEventListener("resize", fn);
     }, []);
 
+    // Fetch active subscription status once on mount
+    useEffect(() => {
+        const token = getStoredToken();
+        fetch("/api/v1/private/subscriptions/active", {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((r) => r.json())
+            .then((d) => {
+                if (d.success && d.data) {
+                    setSubStatus({ hasActive: true, hasUsage: d.data.hasUsage, remaining: d.data.remaining, loaded: true });
+                } else {
+                    setSubStatus({ hasActive: false, hasUsage: false, remaining: null, loaded: true });
+                }
+            })
+            .catch(() => setSubStatus({ hasActive: false, hasUsage: false, remaining: null, loaded: true }));
+    }, []);
+
+    // Consume one use from the active subscription, then trigger download via the provided blob URL
+    const handlePremiumDownload = useCallback(async (url: string | null) => {
+        if (!url || downloading) return;
+        setDownloading(true);
+        try {
+            const token = getStoredToken();
+            const res  = await fetch("/api/v1/private/subscriptions/use", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!data.success) {
+                toastError(data.message || "Subscription required to download this template.");
+                setDownloading(false);
+                return;
+            }
+            setSubStatus((prev) => ({
+                ...prev,
+                remaining: data.data.remaining,
+                hasUsage:  data.data.remaining === null || data.data.remaining > 0,
+            }));
+            const fileName = `${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`;
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            a.click();
+        } catch {
+            toastError("Download failed. Please try again.");
+        }
+        setDownloading(false);
+    }, [downloading, resumeData, templateId, toastError]);
+
+    // Free template download — no subscription needed
     const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
         setJsonInput(val);
@@ -1286,6 +1339,32 @@ export default function ResumeConfigPage() {
 
     return (
         <div className="flex flex-col gap-3">
+
+            {/* ── Subscription status banner ───────────────────────────── */}
+            {subStatus.loaded && (
+                subStatus.hasActive && subStatus.hasUsage ? (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700">
+                        <FiCheckCircle size={12} className="shrink-0" />
+                        <span>
+                            {subStatus.remaining === null
+                                ? "Active subscription — unlimited premium downloads"
+                                : `Active subscription — ${subStatus.remaining} premium download${subStatus.remaining === 1 ? "" : "s"} remaining`}
+                        </span>
+                    </div>
+                ) : subStatus.hasActive && !subStatus.hasUsage ? (
+                    <div className="flex items-center gap-3 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs">
+                        <FiAlertCircle size={12} className="text-red-600 shrink-0" />
+                        <span className="text-red-700">Usage limit reached. Premium downloads are locked.</span>
+                        <a href="/dashboard/my-subscription" className="ml-auto font-semibold text-indigo-600 hover:underline whitespace-nowrap">Re-subscribe →</a>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs">
+                        <FiLock size={12} className="text-amber-600 shrink-0" />
+                        <span className="text-amber-700">All resume templates require an active subscription to download.</span>
+                        <a href="/dashboard/my-subscription" className="ml-auto font-semibold text-indigo-600 hover:underline whitespace-nowrap">Subscribe →</a>
+                    </div>
+                )
+            )}
 
             {/* ── Page header ──────────────────────────────────────────── */}
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1313,17 +1392,30 @@ export default function ResumeConfigPage() {
                     </span>
 
                     {pdfReady && !jsonError && (
-                        <PDFDownloadLink
-                            document={<TemplateDoc data={resumeData} />}
-                            fileName={`${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-full transition-colors shadow-sm shadow-violet-500/20"
-                        >
-                            {({ loading }) =>
-                                loading
-                                    ? <><div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" /> Preparing…</>
-                                    : <><FiDownload size={11} /> Download PDF</>
-                            }
-                        </PDFDownloadLink>
+                        subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage) ? (
+                            /* No active subscription — prompt to subscribe */
+                            <a
+                                href="/dashboard/my-subscription"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-full transition-colors"
+                            >
+                                <FiLock size={11} /> Subscribe to Download
+                            </a>
+                        ) : (
+                            /* Active subscription — use BlobProvider to consume usage */
+                            <BlobProvider document={<TemplateDoc data={resumeData} />}>
+                                {({ url, loading }: { url: string | null; loading: boolean }) => (
+                                    <button
+                                        disabled={loading || downloading}
+                                        onClick={() => handlePremiumDownload(url)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-full transition-colors shadow-sm shadow-violet-500/20 disabled:opacity-50"
+                                    >
+                                        {(loading || downloading)
+                                            ? <><div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" /> Preparing…</>
+                                            : <><FiDownload size={11} /> Download PDF</>}
+                                    </button>
+                                )}
+                            </BlobProvider>
+                        )
                     )}
                 </div>
             </div>
@@ -1353,7 +1445,8 @@ export default function ResumeConfigPage() {
 
                     <div className="flex flex-col gap-2 p-2 pb-4">
                         {TEMPLATES.map((tpl) => {
-                            const active = tpl.id === templateId;
+                            const active   = tpl.id === templateId;
+                            const isLocked = tpl.premium && subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage);
                             return (
                                 <button
                                     key={tpl.id}
@@ -1367,7 +1460,7 @@ export default function ResumeConfigPage() {
                                     {/* Thumbnail */}
                                     <div className="h-24 relative overflow-hidden">
                                         {tpl.thumb}
-                                        {active && (
+                                        {active && !isLocked && (
                                             <div className="absolute inset-0 flex items-center justify-center"
                                                 style={{ background: `${tpl.accent}15` }}
                                             >
@@ -1378,12 +1471,21 @@ export default function ResumeConfigPage() {
                                                 </span>
                                             </div>
                                         )}
+                                        {isLocked && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 backdrop-blur-[1px]">
+                                                <FiLock size={14} className="text-white mb-0.5" />
+                                                <span className="text-white text-xs font-bold">Premium</span>
+                                            </div>
+                                        )}
                                     </div>
                                     {/* Label */}
                                     <div className="px-2.5 py-2 bg-white border-t border-gray-100">
                                         <div className="flex items-center gap-1.5 mb-0.5">
                                             <div className="w-2 h-2 rounded-full shrink-0" style={{ background: tpl.accent }} />
                                             <p className="text-xs font-semibold text-gray-800">{tpl.name}</p>
+                                            {tpl.premium && (
+                                                <span className="ml-auto text-xs font-bold text-amber-600">PRO</span>
+                                            )}
                                         </div>
                                         <p className="text-xs text-gray-400 leading-tight">{tpl.description}</p>
                                     </div>
@@ -1485,13 +1587,24 @@ export default function ResumeConfigPage() {
 
                                             {/* Download bar */}
                                             <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-3">
-                                                <a
-                                                    href={url}
-                                                    download={`${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`}
-                                                    className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-violet-500/20"
-                                                >
-                                                    <FiDownload size={14} /> Download PDF
-                                                </a>
+                                                {subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage) ? (
+                                                    <a
+                                                        href="/dashboard/my-subscription"
+                                                        className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors"
+                                                    >
+                                                        <FiLock size={14} /> Subscribe to Download
+                                                    </a>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handlePremiumDownload(url)}
+                                                        disabled={downloading}
+                                                        className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-violet-500/20 disabled:opacity-50"
+                                                    >
+                                                        {downloading
+                                                            ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Preparing…</>
+                                                            : <><FiDownload size={14} /> Download PDF</>}
+                                                    </button>
+                                                )}
                                                 <a
                                                     href={url}
                                                     target="_blank"
@@ -1506,10 +1619,45 @@ export default function ResumeConfigPage() {
                                 }
                             </BlobProvider>
                         ) : (
-                            /* ── Desktop: inline iframe viewer ── */
-                            <PDFViewer className="w-full h-full" style={{ border: "none" }}>
-                                <TemplateDoc data={resumeData} />
-                            </PDFViewer>
+                            /* ── Desktop: BlobProvider → iframe (toolbar hidden) + download bar ── */
+                            <BlobProvider document={<TemplateDoc data={resumeData} />}>
+                                {({ url, loading }: { url: string | null; loading: boolean }) =>
+                                    loading || !url ? <PDFLoader /> : (
+                                        <div className="flex flex-col w-full h-full">
+                                            {/* PDF iframe — #toolbar=0 hides browser download button */}
+                                            <div className="flex-1 min-h-0">
+                                                <iframe
+                                                    src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
+                                                    className="w-full h-full"
+                                                    style={{ border: "none" }}
+                                                />
+                                            </div>
+
+                                            {/* Download bar */}
+                                            <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-3">
+                                                {subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage) ? (
+                                                    <a
+                                                        href="/dashboard/my-subscription"
+                                                        className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors"
+                                                    >
+                                                        <FiLock size={14} /> Subscribe to Download
+                                                    </a>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handlePremiumDownload(url)}
+                                                        disabled={downloading}
+                                                        className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-violet-500/20 disabled:opacity-50"
+                                                    >
+                                                        {downloading
+                                                            ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Preparing…</>
+                                                            : <><FiDownload size={14} /> Download PDF</>}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                }
+                            </BlobProvider>
                         )}
                     </div>
                 </div>

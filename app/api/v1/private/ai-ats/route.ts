@@ -5,6 +5,7 @@ import { withAuth } from "@/app/utils/withAuth";
 import { decrypt, encrypt } from "@/app/configs/crypto.config";
 import { AiModel } from "@/models/AiModel";
 import { AtsRecord } from "@/models/AtsRecord";
+import Subscription from "@/models/Subscription";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 
 // ─── GET — fetch history for the current user ─────────────────────────────────
@@ -37,6 +38,29 @@ export const POST = withAuth(async (
 ): Promise<NextResponse> => {
     try {
         await connectDB();
+
+        // ── Subscription gate: user must have an active subscription with remaining usage ──
+        const activeSub = await Subscription.findOne({
+            userEmail: user.email,
+            status: "ACTIVE",
+        }).sort({ createdAt: -1 });
+
+        if (!activeSub) {
+            return NextResponse.json(
+                { message: "No active subscription. Please subscribe to use AI ATS." },
+                { status: 403 }
+            );
+        }
+
+        const subUsageCount = (activeSub as any).usageCount ?? 0;
+        const subMaxUsage   = (activeSub as any).maxUsage   ?? 0;
+
+        if (subMaxUsage > 0 && subUsageCount >= subMaxUsage) {
+            return NextResponse.json(
+                { message: "Usage limit reached. Please re-subscribe to continue using AI ATS." },
+                { status: 403 }
+            );
+        }
 
         const body = await req.json();
         const { modelId, jobRoleName, jobDescription, resumeBase64, fileName } = body;
@@ -96,6 +120,14 @@ export const POST = withAuth(async (
         });
 
         const populated = await record.populate("modelId", "displayName provider modelName");
+
+        // ── Increment subscription usage after successful analysis ──
+        const newUsage = subUsageCount + 1;
+        activeSub.usageCount = newUsage;
+        await activeSub.save();
+        if (subMaxUsage > 0 && newUsage >= subMaxUsage) {
+            await Subscription.updateOne({ _id: activeSub._id }, { status: "EXPIRED" });
+        }
 
         return NextResponse.json({ message: "Analysis complete", record: populated }, { status: 201 });
     } catch (error: any) {

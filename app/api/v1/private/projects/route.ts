@@ -61,6 +61,7 @@ export const POST = withAuth(async (
             price:        Number(p.price) || 0,
             currency:     p.currency?.trim() || "INR",
             descriptions: Array.isArray(p.descriptions) ? p.descriptions.filter(Boolean) : [],
+            maxUsage:     Number(p.maxUsage) || 0,
         }));
 
         const project = await Project.create({
@@ -107,6 +108,7 @@ export const PUT = withAuth(async (
                 price:        Number(p.price) || 0,
                 currency:     p.currency?.trim() || "INR",
                 descriptions: Array.isArray(p.descriptions) ? p.descriptions.filter(Boolean) : [],
+                maxUsage:     Number(p.maxUsage) || 0,
             }));
         }
 

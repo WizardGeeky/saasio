@@ -14,6 +14,10 @@ export interface ISubscription extends Document {
     razorpayOrderId: string;
     razorpayPaymentId: string;
     status: SubscriptionStatus;
+    /** How many times the user has used this subscription (ATS analyses + resume downloads). */
+    usageCount: number;
+    /** Max uses allowed. 0 = unlimited. Copied from the plan at subscription time. */
+    maxUsage: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -71,6 +75,8 @@ const SubscriptionSchema: Schema<ISubscription> = new Schema(
             enum: ["ACTIVE", "CANCELLED", "EXPIRED"],
             default: "ACTIVE",
         },
+        usageCount: { type: Number, default: 0, min: 0 },
+        maxUsage:   { type: Number, default: 0, min: 0 },
     },
     { timestamps: true }
 );

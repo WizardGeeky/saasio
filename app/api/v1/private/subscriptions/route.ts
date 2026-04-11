@@ -35,6 +35,7 @@ export const POST = withAuth(
                 currency = "INR",
                 razorpayOrderId,
                 razorpayPaymentId,
+                maxUsage = 0,
             } = body;
 
             if (!projectId || !projectName || !planName || planPrice == null || !razorpayOrderId || !razorpayPaymentId) {
@@ -65,6 +66,8 @@ export const POST = withAuth(
                 razorpayOrderId,
                 razorpayPaymentId,
                 status: "ACTIVE",
+                usageCount: 0,
+                maxUsage: Number(maxUsage) || 0,
             });
 
             // Send confirmation email (non-blocking — don't fail the request if email fails)
