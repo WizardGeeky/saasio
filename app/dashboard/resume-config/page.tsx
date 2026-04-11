@@ -27,6 +27,13 @@ const PDFDownloadLink = dynamic(
     { ssr: false }
 );
 
+/* BlobProvider — used for the mobile PDF experience (no iframe needed) */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const BlobProvider = dynamic(
+    () => import("@react-pdf/renderer").then((m) => ({ default: m.BlobProvider as any })),
+    { ssr: false }
+) as any;
+
 function PDFLoader() {
     return (
         <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50">
@@ -1174,10 +1181,18 @@ export default function ResumeConfigPage() {
     const [templateId,  setTemplateId]  = useState<TemplateId>("classic");
     const [mobileTab,   setMobileTab]   = useState<ActiveTab>("templates");
     const [pdfReady,    setPdfReady]    = useState(false);
+    const [isMobile,    setIsMobile]    = useState(false);
 
     useEffect(() => {
         const t = setTimeout(() => setPdfReady(true), 300);
         return () => clearTimeout(t);
+    }, []);
+
+    useEffect(() => {
+        const fn = () => setIsMobile(window.innerWidth < 1024);
+        fn();
+        window.addEventListener("resize", fn);
+        return () => window.removeEventListener("resize", fn);
     }, []);
 
     const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -1388,12 +1403,56 @@ export default function ResumeConfigPage() {
                     </div>
 
                     <div className="flex-1 overflow-hidden">
-                        {pdfReady ? (
+                        {!pdfReady || jsonError ? (
+                            <PDFLoader />
+                        ) : isMobile ? (
+                            /* ── Mobile: BlobProvider → open/download buttons ── */
+                            <BlobProvider document={<TemplateDoc data={resumeData} />}>
+                                {({ url, loading }: { url: string | null; loading: boolean }) =>
+                                    loading ? <PDFLoader /> : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center gap-5 p-6 bg-gray-50">
+                                            {/* Resume card icon */}
+                                            <div className="w-20 h-24 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5">
+                                                <FiFileText size={28} className="text-violet-400" />
+                                                <div className="flex flex-col gap-1 w-12">
+                                                    <div className="h-0.5 w-full bg-gray-200 rounded" />
+                                                    <div className="h-0.5 w-3/4 bg-gray-200 rounded" />
+                                                    <div className="h-0.5 w-full bg-gray-200 rounded" />
+                                                </div>
+                                            </div>
+
+                                            <div className="text-center">
+                                                <p className="text-sm font-semibold text-gray-800">{activeTpl.name}</p>
+                                                <p className="text-xs text-gray-400 mt-1">PDF ready • tap to open or download</p>
+                                            </div>
+
+                                            <div className="flex flex-col gap-3 w-full max-w-xs">
+                                                {/* Opens PDF in Android Chrome's native viewer */}
+                                                <a
+                                                    href={url ?? "#"}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-center gap-2 w-full px-5 py-3 bg-violet-600 text-white text-sm font-semibold rounded-xl shadow-sm active:bg-violet-700"
+                                                >
+                                                    <FiEye size={14} /> Open PDF
+                                                </a>
+                                                <a
+                                                    href={url ?? "#"}
+                                                    download={`${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`}
+                                                    className="flex items-center justify-center gap-2 w-full px-5 py-2.5 border border-violet-300 text-violet-600 text-sm font-medium rounded-xl active:bg-violet-50"
+                                                >
+                                                    <FiDownload size={13} /> Download PDF
+                                                </a>
+                                            </div>
+                                        </div>
+                                    )
+                                }
+                            </BlobProvider>
+                        ) : (
+                            /* ── Desktop: inline iframe viewer ── */
                             <PDFViewer className="w-full h-full" style={{ border: "none" }}>
                                 <TemplateDoc data={resumeData} />
                             </PDFViewer>
-                        ) : (
-                            <PDFLoader />
                         )}
                     </div>
                 </div>
