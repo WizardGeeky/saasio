@@ -62,6 +62,21 @@ export const POST = withAuth(
                 );
             }
 
+            // Ownership check — ensure the order belongs to the requesting user
+            const existingOrder = await PaymentOrder.findOne({ razorpayOrderId }).lean();
+            if (!existingOrder) {
+                return NextResponse.json(
+                    { success: false, message: "Payment order record not found" },
+                    { status: 404 }
+                );
+            }
+            if ((existingOrder as any).userId !== user.sub) {
+                return NextResponse.json(
+                    { success: false, message: "Access denied. This payment order does not belong to you." },
+                    { status: 403 }
+                );
+            }
+
             // Signature valid — update record to SUCCESS
             const order = await PaymentOrder.findOneAndUpdate(
                 { razorpayOrderId },

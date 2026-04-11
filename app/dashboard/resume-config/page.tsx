@@ -1473,10 +1473,36 @@ export default function ResumeConfigPage() {
                         {!pdfReady || jsonError ? (
                             <PDFLoader />
                         ) : isMobile ? (
-                            /* ── Mobile: BlobProvider → PDF.js canvas preview ── */
+                            /* ── Mobile: BlobProvider → PDF.js canvas preview + download bar ── */
                             <BlobProvider document={<TemplateDoc data={resumeData} />}>
                                 {({ url, loading }: { url: string | null; loading: boolean }) =>
-                                    loading || !url ? <PDFLoader /> : <MobilePDFCanvas url={url} />
+                                    loading || !url ? <PDFLoader /> : (
+                                        <div className="flex flex-col w-full h-full">
+                                            {/* Scrollable page canvas */}
+                                            <div className="flex-1 min-h-0">
+                                                <MobilePDFCanvas url={url} />
+                                            </div>
+
+                                            {/* Download bar */}
+                                            <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-3">
+                                                <a
+                                                    href={url}
+                                                    download={`${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`}
+                                                    className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-violet-500/20"
+                                                >
+                                                    <FiDownload size={14} /> Download PDF
+                                                </a>
+                                                <a
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                                >
+                                                    <FiEye size={14} />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    )
                                 }
                             </BlobProvider>
                         ) : (

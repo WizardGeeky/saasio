@@ -3,7 +3,7 @@ import { connectDB } from "@/app/configs/database.config";
 import { decrypt } from "@/app/configs/crypto.config";
 import RazorpayConfig from "@/models/Rozarpay";
 import PaymentOrder from "@/models/PaymentOrder";
-import { withAuth } from "@/app/utils/withAuth";
+import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 
 /**
@@ -37,6 +37,15 @@ export const GET = withAuth(
                 return NextResponse.json(
                     { success: false, message: "Payment record not found" },
                     { status: 404 }
+                );
+            }
+
+            // Ownership check: user must own this payment OR have admin rozarpay privilege
+            if ((dbOrder as any).userId !== _user.sub) {
+                const deny = await checkPrivilege(_user, "GET", "/api/v1/private/rozarpay");
+                if (deny) return NextResponse.json(
+                    { success: false, message: "Access denied. This payment does not belong to you." },
+                    { status: 403 }
                 );
             }
 

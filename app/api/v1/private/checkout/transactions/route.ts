@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import PaymentOrder from "@/models/PaymentOrder";
-import { withAuth } from "@/app/utils/withAuth";
+import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 
 /**
@@ -14,8 +14,12 @@ import { CustomJwtPayload } from "@/app/configs/jwt.config";
  *   status  (SUCCESS | PENDING | FAILED | ALL)
  *   sort    (date_desc | date_asc | amount_desc | amount_asc)
  */
+// Requires: GET /api/v1/private/rozarpay privilege (admin payment management).
 export const GET = withAuth(
     async (req: NextRequest, _ctx: { params: any }, _user: CustomJwtPayload): Promise<NextResponse> => {
+        const deny = await checkPrivilege(_user, "GET", "/api/v1/private/rozarpay");
+        if (deny) return deny;
+
         try {
             await connectDB();
 

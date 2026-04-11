@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
-import { withAuth } from "@/app/utils/withAuth";
+import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { decrypt } from "@/app/configs/crypto.config";
 import { AtsRecord } from "@/models/AtsRecord";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 
 // ─── GET — all ATS records with stats (admin/history view) ───────────────────
+// Requires: GET /api/v1/private/ats-history privilege.
 
 export const GET = withAuth(async (
     req: NextRequest,
     _ctx: { params: any },
     _user: CustomJwtPayload
 ): Promise<NextResponse> => {
+    const deny = await checkPrivilege(_user, "GET", "/api/v1/private/ats-history");
+    if (deny) return deny;
+
     try {
         await connectDB();
 

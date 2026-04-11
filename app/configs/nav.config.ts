@@ -99,7 +99,7 @@ export const NAV_CONFIG: NavConfig[] = [
         href: "/dashboard/ats-history",
         icon: FiClock,
         privileges: [
-            { method: "GET", apiPath: "/api/v1/private/ai-ats" },
+            { method: "GET", apiPath: "/api/v1/private/ats-history" },
         ],
     },
     {
@@ -113,8 +113,7 @@ export const NAV_CONFIG: NavConfig[] = [
         href: "/dashboard/subscriptions",
         icon: FiPackage,
         privileges: [
-            { method: "POST", apiPath: "/api/v1/private/subscriptions" },
-            { method: "GET",  apiPath: "/api/v1/private/subscriptions/my" },
+            { method: "GET", apiPath: "/api/v1/private/subscriptions" },
         ],
     },
     {

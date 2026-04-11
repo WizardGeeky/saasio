@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
-import { withAuth } from "@/app/utils/withAuth";
+import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import Subscription from "@/models/Subscription";
 import { sendSubscriptionConfirmationEmail } from "@/app/notifications/subscription.notification";
@@ -96,10 +96,14 @@ export const POST = withAuth(
  * GET /api/v1/private/subscriptions
  *
  * Admin view — all subscriptions with optional filters.
+ * Requires: GET /api/v1/private/subscriptions privilege.
  * Query params: page, limit, status, search (email/project)
  */
 export const GET = withAuth(
     async (req: NextRequest, _ctx: { params: any }, _user: CustomJwtPayload): Promise<NextResponse> => {
+        const deny = await checkPrivilege(_user, "GET", "/api/v1/private/subscriptions");
+        if (deny) return deny;
+
         try {
             await connectDB();
 

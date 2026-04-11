@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import Complaint from "@/models/Complaint";
-import { withAuth } from "@/app/utils/withAuth";
+import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 
 /**
  * GET /api/v1/private/complaints
- * (Admin list of all complaints)
+ * Admin list of all complaints.
+ * Requires: GET /api/v1/private/complaints privilege.
  */
 export const GET = withAuth(
     async (req: NextRequest, _ctx: { params: any }, _user: CustomJwtPayload): Promise<NextResponse> => {
+        const deny = await checkPrivilege(_user, "GET", "/api/v1/private/complaints");
+        if (deny) return deny;
+
         try {
             await connectDB();
 
