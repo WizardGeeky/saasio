@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
@@ -11,8 +12,18 @@ import { Project } from "@/models/Project";
 import PaymentOrder from "@/models/PaymentOrder";
 import Subscription from "@/models/Subscription";
 import Complaint from "@/models/Complaint";
+import ResumeDownload from "@/models/ResumeDownload";
+import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
+import { RESUME_TEMPLATE_CATALOG } from "@/app/dashboard/resume-config/template-catalog";
 
 export type Period = "today" | "7d" | "30d" | "6m" | "all";
+
+const DEFAULT_MOST_USED_RESUME_TEMPLATE = {
+    templateId: RESUME_TEMPLATE_CATALOG[0]?.id ?? "classic",
+    templateName: RESUME_TEMPLATE_CATALOG[0]?.name ?? "Classic",
+    memberCount: 0,
+    downloadCount: 0,
+};
 
 // ─── Period helpers ───────────────────────────────────────────────────────────
 
@@ -96,6 +107,8 @@ function fillSeries<T extends Record<string, any>>(
 export const GET = withAuth(
     async (req: NextRequest, _ctx: { params: any }, _user: CustomJwtPayload): Promise<NextResponse> => {
         try {
+            void _ctx;
+            void _user;
             await connectDB();
 
             const url    = new URL(req.url);
@@ -117,6 +130,8 @@ export const GET = withAuth(
                 txStats,
                 subStats,
                 atsStats,
+                topResumeTemplates,
+                activeSubscriptions,
             ] = await Promise.all([
                 User.aggregate([{ $group: { _id: "$accountStatus", count: { $sum: 1 } } }]),
                 Role.countDocuments(),
@@ -133,7 +148,50 @@ export const GET = withAuth(
                 AtsRecord.aggregate([
                     { $group: { _id: null, total: { $sum: 1 }, avgScore: { $avg: "$analysis.score" } } }
                 ]),
+                ResumeDownload.aggregate([
+                    {
+                        $group: {
+                            _id: {
+                                templateId: "$templateId",
+                                templateName: "$templateName",
+                            },
+                            downloadCount: { $sum: 1 },
+                            userIds: { $addToSet: "$userId" },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 1,
+                            downloadCount: 1,
+                            memberCount: { $size: "$userIds" },
+                        },
+                    },
+                    { $sort: { memberCount: -1, downloadCount: -1, "_id.templateName": 1 } },
+                    { $limit: RESUME_TEMPLATE_CATALOG.length },
+                ]),
+                Subscription.find({ status: "ACTIVE" }).lean(),
             ]);
+
+            const activeSubscriptionQuotas = await Promise.all(
+                (activeSubscriptions as any[]).map(async (sub) => ({
+                    sub,
+                    quota: await resolveSubscriptionQuota(sub),
+                }))
+            );
+
+            let availableResumes = 0;
+            let unlimitedResumePlans = 0;
+
+            for (const { quota } of activeSubscriptionQuotas) {
+                if (quota.maxUsage === 0) {
+                    unlimitedResumePlans += 1;
+                    continue;
+                }
+
+                if (quota.hasUsage) {
+                    availableResumes += quota.remaining ?? 0;
+                }
+            }
 
             // Flatten user stats
             const userMap = Object.fromEntries(userStats.map((u: any) => [u._id, u.count]));
@@ -161,6 +219,40 @@ export const GET = withAuth(
 
             // AiModel active/total
             const aiMap = Object.fromEntries(aiModelStats.map((a: any) => [String(a._id), a.count]));
+            const resumeUsageMap = new Map(
+                (topResumeTemplates as any[]).map((template) => [
+                    template._id?.templateId || "",
+                    {
+                        memberCount: template.memberCount ?? 0,
+                        downloadCount: template.downloadCount ?? 0,
+                    },
+                ])
+            );
+            const resumeTemplateUsage = RESUME_TEMPLATE_CATALOG.map((template) => {
+                const usage = resumeUsageMap.get(template.id);
+
+                return {
+                    templateId: template.id,
+                    templateName: template.name,
+                    memberCount: usage?.memberCount ?? 0,
+                    downloadCount: usage?.downloadCount ?? 0,
+                };
+            });
+            const mostUsedTemplate = resumeTemplateUsage.reduce((best, current) => {
+                if (!best) {
+                    return current;
+                }
+
+                if (current.memberCount > best.memberCount) {
+                    return current;
+                }
+
+                if (current.memberCount === best.memberCount && current.downloadCount > best.downloadCount) {
+                    return current;
+                }
+
+                return best;
+            }, null as (typeof resumeTemplateUsage)[number] | null) ?? DEFAULT_MOST_USED_RESUME_TEMPLATE;
 
             const global = {
                 users: {
@@ -205,6 +297,12 @@ export const GET = withAuth(
                 atsRecords: {
                     total:    atsStats[0]?.total    ?? 0,
                     avgScore: Math.round(atsStats[0]?.avgScore ?? 0),
+                },
+                resumes: {
+                    available: availableResumes,
+                    unlimitedPlans: unlimitedResumePlans,
+                    topTemplates: resumeTemplateUsage,
+                    mostUsedTemplate,
                 },
             };
 

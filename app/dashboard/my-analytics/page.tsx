@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
-    AreaChart, Area, BarChart, Bar, ComposedChart, Line,
+    BarChart, Bar, ComposedChart, Line,
     PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, ResponsiveContainer,
-    RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from "recharts";
 import {
     ChartContainer, ChartTooltip, ChartTooltipContent,
@@ -14,13 +13,84 @@ import {
 import { getStoredToken } from "@/app/utils/token";
 import {
     FiZap, FiPackage, FiMessageSquare, FiRefreshCw,
-    FiAlertCircle, FiUser, FiCalendar, FiShield, FiTrendingUp,
+    FiAlertCircle, FiUser, FiCalendar, FiShield,
     FiTarget, FiCheckCircle,
 } from "react-icons/fi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Period = "today" | "7d" | "30d" | "6m" | "all";
+
+type RecentResume = {
+    _id: string;
+    templateId: string;
+    templateName: string;
+    fileName: string;
+    resumeName: string;
+    resumeTitle: string;
+    source: string;
+    createdAt: string;
+};
+
+type AnalyticsData = {
+    global: {
+        profile: {
+            name: string;
+            email: string;
+            role: string;
+            status: string;
+            memberSince: string | null;
+        };
+        ats: {
+            total: number;
+            avgScore: number;
+        };
+        sectionScores: {
+            skills: number;
+            experience: number;
+            projects: number;
+            education: number;
+        };
+        topJobRoles: Array<{ role: string; count: number }>;
+        subscriptions: {
+            total: number;
+            active: number;
+            cancelled: number;
+            expired: number;
+        };
+        resumes: {
+            total: number;
+            available: number | null;
+            hasUnlimited: boolean;
+            activePlans: number;
+            mostUsedTemplate: {
+                templateId: string;
+                templateName: string;
+                count: number;
+            } | null;
+        };
+        complaints: {
+            total: number;
+            pending: number;
+            inProgress: number;
+            resolved: number;
+            rejected: number;
+        };
+    };
+    periodStats: {
+        ats: {
+            total: number;
+            avgScore: number;
+        };
+        subscriptions: number;
+        resumes: number;
+        complaints: number;
+    };
+    series: {
+        ats: Array<{ label: string; count: number; avgScore: number }>;
+    };
+    recentResumes: RecentResume[];
+};
 
 const PERIODS: { label: string; value: Period }[] = [
     { label: "Today",    value: "today" },
@@ -177,11 +247,15 @@ function ScoreBadge({ score }: { score: number }) {
     );
 }
 
+function getErrorMessage(error: unknown) {
+    return error instanceof Error ? error.message : "Failed to fetch analytics";
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MyAnalyticsPage() {
     const [period, setPeriod]   = useState<Period>("7d");
-    const [data,   setData]     = useState<any>(null);
+    const [data,   setData]     = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState<string | null>(null);
 
@@ -195,9 +269,9 @@ export default function MyAnalyticsPage() {
             });
             const json = await res.json();
             if (!json.success) throw new Error(json.message ?? "Failed to fetch analytics");
-            setData(json.data);
-        } catch (e: any) {
-            setError(e.message);
+            setData(json.data as AnalyticsData);
+        } catch (error: unknown) {
+            setError(getErrorMessage(error));
         } finally {
             setLoading(false);
         }
@@ -220,7 +294,6 @@ export default function MyAnalyticsPage() {
     const memberSince = g?.profile?.memberSince
         ? new Date(g.profile.memberSince).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })
         : "—";
-
     return (
         <div className="mx-auto w-full space-y-8 pb-10">
 
@@ -265,7 +338,7 @@ export default function MyAnalyticsPage() {
             )}
 
             {/* ── Content ── */}
-            {data && (
+            {g && p && s && (
                 <>
                     {/* ═══ 1. Profile Card ═══ */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-5">
@@ -337,7 +410,8 @@ export default function MyAnalyticsPage() {
                         </div>
                     </section>
 
-                    {/* ═══ 4. ATS Trend ═══ */}
+
+                    {/* ═══ 5. ATS Trend ═══ */}
                     <section>
                         <SectionHeading>ATS Usage Trend</SectionHeading>
                         <ChartCard title="ATS Scan Activity" subtitle={`Scans &amp; avg score over ${periodLabel}`}>
@@ -356,7 +430,7 @@ export default function MyAnalyticsPage() {
                         </ChartCard>
                     </section>
 
-                    {/* ═══ 5. ATS Deep-dive ═══ */}
+                    {/* ═══ 6. ATS Deep-dive ═══ */}
                     <section>
                         <SectionHeading>ATS Score Breakdown</SectionHeading>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -424,7 +498,7 @@ export default function MyAnalyticsPage() {
                         </div>
                     </section>
 
-                    {/* ═══ 6. Subscriptions & Complaints breakdowns ═══ */}
+                    {/* ═══ 7. Subscriptions & Complaints breakdowns ═══ */}
                     <section>
                         <SectionHeading>Subscriptions &amp; Complaints</SectionHeading>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -452,7 +526,7 @@ export default function MyAnalyticsPage() {
                         </div>
                     </section>
 
-                    {/* ═══ 7. Overall Score Summary ═══ */}
+                    {/* ═══ 8. Overall Score Summary ═══ */}
                     {g.ats.total > 0 && (
                         <section>
                             <SectionHeading>Score Summary</SectionHeading>

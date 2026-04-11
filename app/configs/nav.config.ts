@@ -103,7 +103,7 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
-        name: "Resume Config",
+        name: "Resumes",
         href: "/dashboard/resume-config",
         icon: FiFileText,
         privileges: [],

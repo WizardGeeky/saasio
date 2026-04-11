@@ -7,7 +7,6 @@ import {
     Text,
     View,
     StyleSheet,
-    Font,
     Link,
 } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
@@ -16,6 +15,7 @@ import {
 } from "react-icons/fi";
 import { getStoredToken } from "@/app/utils/token";
 import { useToast } from "@/components/ui/toast";
+import { EXTRA_TEMPLATES, type ExtraTemplateId } from "./extra-templates";
 
 // ── Lazy PDF components ───────────────────────────────────────────────────────
 
@@ -1336,7 +1336,7 @@ function T15({ data }: { data: any }) {
 // TEMPLATE REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 
-type TemplateId = "classic" | "modern" | "professional" | "minimal" | "executive" | "tech" | "sidebar-teal" | "sidebar-navy" | "emerald" | "ats" | "faang-focus" | "maang-slate" | "platform-prime" | "recruiter-scan" | "sde-compact";
+type TemplateId = "classic" | "modern" | "professional" | "minimal" | "executive" | "tech" | "sidebar-teal" | "sidebar-navy" | "emerald" | "ats" | "faang-focus" | "maang-slate" | "platform-prime" | "recruiter-scan" | "sde-compact" | ExtraTemplateId;
 
 interface TemplateInfo {
     id:          TemplateId;
@@ -1350,7 +1350,7 @@ interface TemplateInfo {
     premium:     boolean;
 }
 
-const TEMPLATES: TemplateInfo[] = [
+const BASE_TEMPLATES: TemplateInfo[] = [
     {
         id: "classic", name: "Classic", description: "Serif, centered — timeless ATS pick",
         accent: "#1e293b", bg: "#f8fafc", component: T1, premium: true,
@@ -1666,6 +1666,8 @@ const TEMPLATES: TemplateInfo[] = [
     },
 ];
 
+const TEMPLATES: TemplateInfo[] = [...BASE_TEMPLATES, ...EXTRA_TEMPLATES];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // INITIAL DATA
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1822,7 +1824,30 @@ export default function ResumeConfigPage() {
                 remaining: data.data.remaining,
                 hasUsage:  data.data.remaining === null || data.data.remaining > 0,
             }));
+
+            const selectedTemplate = TEMPLATES.find((t) => t.id === templateId);
             const fileName = `${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`;
+
+            try {
+                await fetch("/api/v1/private/resume-downloads", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        fileName,
+                        templateId,
+                        templateName: selectedTemplate?.name || templateId,
+                        resumeName: resumeData.header?.name || "",
+                        resumeTitle: resumeData.header?.title || "",
+                        source: "resume-config",
+                    }),
+                });
+            } catch {
+                // Analytics tracking should never block the download itself.
+            }
+
             const a = document.createElement("a");
             a.href = url;
             a.download = fileName;
@@ -1892,7 +1917,7 @@ export default function ResumeConfigPage() {
                         <FiFileText className="text-white" size={18} />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900 leading-tight">Resume Config</h1>
+                        <h1 className="text-xl font-bold text-gray-900 leading-tight">Resumes</h1>
                         <p className="text-sm text-gray-500 mt-0.5">Choose a format · edit your data · preview live as PDF</p>
                     </div>
                 </div>

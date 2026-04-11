@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
@@ -7,6 +8,8 @@ import { AtsRecord } from "@/models/AtsRecord";
 import Subscription from "@/models/Subscription";
 import Complaint from "@/models/Complaint";
 import { User } from "@/models/User";
+import ResumeDownload from "@/models/ResumeDownload";
+import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
 export type Period = "today" | "7d" | "30d" | "6m" | "all";
 
@@ -100,6 +103,8 @@ export const GET = withAuth(
             const subPeriodMatch   = start ? { userEmail: user.email, createdAt: { $gte: start } } : { userEmail: user.email };
             const compAllTimeMatch = { userId: user.sub };
             const compPeriodMatch  = start ? { userId: user.sub, createdAt: { $gte: start } } : { userId: user.sub };
+            const resumeAllTimeMatch = { userId: user.sub };
+            const resumePeriodMatch = start ? { userId: user.sub, createdAt: { $gte: start } } : { userId: user.sub };
 
             // ── All-time aggregations ──────────────────────────────────────
             const [
@@ -109,6 +114,10 @@ export const GET = withAuth(
                 subStats,
                 complaintStats,
                 userDoc,
+                totalResumeDownloads,
+                topResumeTemplate,
+                recentResumeDownloads,
+                activeSubscriptions,
             ] = await Promise.all([
                 AtsRecord.aggregate([
                     { $match: atsAllTimeMatch },
@@ -139,7 +148,80 @@ export const GET = withAuth(
                     { $group: { _id: "$status", count: { $sum: 1 } } },
                 ]),
                 User.findById(user.sub).select("fullname role accountStatus createdAt").lean(),
+                ResumeDownload.countDocuments(resumeAllTimeMatch),
+                ResumeDownload.aggregate([
+                    { $match: resumeAllTimeMatch },
+                    {
+                        $group: {
+                            _id: {
+                                templateId: "$templateId",
+                                templateName: "$templateName",
+                            },
+                            count: { $sum: 1 },
+                        },
+                    },
+                    { $sort: { count: -1 } },
+                    { $limit: 1 },
+                ]),
+                ResumeDownload.find(resumeAllTimeMatch)
+                    .sort({ createdAt: -1 })
+                    .limit(15)
+                    .lean(),
+                Subscription.find({
+                    userEmail: user.email,
+                    status: "ACTIVE",
+                })
+                    .sort({ createdAt: -1 })
+                    .lean(),
             ]);
+
+            const activeSubscriptionQuotas = await Promise.all(
+                (activeSubscriptions as any[]).map(async (sub) => ({
+                    sub,
+                    quota: await resolveSubscriptionQuota(sub),
+                }))
+            );
+
+            const subUpdates: any[] = [];
+            let hasUnlimitedResumes = false;
+            let availableResumes = 0;
+            let activeResumePlans = 0;
+
+            for (const { sub, quota } of activeSubscriptionQuotas) {
+                const update: Record<string, unknown> = {};
+
+                if (quota.shouldPersistResolvedMaxUsage) {
+                    update.maxUsage = quota.maxUsage;
+                }
+
+                if (quota.maxUsage > 0 && !quota.hasUsage) {
+                    update.status = "EXPIRED";
+                }
+
+                if (Object.keys(update).length > 0) {
+                    subUpdates.push({
+                        updateOne: {
+                            filter: { _id: sub._id },
+                            update: { $set: update },
+                        },
+                    });
+                }
+
+                if (quota.maxUsage === 0) {
+                    hasUnlimitedResumes = true;
+                    activeResumePlans += 1;
+                    continue;
+                }
+
+                if (quota.hasUsage) {
+                    availableResumes += quota.remaining ?? 0;
+                    activeResumePlans += 1;
+                }
+            }
+
+            if (subUpdates.length > 0) {
+                await Subscription.bulkWrite(subUpdates);
+            }
 
             const subMap  = Object.fromEntries((subStats  as any[]).map((s) => [s._id, s.count]));
             const compMap = Object.fromEntries((complaintStats as any[]).map((c) => [c._id, c.count]));
@@ -173,6 +255,19 @@ export const GET = withAuth(
                     cancelled: subMap["CANCELLED"] ?? 0,
                     expired:   subMap["EXPIRED"]   ?? 0,
                 },
+                resumes: {
+                    total: totalResumeDownloads ?? 0,
+                    available: hasUnlimitedResumes ? null : availableResumes,
+                    hasUnlimited: hasUnlimitedResumes,
+                    activePlans: activeResumePlans,
+                    mostUsedTemplate: topResumeTemplate[0]
+                        ? {
+                            templateId: topResumeTemplate[0]._id?.templateId || "",
+                            templateName: topResumeTemplate[0]._id?.templateName || "Unknown",
+                            count: topResumeTemplate[0].count ?? 0,
+                        }
+                        : null,
+                },
                 complaints: {
                     total:      (Object.values(compMap) as number[]).reduce((s, v) => s + v, 0),
                     pending:    compMap["PENDING"]     ?? 0,
@@ -183,13 +278,14 @@ export const GET = withAuth(
             };
 
             // ── Period stats ───────────────────────────────────────────────
-            const [periodAts, periodSubs, periodComps] = await Promise.all([
+            const [periodAts, periodSubs, periodComps, periodResumeDownloads] = await Promise.all([
                 AtsRecord.aggregate([
                     { $match: atsPeriodMatch },
                     { $group: { _id: null, total: { $sum: 1 }, avgScore: { $avg: "$analysis.score" } } },
                 ]),
                 Subscription.countDocuments(subPeriodMatch),
                 Complaint.countDocuments(compPeriodMatch),
+                ResumeDownload.countDocuments(resumePeriodMatch),
             ]);
 
             const periodStats = {
@@ -198,6 +294,7 @@ export const GET = withAuth(
                     avgScore: Math.round(periodAts[0]?.avgScore ?? 0),
                 },
                 subscriptions: periodSubs,
+                resumes: periodResumeDownloads,
                 complaints:    periodComps,
             };
 
@@ -216,9 +313,20 @@ export const GET = withAuth(
                 ats: fillSeries(buckets, atsSeries as any, { count: 0, avgScore: 0 }, period),
             };
 
+            const recentResumes = (recentResumeDownloads as any[]).map((resume) => ({
+                _id: resume._id?.toString?.() ?? String(resume._id),
+                templateId: resume.templateId,
+                templateName: resume.templateName,
+                fileName: resume.fileName,
+                resumeName: resume.resumeName || "",
+                resumeTitle: resume.resumeTitle || "",
+                source: resume.source || "resume-config",
+                createdAt: resume.createdAt,
+            }));
+
             return NextResponse.json({
                 success: true,
-                data: { period, global, periodStats, series },
+                data: { period, global, periodStats, series, recentResumes },
             });
         } catch (error: any) {
             console.error("[my-analytics]", error);

@@ -16,12 +16,142 @@ import { getStoredToken } from "@/app/utils/token";
 import {
     FiUsers, FiShield, FiKey, FiFolder,
     FiCpu, FiMessageSquare, FiCreditCard, FiZap,
-    FiPackage, FiDollarSign, FiAlertCircle, FiRefreshCw,
+    FiPackage, FiDollarSign, FiAlertCircle, FiRefreshCw, FiTrendingUp,
+    FiChevronLeft, FiChevronRight,
 } from "react-icons/fi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Period = "today" | "7d" | "30d" | "6m" | "all";
+
+type CountPoint = {
+    label: string;
+    count: number;
+};
+
+type RevenuePoint = {
+    label: string;
+    transactions: number;
+    subscriptions: number;
+};
+
+type TransactionPoint = {
+    label: string;
+    success: number;
+    failed: number;
+    pending: number;
+};
+
+type SubscriptionPoint = {
+    label: string;
+    count: number;
+    revenue: number;
+};
+
+type AtsPoint = {
+    label: string;
+    count: number;
+    avgScore: number;
+};
+
+type DashboardAnalyticsData = {
+    global: {
+        users: {
+            total: number;
+            active: number;
+            inactive: number;
+            suspended: number;
+        };
+        roles: number;
+        privileges: number;
+        projects: {
+            total: number;
+            active: number;
+            inactive: number;
+            suspended: number;
+        };
+        aiModels: {
+            total: number;
+            active: number;
+        };
+        complaints: {
+            total: number;
+            pending: number;
+            inProgress: number;
+            resolved: number;
+            rejected: number;
+        };
+        transactions: {
+            total: number;
+            success: number;
+            pending: number;
+            failed: number;
+            revenue: number;
+        };
+        subscriptions: {
+            total: number;
+            active: number;
+            cancelled: number;
+            expired: number;
+            revenue: number;
+        };
+        atsRecords: {
+            total: number;
+            avgScore: number;
+        };
+        resumes: {
+            available: number;
+            unlimitedPlans: number;
+            topTemplates: Array<{
+                templateId: string;
+                templateName: string;
+                memberCount: number;
+                downloadCount: number;
+            }>;
+            mostUsedTemplate: {
+                templateId: string;
+                templateName: string;
+                memberCount: number;
+                downloadCount: number;
+            };
+        };
+    };
+    periodStats: {
+        users: number;
+        transactions: {
+            total: number;
+            success: number;
+            failed: number;
+            pending: number;
+            revenue: number;
+        };
+        subscriptions: {
+            total: number;
+            active: number;
+            revenue: number;
+        };
+        atsRecords: {
+            total: number;
+            avgScore: number;
+        };
+        complaints: number;
+    };
+    series: {
+        revenue: RevenuePoint[];
+        transactions: TransactionPoint[];
+        subscriptions: SubscriptionPoint[];
+        users: CountPoint[];
+        atsRecords: AtsPoint[];
+        complaints: CountPoint[];
+    };
+};
+
+const DEFAULT_MOST_USED_RESUME_TEMPLATE = {
+    templateId: "classic",
+    templateName: "Classic",
+    memberCount: 0,
+    downloadCount: 0,
+};
 
 const PERIODS: { label: string; value: Period }[] = [
     { label: "Today",    value: "today" },
@@ -60,6 +190,10 @@ const atsConfig: ChartConfig = {
 
 const compConfig: ChartConfig = {
     count: { label: "Complaints", color: "hsl(0, 71%, 55%)" },
+};
+
+const resumeUsageConfig: ChartConfig = {
+    memberCount: { label: "Members", color: "hsl(173, 80%, 40%)" },
 };
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -209,15 +343,27 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
     );
 }
 
+function getResumeChartPageSize(width: number) {
+    if (width < 640) return 4;
+    if (width < 1024) return 6;
+    return 8;
+}
+
+function formatResumeTick(value: string) {
+    return value.length > 12 ? `${value.slice(0, 11)}...` : value;
+}
+
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
     const { can, isLoading: privLoading } = usePrivilege();
     const router = useRouter();
     const [period, setPeriod]   = useState<Period>("7d");
-    const [data,   setData]     = useState<any>(null);
+    const [data,   setData]     = useState<DashboardAnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState<string | null>(null);
+    const [resumePage, setResumePage] = useState(0);
+    const [resumeItemsPerPage, setResumeItemsPerPage] = useState(8);
 
     const canView = !privLoading && can("GET", "/api/v1/private/analytics");
 
@@ -240,8 +386,8 @@ export default function DashboardPage() {
             const json = await res.json();
             if (!json.success) throw new Error(json.message ?? "Failed to fetch analytics");
             setData(json.data);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (error: unknown) {
+            setError(error instanceof Error ? error.message : "Failed to fetch analytics");
         } finally {
             setLoading(false);
         }
@@ -251,13 +397,48 @@ export default function DashboardPage() {
         if (!privLoading) fetchData();
     }, [privLoading, fetchData]);
 
-    // While redirecting, render nothing
-    if (!privLoading && !canView) return null;
+    useEffect(() => {
+        const updateResumePageSize = () => {
+            setResumeItemsPerPage(getResumeChartPageSize(window.innerWidth));
+        };
+
+        updateResumePageSize();
+        window.addEventListener("resize", updateResumePageSize);
+
+        return () => window.removeEventListener("resize", updateResumePageSize);
+    }, []);
 
     const g = data?.global;
     const p = data?.periodStats;
     const s = data?.series;
     const periodLabel = PERIODS.find((x) => x.value === period)?.label ?? "7 Days";
+    const availableResumeCount = g?.resumes?.available ?? 0;
+    const unlimitedResumePlans = g?.resumes?.unlimitedPlans ?? 0;
+    const availableResumeValue = unlimitedResumePlans > 0
+        ? `${availableResumeCount.toLocaleString("en-IN")}+`
+        : availableResumeCount.toLocaleString("en-IN");
+    const availableResumeSub = unlimitedResumePlans > 0
+        ? `${unlimitedResumePlans} unlimited active plan${unlimitedResumePlans === 1 ? "" : "s"}`
+        : "Across active subscriptions";
+    const resumeUsageChartData = (g?.resumes?.topTemplates ?? [DEFAULT_MOST_USED_RESUME_TEMPLATE])
+        .map((template) => ({
+            templateName: template.templateName,
+            memberCount: template.memberCount,
+        }))
+        .sort((left, right) => right.memberCount - left.memberCount || left.templateName.localeCompare(right.templateName));
+    const resumeUsagePageCount = Math.max(1, Math.ceil(resumeUsageChartData.length / resumeItemsPerPage));
+    const safeResumePage = Math.min(resumePage, resumeUsagePageCount - 1);
+    const resumePageStart = safeResumePage * resumeItemsPerPage;
+    const resumePageEnd = Math.min(resumePageStart + resumeItemsPerPage, resumeUsageChartData.length);
+    const visibleResumeUsageData = resumeUsageChartData.slice(resumePageStart, resumePageEnd);
+    const resumeUsageChartMax = Math.max(1, ...visibleResumeUsageData.map((template) => template.memberCount));
+
+    useEffect(() => {
+        setResumePage((current) => Math.min(current, resumeUsagePageCount - 1));
+    }, [resumeUsagePageCount]);
+
+    // While redirecting, render nothing
+    if (!privLoading && !canView) return null;
 
     return (
         <div className="mx-auto w-full space-y-8 pb-10">
@@ -307,12 +488,12 @@ export default function DashboardPage() {
             )}
 
             {/* ── Content ── */}
-            {data && (
+            {g && p && s && (
                 <>
                     {/* ═══ 1. Global Overview ═══ */}
                     <section>
                         <SectionHeading>All-Time Overview</SectionHeading>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
                             <StatCard
                                 icon={FiUsers} label="Total Users" color="blue"
                                 value={g.users.total.toLocaleString("en-IN")}
@@ -337,6 +518,11 @@ export default function DashboardPage() {
                                 icon={FiZap} label="ATS Scans" color="amber"
                                 value={g.atsRecords.total.toLocaleString("en-IN")}
                                 sub={`Avg Score: ${g.atsRecords.avgScore}`}
+                            />
+                            <StatCard
+                                icon={FiTrendingUp} label="Current Available Resumes" color="green"
+                                value={availableResumeValue}
+                                sub={availableResumeSub}
                             />
                             <StatCard
                                 icon={FiFolder} label="Projects" color="teal"
@@ -396,6 +582,94 @@ export default function DashboardPage() {
 
                     {/* ═══ 3. Revenue Charts ═══ */}
                     <section>
+                        <SectionHeading>Resume Insights</SectionHeading>
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-950/80">
+                                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0">
+                                        <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-100">
+                                            Resume Usage by Format
+                                        </h3>
+                                        <p className="mt-0.5 text-xs text-gray-400 dark:text-slate-400">
+                                            Showing {resumePageStart + 1}-{resumePageEnd} of {resumeUsageChartData.length} resume formats
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                                        <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                            Page {safeResumePage + 1} of {resumeUsagePageCount}
+                                        </span>
+                                        <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-slate-700 dark:bg-slate-900">
+                                            <button
+                                                type="button"
+                                                onClick={() => setResumePage((current) => Math.max(0, current - 1))}
+                                                disabled={safeResumePage === 0}
+                                                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                                                aria-label="Previous resume formats page"
+                                            >
+                                                <FiChevronLeft size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setResumePage((current) => Math.min(resumeUsagePageCount - 1, current + 1))}
+                                                disabled={safeResumePage >= resumeUsagePageCount - 1}
+                                                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                                                aria-label="Next resume formats page"
+                                            >
+                                                <FiChevronRight size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <ChartContainer config={resumeUsageConfig} className="h-[320px] w-full aspect-auto sm:h-[360px]">
+                                    <BarChart
+                                        data={visibleResumeUsageData}
+                                        margin={{ top: 8, right: 8, left: -8, bottom: 24 }}
+                                    >
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            stroke="rgba(148,163,184,0.24)"
+                                            vertical
+                                        />
+                                        <XAxis
+                                            dataKey="templateName"
+                                            tick={{ fontSize: 10 }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            interval={0}
+                                            angle={-18}
+                                            textAnchor="end"
+                                            height={60}
+                                            tickFormatter={formatResumeTick}
+                                        />
+                                        <YAxis
+                                            tick={{ fontSize: 10 }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            allowDecimals={false}
+                                            width={32}
+                                            domain={[0, resumeUsageChartMax]}
+                                        />
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={
+                                                <ChartTooltipContent
+                                                    labelFormatter={(value) => String(value)}
+                                                />
+                                            }
+                                        />
+                                        <Bar
+                                            dataKey="memberCount"
+                                            fill="var(--color-memberCount)"
+                                            radius={[8, 8, 0, 0]}
+                                            maxBarSize={56}
+                                        />
+                                    </BarChart>
+                                </ChartContainer>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
                         <SectionHeading>Revenue &amp; Payments</SectionHeading>
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
@@ -420,7 +694,7 @@ export default function DashboardPage() {
                                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                         <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                                         <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} tickFormatter={(v) => `₹${v}`} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                         <ChartLegend content={<ChartLegendContent />} />
                                         <Area type="monotone" dataKey="transactions"  stroke="hsl(215,90%,55%)" fill="url(#gTx)"  strokeWidth={2} dot={false} />
                                         <Area type="monotone" dataKey="subscriptions" stroke="hsl(160,70%,45%)" fill="url(#gSub)" strokeWidth={2} dot={false} />
@@ -448,7 +722,7 @@ export default function DashboardPage() {
                                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                         <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                                         <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                         <ChartLegend content={<ChartLegendContent />} />
                                         <Bar dataKey="success" stackId="tx" fill="hsl(142,71%,45%)" />
                                         <Bar dataKey="failed"  stackId="tx" fill="hsl(0,71%,55%)"   />
@@ -472,7 +746,7 @@ export default function DashboardPage() {
                                         <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                                         <YAxis yAxisId="left"  tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
                                         <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={52} tickFormatter={(v) => `₹${v}`} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                         <ChartLegend content={<ChartLegendContent />} />
                                         <Bar yAxisId="left"  dataKey="count"   fill="hsl(262,70%,60%)" radius={[4,4,0,0]} />
                                         <Bar yAxisId="right" dataKey="revenue" fill="hsl(215,90%,55%)" radius={[4,4,0,0]} />
@@ -511,7 +785,7 @@ export default function DashboardPage() {
                                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                         <XAxis dataKey="label" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
                                         <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                         <Area type="monotone" dataKey="count" stroke="hsl(215,90%,55%)" fill="url(#gUsers)" strokeWidth={2} dot={false} />
                                     </AreaChart>
                                 </ChartContainer>
@@ -525,7 +799,7 @@ export default function DashboardPage() {
                                         <XAxis dataKey="label" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
                                         <YAxis yAxisId="left"  tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
                                         <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={36} domain={[0, 100]} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                         <ChartLegend content={<ChartLegendContent />} />
                                         <Bar  yAxisId="left"  dataKey="count"    fill="hsl(262,70%,60%)" radius={[4,4,0,0]} />
                                         <Line yAxisId="right" dataKey="avgScore" stroke="hsl(38,92%,50%)" strokeWidth={2} dot={false} type="monotone" />
@@ -540,7 +814,7 @@ export default function DashboardPage() {
                                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                         <XAxis dataKey="label" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
                                         <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                         <Bar dataKey="count" fill="hsl(0,71%,55%)" radius={[4,4,0,0]} />
                                     </BarChart>
                                 </ChartContainer>
