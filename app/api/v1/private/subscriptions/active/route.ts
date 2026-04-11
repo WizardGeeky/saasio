@@ -3,6 +3,7 @@ import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import Subscription from "@/models/Subscription";
+import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
 /**
  * GET /api/v1/private/subscriptions/active
@@ -23,20 +24,31 @@ export const GET = withAuth(
                 userEmail: user.email,
                 status: "ACTIVE",
             })
-                .sort({ createdAt: -1 })
-                .lean();
+                .sort({ createdAt: -1 });
 
             if (!sub) {
                 return NextResponse.json({ success: true, data: null });
             }
 
-            const s = sub as any;
-            const usageCount = s.usageCount ?? 0;
-            const maxUsage   = s.maxUsage   ?? 0;
+            const quota = await resolveSubscriptionQuota(sub);
 
-            // maxUsage === 0 means unlimited
-            const hasUsage  = maxUsage === 0 || usageCount < maxUsage;
-            const remaining = maxUsage === 0 ? null : Math.max(0, maxUsage - usageCount);
+            const updates: Record<string, unknown> = {};
+            if (quota.shouldPersistResolvedMaxUsage) {
+                updates.maxUsage = quota.maxUsage;
+            }
+            if (quota.maxUsage > 0 && !quota.hasUsage) {
+                updates.status = "EXPIRED";
+            }
+
+            if (Object.keys(updates).length > 0) {
+                await Subscription.updateOne({ _id: sub._id }, { $set: updates });
+            }
+
+            if (quota.maxUsage > 0 && !quota.hasUsage) {
+                return NextResponse.json({ success: true, data: null });
+            }
+
+            const s = sub as any;
 
             return NextResponse.json({
                 success: true,
@@ -45,10 +57,10 @@ export const GET = withAuth(
                     planName:    s.planName,
                     projectName: s.projectName,
                     status:      s.status,
-                    usageCount,
-                    maxUsage,
-                    hasUsage,
-                    remaining,
+                    usageCount:  quota.usageCount,
+                    maxUsage:    quota.maxUsage,
+                    hasUsage:    quota.hasUsage,
+                    remaining:   quota.remaining,
                 },
             });
         } catch (error: any) {

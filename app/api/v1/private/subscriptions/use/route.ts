@@ -3,6 +3,7 @@ import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import Subscription from "@/models/Subscription";
+import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
 /**
  * POST /api/v1/private/subscriptions/use
@@ -31,10 +32,19 @@ export const POST = withAuth(
                 );
             }
 
-            const usageCount = (sub as any).usageCount ?? 0;
-            const maxUsage   = (sub as any).maxUsage   ?? 0;
+            const quota = await resolveSubscriptionQuota(sub);
+            const usageCount = quota.usageCount;
+            const maxUsage = quota.maxUsage;
 
-            if (maxUsage > 0 && usageCount >= maxUsage) {
+            if (quota.shouldPersistResolvedMaxUsage) {
+                sub.maxUsage = maxUsage;
+            }
+
+            if (!quota.hasUsage) {
+                if (maxUsage > 0) {
+                    sub.status = "EXPIRED";
+                    await sub.save();
+                }
                 return NextResponse.json(
                     { success: false, message: "Usage limit reached. Please re-subscribe to continue." },
                     { status: 403 }

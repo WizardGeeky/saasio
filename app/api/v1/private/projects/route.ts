@@ -3,8 +3,21 @@ import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { Project } from "@/models/Project";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { normalizePlanMaxUsage } from "@/app/utils/plan-usage";
 
 const EMPTY_PLAN = (name: string) => ({ name, price: 0, currency: "INR", descriptions: [] });
+const normalizePlans = (plans: any[]) =>
+    [
+        plans?.[0] ?? EMPTY_PLAN("Basic"),
+        plans?.[1] ?? EMPTY_PLAN("Standard"),
+        plans?.[2] ?? EMPTY_PLAN("Premium"),
+    ].map((p: any) => ({
+        name:         p.name?.trim() || "Plan",
+        price:        Number(p.price) || 0,
+        currency:     p.currency?.trim() || "INR",
+        descriptions: Array.isArray(p.descriptions) ? p.descriptions.filter(Boolean) : [],
+        maxUsage:     normalizePlanMaxUsage(p),
+    }));
 
 /**
  * GET /api/v1/private/projects
@@ -18,7 +31,11 @@ export const GET = withAuth(async (
     try {
         await connectDB();
         const projects = await Project.find().sort({ createdAt: -1 }).lean();
-        return NextResponse.json({ projects }, { status: 200 });
+        const normalizedProjects = projects.map((project: any) => ({
+            ...project,
+            plans: normalizePlans(project.plans ?? []),
+        }));
+        return NextResponse.json({ projects: normalizedProjects }, { status: 200 });
     } catch (err: any) {
         return NextResponse.json({ message: err.message }, { status: 500 });
     }
@@ -52,17 +69,7 @@ export const POST = withAuth(async (
             return NextResponse.json({ message: `Project '${id}' already exists` }, { status: 409 });
         }
 
-        const normalizedPlans = [
-            plans?.[0] ?? EMPTY_PLAN("Basic"),
-            plans?.[1] ?? EMPTY_PLAN("Standard"),
-            plans?.[2] ?? EMPTY_PLAN("Premium"),
-        ].map((p: any) => ({
-            name:         p.name?.trim() || "Plan",
-            price:        Number(p.price) || 0,
-            currency:     p.currency?.trim() || "INR",
-            descriptions: Array.isArray(p.descriptions) ? p.descriptions.filter(Boolean) : [],
-            maxUsage:     Number(p.maxUsage) || 0,
-        }));
+        const normalizedPlans = normalizePlans(plans ?? []);
 
         const project = await Project.create({
             _id: id,
@@ -103,13 +110,7 @@ export const PUT = withAuth(async (
         if (name?.trim()) updates.name = name.trim();
         if (status)       updates.status = status;
         if (Array.isArray(plans) && plans.length === 3) {
-            updates.plans = plans.map((p: any) => ({
-                name:         p.name?.trim() || "Plan",
-                price:        Number(p.price) || 0,
-                currency:     p.currency?.trim() || "INR",
-                descriptions: Array.isArray(p.descriptions) ? p.descriptions.filter(Boolean) : [],
-                maxUsage:     Number(p.maxUsage) || 0,
-            }));
+            updates.plans = normalizePlans(plans);
         }
 
         await Project.updateOne({ _id: id }, { $set: updates });

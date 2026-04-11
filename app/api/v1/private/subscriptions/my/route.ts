@@ -3,6 +3,7 @@ import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import Subscription from "@/models/Subscription";
+import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
 /**
  * GET /api/v1/private/subscriptions/my
@@ -32,6 +33,20 @@ export const GET = withAuth(
                 .limit(limit)
                 .lean();
 
+            const normalizedSubscriptions = await Promise.all(
+                subscriptions.map(async (sub: any) => {
+                    const quota = await resolveSubscriptionQuota(sub);
+
+                    return {
+                        ...sub,
+                        maxUsage: quota.maxUsage,
+                        status: sub.status === "ACTIVE" && quota.maxUsage > 0 && !quota.hasUsage
+                            ? "EXPIRED"
+                            : sub.status,
+                    };
+                })
+            );
+
             // Aggregate stats
             const stats = await Subscription.aggregate([
                 { $match: { userEmail: user.email } },
@@ -52,7 +67,7 @@ export const GET = withAuth(
             return NextResponse.json({
                 success: true,
                 data: {
-                    subscriptions,
+                    subscriptions: normalizedSubscriptions,
                     pagination: { total, page, pages: Math.ceil(total / limit), limit },
                     stats: {
                         active:    statsMap["ACTIVE"]    ?? { count: 0, totalAmount: 0 },

@@ -7,6 +7,7 @@ import { AiModel } from "@/models/AiModel";
 import { AtsRecord } from "@/models/AtsRecord";
 import Subscription from "@/models/Subscription";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
 // ─── GET — fetch history for the current user ─────────────────────────────────
 
@@ -52,10 +53,19 @@ export const POST = withAuth(async (
             );
         }
 
-        const subUsageCount = (activeSub as any).usageCount ?? 0;
-        const subMaxUsage   = (activeSub as any).maxUsage   ?? 0;
+        const quota = await resolveSubscriptionQuota(activeSub);
+        const subUsageCount = quota.usageCount;
+        const subMaxUsage = quota.maxUsage;
 
-        if (subMaxUsage > 0 && subUsageCount >= subMaxUsage) {
+        if (quota.shouldPersistResolvedMaxUsage) {
+            activeSub.maxUsage = subMaxUsage;
+        }
+
+        if (!quota.hasUsage) {
+            if (subMaxUsage > 0) {
+                activeSub.status = "EXPIRED";
+                await activeSub.save();
+            }
             return NextResponse.json(
                 { message: "Usage limit reached. Please re-subscribe to continue using AI ATS." },
                 { status: 403 }

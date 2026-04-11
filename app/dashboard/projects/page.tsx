@@ -19,6 +19,7 @@ interface PaymentPlan {
     price: number;
     currency: string;
     descriptions: string[];
+    maxUsage: number;
 }
 
 interface ProjectData {
@@ -45,7 +46,7 @@ const STATUS_DOT: Record<ProjectStatus, string> = {
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD"];
 
 const defaultPlan = (name: string): PaymentPlan => ({
-    name, price: 0, currency: "INR", descriptions: [""],
+    name, price: 0, currency: "INR", descriptions: [""], maxUsage: 0,
 });
 
 const emptyForm = () => ({
@@ -104,6 +105,7 @@ export default function ProjectsPage() {
             plans:  p.plans.map(pl => ({
                 ...pl,
                 descriptions: pl.descriptions.length ? pl.descriptions : [""],
+                maxUsage: Number(pl.maxUsage) || 0,
             })),
         });
         setModal("edit");
@@ -153,9 +155,14 @@ export default function ProjectsPage() {
         e.preventDefault();
         setIsSaving(true);
         const isEdit = modal === "edit";
+        const serializePlan = (p: PaymentPlan) => ({
+            ...p,
+            descriptions: p.descriptions.filter(d => d.trim()),
+            maxUsage: Math.max(0, Number(p.maxUsage) || 0),
+        });
         const payload = isEdit
-            ? { id: selected!._id, ...form, plans: form.plans.map(p => ({ ...p, descriptions: p.descriptions.filter(d => d.trim()) })) }
-            : { ...form, plans: form.plans.map(p => ({ ...p, descriptions: p.descriptions.filter(d => d.trim()) })) };
+            ? { id: selected!._id, ...form, plans: form.plans.map(serializePlan) }
+            : { ...form, plans: form.plans.map(serializePlan) };
         try {
             const res  = await fetch("/api/v1/private/projects", {
                 method:  isEdit ? "PUT" : "POST",
@@ -324,6 +331,9 @@ export default function ProjectsPage() {
                                                         <FiPackage size={10} className="text-emerald-500" /> {pl.name}
                                                         <span className="ml-auto font-semibold text-emerald-600">{pl.currency} {pl.price.toLocaleString()}</span>
                                                     </p>
+                                                    <p className="mb-2 text-[11px] font-medium text-gray-500">
+                                                        {pl.maxUsage === 0 ? "Unlimited usage" : `${pl.maxUsage} use${pl.maxUsage === 1 ? "" : "s"} included`}
+                                                    </p>
                                                     <ul className="space-y-1">
                                                         {pl.descriptions.map((d, j) => (
                                                             <li key={j} className="flex items-start gap-1.5 text-xs text-gray-500">
@@ -432,9 +442,14 @@ export default function ProjectsPage() {
                                                                         <span className="flex items-center gap-1.5 text-sm font-bold text-gray-800">
                                                                             <FiPackage size={13} className="text-emerald-500" /> {pl.name}
                                                                         </span>
-                                                                        <span className="text-sm font-bold text-emerald-600">
-                                                                            {pl.currency} {pl.price.toLocaleString()}
-                                                                        </span>
+                                                                        <div className="text-right">
+                                                                            <span className="block text-sm font-bold text-emerald-600">
+                                                                                {pl.currency} {pl.price.toLocaleString()}
+                                                                            </span>
+                                                                            <span className="text-[11px] font-medium text-gray-400">
+                                                                                {pl.maxUsage === 0 ? "Unlimited usage" : `${pl.maxUsage} use${pl.maxUsage === 1 ? "" : "s"} included`}
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
                                                                     <ul className="space-y-1.5">
                                                                         {pl.descriptions.length === 0
@@ -592,7 +607,7 @@ function ProjectModal({ type, form, setForm, selectedId, isSaving, onClose, onSu
                                     </div>
 
                                     {/* Plan name + price + currency */}
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Plan Name <span className="text-red-400">*</span></label>
                                             <input
@@ -625,6 +640,17 @@ function ProjectModal({ type, form, setForm, selectedId, isSaving, onClose, onSu
                                                 className={inputCls + " cursor-pointer"}>
                                                 {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                                             </select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Usage Limit</label>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                value={pl.maxUsage}
+                                                onChange={e => setPlan(i, "maxUsage", Math.max(0, Number(e.target.value) || 0))}
+                                                className={inputCls}
+                                            />
+                                            <p className="text-[10px] text-gray-400">Use `0` for unlimited access.</p>
                                         </div>
                                     </div>
 

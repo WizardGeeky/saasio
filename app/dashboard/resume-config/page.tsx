@@ -924,10 +924,419 @@ function T10({ data }: { data: any }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TEMPLATE 11 - FAANG FOCUS (single-column, recruiter-first, strong blue scan line)
+const s11 = StyleSheet.create({
+    page:  { padding: "18 24", backgroundColor: "#fff" },
+    head:  { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+    left:  { flex: 1, paddingRight: 12 },
+    name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f172a", letterSpacing: 0.2 },
+    ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#2563eb", marginTop: 2 },
+    hc:    { fontSize: 8.5, fontFamily: "Helvetica", color: "#475569", textAlign: "right", lineHeight: 1.45, width: 180 },
+    bar:   { height: 1.5, backgroundColor: "#2563eb", marginTop: 7 },
+    thin:  { height: 0.5, backgroundColor: "#bfdbfe", marginBottom: 2 },
+    sh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#2563eb", textTransform: "uppercase", letterSpacing: 0.9, marginTop: 8 },
+    sl:    { height: 0.5, backgroundColor: "#bfdbfe", marginTop: 2, marginBottom: 3 },
+    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    meta:  { fontSize: 8.6, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    br:    { flexDirection: "row", marginTop: 2 },
+    bd:    { width: 10, fontSize: 9.2, color: "#2563eb" },
+    bt:    { flex: 1, fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    lnk:   { color: "#2563eb", textDecoration: "underline" },
+});
+
+function T11({ data }: { data: any }) {
+    const B = ({ t }: { t: string }) => <View style={s11.br}><Text style={s11.bd}>-</Text><Text style={s11.bt}>{t}</Text></View>;
+    const S = ({ v }: { v: string }) => <><Text style={s11.sh}>{v}</Text><View style={s11.sl} /></>;
+    return (
+        <Document>
+            <Page size="A4" style={s11.page}>
+                <View style={s11.head}>
+                    <View style={s11.left}>
+                        <Text style={s11.name}>{data.header?.name}</Text>
+                        <Text style={s11.ht}>{data.header?.title}</Text>
+                    </View>
+                    <Text style={s11.hc}>
+                        {data.header?.contact}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s11.lnk}>LinkedIn</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s11.lnk}>GitHub</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s11.lnk}>Portfolio</Link></Text>}
+                    </Text>
+                </View>
+                <View style={s11.bar} />
+                <View style={s11.thin} />
+                {!!data.summary?.trim() && (<><S v="Professional Summary" /><Text style={s11.body}>{data.summary}</Text></>)}
+                {Array.isArray(data.skills) && data.skills.length > 0 && (
+                    <><S v="Core Stack" />
+                        {data.skills.map((sk: any, i: number) => (
+                            <Text key={i} style={s11.body}><Text style={s11.bold}>{sk.label}: </Text>{sk.value}</Text>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.experience) && data.experience.length > 0 && (
+                    <><S v="Professional Experience" />
+                        {data.experience.map((e: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                                <View style={s11.row}><Text style={s11.bold}>{e.role}</Text><Text style={s11.meta}>{e.duration}</Text></View>
+                                <Text style={s11.body}>{e.company}</Text>
+                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.techStack && <Text style={[s11.meta, { marginTop: 2 }]}>Tech: {e.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    <><S v="Projects" />
+                        {data.projects.map((p: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
+                                <View style={s11.row}><Text style={s11.bold}>{p.name}</Text><Text style={s11.meta}>{p.duration}</Text></View>
+                                <Text style={s11.meta}>{p.role}</Text>
+                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.techStack && <Text style={[s11.meta, { marginTop: 2 }]}>Tech: {p.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {data.education && (data.education.college || data.education.degree) && (
+                    <><S v="Education" />
+                        <View style={s11.row}>
+                            <View style={{ flex: 1 }}><Text style={s11.bold}>{data.education.college}</Text><Text style={s11.body}>{data.education.degree}</Text></View>
+                            <Text style={s11.meta}>{data.education.duration}</Text>
+                        </View>
+                    </>
+                )}
+            </Page>
+        </Document>
+    );
+}
+
+// TEMPLATE 12 - MAANG SLATE (centered header, calm slate-green accents, clean spacing)
+const s12 = StyleSheet.create({
+    page:  { padding: "20 28", backgroundColor: "#fff" },
+    hdr:   { alignItems: "center", borderBottomWidth: 0.8, borderBottomColor: "#d1d5db", paddingBottom: 8 },
+    name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#111827", letterSpacing: 0.4 },
+    ht:    { fontSize: 9.8, fontFamily: "Helvetica", color: "#0f766e", marginTop: 2 },
+    hc:    { fontSize: 8.7, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, textAlign: "center", lineHeight: 1.4 },
+    accent:{ width: 62, height: 2, backgroundColor: "#0f766e", marginTop: 6 },
+    srow:  { flexDirection: "row", alignItems: "center", marginTop: 9, marginBottom: 3 },
+    dot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: "#0f766e", marginRight: 6 },
+    sh:    { fontSize: 9.3, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 1.1 },
+    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:  { fontSize: 9.4, fontFamily: "Helvetica-Bold", color: "#111827" },
+    body:  { fontSize: 9.3, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    meta:  { fontSize: 8.7, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:    { flexDirection: "row", marginTop: 2 },
+    bd:    { width: 10, fontSize: 9.3, color: "#0f766e" },
+    bt:    { flex: 1, fontSize: 9.3, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    lnk:   { color: "#0f766e", textDecoration: "underline" },
+});
+
+function T12({ data }: { data: any }) {
+    const B = ({ t }: { t: string }) => <View style={s12.br}><Text style={s12.bd}>{">"}</Text><Text style={s12.bt}>{t}</Text></View>;
+    const S = ({ v }: { v: string }) => <View style={s12.srow}><View style={s12.dot} /><Text style={s12.sh}>{v}</Text></View>;
+    return (
+        <Document>
+            <Page size="A4" style={s12.page}>
+                <View style={s12.hdr}>
+                    <Text style={s12.name}>{data.header?.name}</Text>
+                    <Text style={s12.ht}>{data.header?.title}</Text>
+                    <Text style={s12.hc}>
+                        {data.header?.contact}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s12.lnk}>LinkedIn</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s12.lnk}>GitHub</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s12.lnk}>Portfolio</Link></Text>}
+                    </Text>
+                    <View style={s12.accent} />
+                </View>
+                {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s12.body}>{data.summary}</Text></>)}
+                {Array.isArray(data.skills) && data.skills.length > 0 && (
+                    <><S v="Technical Skills" />
+                        {data.skills.map((sk: any, i: number) => (
+                            <Text key={i} style={s12.body}><Text style={s12.bold}>{sk.label}: </Text>{sk.value}</Text>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.experience) && data.experience.length > 0 && (
+                    <><S v="Experience" />
+                        {data.experience.map((e: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                                <View style={s12.row}><Text style={s12.bold}>{e.role} | {e.company}</Text><Text style={s12.meta}>{e.duration}</Text></View>
+                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.techStack && <Text style={[s12.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    <><S v="Projects" />
+                        {data.projects.map((p: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
+                                <View style={s12.row}><Text style={s12.bold}>{p.name} ({p.role})</Text><Text style={s12.meta}>{p.duration}</Text></View>
+                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.techStack && <Text style={[s12.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {data.education && (data.education.college || data.education.degree) && (
+                    <><S v="Education" />
+                        <View style={s12.row}>
+                            <View style={{ flex: 1 }}><Text style={s12.bold}>{data.education.college}</Text><Text style={s12.body}>{data.education.degree}</Text></View>
+                            <Text style={s12.meta}>{data.education.duration}</Text>
+                        </View>
+                    </>
+                )}
+            </Page>
+        </Document>
+    );
+}
+
+// TEMPLATE 13 - PLATFORM PRIME (section-band layout for systems and backend resumes)
+const s13 = StyleSheet.create({
+    page:  { padding: "20 24", backgroundColor: "#fff" },
+    name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#475569", marginTop: 2 },
+    hc:    { fontSize: 8.6, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.45 },
+    top:   { height: 2.5, backgroundColor: "#475569", marginTop: 7, marginBottom: 5 },
+    sw:    { backgroundColor: "#f1f5f9", padding: "4 6", marginTop: 8, marginBottom: 3, borderLeftWidth: 2, borderLeftColor: "#475569" },
+    sh:    { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#1e293b", textTransform: "uppercase", letterSpacing: 0.9 },
+    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:  { fontSize: 9.4, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    meta:  { fontSize: 8.6, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    br:    { flexDirection: "row", marginTop: 2 },
+    bd:    { width: 10, fontSize: 9.2, color: "#475569" },
+    bt:    { flex: 1, fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    lnk:   { color: "#334155", textDecoration: "underline" },
+});
+
+function T13({ data }: { data: any }) {
+    const B = ({ t }: { t: string }) => <View style={s13.br}><Text style={s13.bd}>-</Text><Text style={s13.bt}>{t}</Text></View>;
+    const S = ({ v }: { v: string }) => <View style={s13.sw}><Text style={s13.sh}>{v}</Text></View>;
+    return (
+        <Document>
+            <Page size="A4" style={s13.page}>
+                <Text style={s13.name}>{data.header?.name}</Text>
+                <Text style={s13.ht}>{data.header?.title}</Text>
+                <Text style={s13.hc}>
+                    {data.header?.contact}
+                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s13.lnk}>LinkedIn</Link></Text>}
+                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s13.lnk}>GitHub</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s13.lnk}>Portfolio</Link></Text>}
+                </Text>
+                <View style={s13.top} />
+                {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s13.body}>{data.summary}</Text></>)}
+                {Array.isArray(data.skills) && data.skills.length > 0 && (
+                    <><S v="Skills" />
+                        {data.skills.map((sk: any, i: number) => (
+                            <Text key={i} style={s13.body}><Text style={s13.bold}>{sk.label}: </Text>{sk.value}</Text>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.experience) && data.experience.length > 0 && (
+                    <><S v="Experience" />
+                        {data.experience.map((e: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                                <View style={s13.row}><Text style={s13.bold}>{e.role}</Text><Text style={s13.meta}>{e.duration}</Text></View>
+                                <Text style={s13.meta}>{e.company}</Text>
+                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.techStack && <Text style={[s13.meta, { marginTop: 2 }]}>Platforms: {e.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    <><S v="Projects" />
+                        {data.projects.map((p: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
+                                <View style={s13.row}><Text style={s13.bold}>{p.name}</Text><Text style={s13.meta}>{p.duration}</Text></View>
+                                <Text style={s13.meta}>{p.role}</Text>
+                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.techStack && <Text style={[s13.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {data.education && (data.education.college || data.education.degree) && (
+                    <><S v="Education" />
+                        <View style={s13.row}>
+                            <View style={{ flex: 1 }}><Text style={s13.bold}>{data.education.college}</Text><Text style={s13.body}>{data.education.degree}</Text></View>
+                            <Text style={s13.meta}>{data.education.duration}</Text>
+                        </View>
+                    </>
+                )}
+            </Page>
+        </Document>
+    );
+}
+
+// TEMPLATE 14 - RECRUITER SCAN (summary highlight box, impact-first and easy to skim)
+const s14 = StyleSheet.create({
+    page:   { padding: "18 24", backgroundColor: "#fff" },
+    hdr:    { borderBottomWidth: 1.2, borderBottomColor: "#1d4ed8", paddingBottom: 7 },
+    name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    ht:     { fontSize: 9.4, fontFamily: "Helvetica", color: "#1d4ed8", marginTop: 2 },
+    hc:     { fontSize: 8.6, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.4 },
+    box:    { borderLeftWidth: 3, borderLeftColor: "#1d4ed8", backgroundColor: "#eff6ff", padding: "6 8", marginTop: 8 },
+    sh:     { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 1, marginTop: 8, marginBottom: 2 },
+    sl:     { height: 0.5, backgroundColor: "#bfdbfe", marginBottom: 3 },
+    row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:   { fontSize: 9.4, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:   { fontSize: 9.1, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    meta:   { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    br:     { flexDirection: "row", marginTop: 2 },
+    bd:     { width: 10, fontSize: 9.1, color: "#1d4ed8" },
+    bt:     { flex: 1, fontSize: 9.1, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    lnk:    { color: "#1d4ed8", textDecoration: "underline" },
+});
+
+function T14({ data }: { data: any }) {
+    const B = ({ t }: { t: string }) => <View style={s14.br}><Text style={s14.bd}>-</Text><Text style={s14.bt}>{t}</Text></View>;
+    const S = ({ v }: { v: string }) => <><Text style={s14.sh}>{v}</Text><View style={s14.sl} /></>;
+    return (
+        <Document>
+            <Page size="A4" style={s14.page}>
+                <View style={s14.hdr}>
+                    <Text style={s14.name}>{data.header?.name}</Text>
+                    <Text style={s14.ht}>{data.header?.title}</Text>
+                    <Text style={s14.hc}>
+                        {data.header?.contact}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s14.lnk}>LinkedIn</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s14.lnk}>GitHub</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s14.lnk}>Portfolio</Link></Text>}
+                    </Text>
+                </View>
+                {!!data.summary?.trim() && (
+                    <>
+                        <S v="Summary" />
+                        <View style={s14.box}><Text style={s14.body}>{data.summary}</Text></View>
+                    </>
+                )}
+                {Array.isArray(data.skills) && data.skills.length > 0 && (
+                    <><S v="Technical Skills" />
+                        {data.skills.map((sk: any, i: number) => (
+                            <Text key={i} style={s14.body}><Text style={s14.bold}>{sk.label}: </Text>{sk.value}</Text>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.experience) && data.experience.length > 0 && (
+                    <><S v="Experience" />
+                        {data.experience.map((e: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                                <View style={s14.row}><Text style={s14.bold}>{e.role} - {e.company}</Text><Text style={s14.meta}>{e.duration}</Text></View>
+                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.techStack && <Text style={[s14.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    <><S v="Projects" />
+                        {data.projects.map((p: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
+                                <View style={s14.row}><Text style={s14.bold}>{p.name}</Text><Text style={s14.meta}>{p.duration}</Text></View>
+                                <Text style={s14.meta}>{p.role}</Text>
+                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.techStack && <Text style={[s14.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {data.education && (data.education.college || data.education.degree) && (
+                    <><S v="Education" />
+                        <View style={s14.row}>
+                            <View style={{ flex: 1 }}><Text style={s14.bold}>{data.education.college}</Text><Text style={s14.body}>{data.education.degree}</Text></View>
+                            <Text style={s14.meta}>{data.education.duration}</Text>
+                        </View>
+                    </>
+                )}
+            </Page>
+        </Document>
+    );
+}
+
+// TEMPLATE 15 - SDE COMPACT (black-and-white, dense and ATS-maximised)
+const s15 = StyleSheet.create({
+    page:  { padding: "15 22", backgroundColor: "#fff" },
+    name:  { fontSize: 18, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1.2 },
+    ht:    { fontSize: 9, fontFamily: "Helvetica", color: "#1f2937", marginTop: 1.5 },
+    hc:    { fontSize: 8.2, fontFamily: "Helvetica", color: "#4b5563", marginTop: 2, lineHeight: 1.35 },
+    bar:   { height: 1.4, backgroundColor: "#000", marginTop: 4, marginBottom: 1 },
+    sh:    { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1, marginTop: 6 },
+    sl:    { height: 0.5, backgroundColor: "#000", marginTop: 1, marginBottom: 2 },
+    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 3 },
+    bold:  { fontSize: 9.1, fontFamily: "Helvetica-Bold", color: "#000" },
+    body:  { fontSize: 8.8, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
+    meta:  { fontSize: 8.2, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
+    br:    { flexDirection: "row", marginTop: 1.5 },
+    bd:    { width: 8, fontSize: 8.8, color: "#000" },
+    bt:    { flex: 1, fontSize: 8.8, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
+    lnk:   { color: "#1d4ed8", textDecoration: "underline" },
+});
+
+function T15({ data }: { data: any }) {
+    const B = ({ t }: { t: string }) => <View style={s15.br}><Text style={s15.bd}>-</Text><Text style={s15.bt}>{t}</Text></View>;
+    const S = ({ v }: { v: string }) => <><Text style={s15.sh}>{v}</Text><View style={s15.sl} /></>;
+    return (
+        <Document>
+            <Page size="A4" style={s15.page}>
+                <Text style={s15.name}>{data.header?.name}</Text>
+                <Text style={s15.ht}>{data.header?.title}</Text>
+                <Text style={s15.hc}>
+                    {data.header?.contact}
+                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s15.lnk}>LinkedIn</Link></Text>}
+                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s15.lnk}>GitHub</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s15.lnk}>Portfolio</Link></Text>}
+                </Text>
+                <View style={s15.bar} />
+                {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s15.body}>{data.summary}</Text></>)}
+                {Array.isArray(data.skills) && data.skills.length > 0 && (
+                    <><S v="Skills" />
+                        {data.skills.map((sk: any, i: number) => (
+                            <Text key={i} style={s15.body}><Text style={s15.bold}>{sk.label}: </Text>{sk.value}</Text>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.experience) && data.experience.length > 0 && (
+                    <><S v="Experience" />
+                        {data.experience.map((e: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 4 : 0 }}>
+                                <View style={s15.row}><Text style={s15.bold}>{e.role}, {e.company}</Text><Text style={s15.meta}>{e.duration}</Text></View>
+                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.techStack && <Text style={[s15.meta, { marginTop: 1.5 }]}>Tech: {e.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    <><S v="Projects" />
+                        {data.projects.map((p: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 3 : 0 }}>
+                                <View style={s15.row}><Text style={s15.bold}>{p.name} ({p.role})</Text><Text style={s15.meta}>{p.duration}</Text></View>
+                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.techStack && <Text style={[s15.meta, { marginTop: 1.5 }]}>Tech: {p.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {data.education && (data.education.college || data.education.degree) && (
+                    <><S v="Education" />
+                        <View style={s15.row}>
+                            <View style={{ flex: 1 }}><Text style={s15.bold}>{data.education.college}</Text><Text style={s15.body}>{data.education.degree}</Text></View>
+                            <Text style={s15.meta}>{data.education.duration}</Text>
+                        </View>
+                    </>
+                )}
+            </Page>
+        </Document>
+    );
+}
+
 // TEMPLATE REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 
-type TemplateId = "classic" | "modern" | "professional" | "minimal" | "executive" | "tech" | "sidebar-teal" | "sidebar-navy" | "emerald" | "ats";
+type TemplateId = "classic" | "modern" | "professional" | "minimal" | "executive" | "tech" | "sidebar-teal" | "sidebar-navy" | "emerald" | "ats" | "faang-focus" | "maang-slate" | "platform-prime" | "recruiter-scan" | "sde-compact";
 
 interface TemplateInfo {
     id:          TemplateId;
@@ -1142,6 +1551,116 @@ const TEMPLATES: TemplateInfo[] = [
                 <div className="h-0.5 w-12 bg-black rounded-sm mt-0.5" />
                 <div className="h-px w-full bg-black" />
                 <div className="h-1 w-full bg-gray-300 rounded-sm" /><div className="h-1 w-3/4 bg-gray-300 rounded-sm" />
+            </div>
+        ),
+    },
+    {
+        id: "faang-focus", name: "FAANG Focus", description: "Single-column, recruiter-first, blue scan line",
+        accent: "#2563eb", bg: "#eff6ff", component: T11, premium: true,
+        thumb: (
+            <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
+                <div className="flex justify-between items-start gap-1">
+                    <div className="flex flex-col gap-0.5 flex-1">
+                        <div className="h-2 w-16 bg-slate-900 rounded-sm" />
+                        <div className="h-1 w-20 bg-blue-600 rounded-sm" />
+                    </div>
+                    <div className="flex flex-col gap-0.5 w-10">
+                        <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                        <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                    </div>
+                </div>
+                <div className="h-0.5 w-full bg-blue-600 mt-0.5" />
+                <div className="h-px w-full bg-blue-200" />
+                <div className="h-1 w-12 bg-blue-700 rounded-sm mt-0.5" />
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                <div className="h-1 w-4/5 bg-gray-300 rounded-sm" />
+                <div className="h-1 w-16 bg-blue-700 rounded-sm mt-0.5" />
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                <div className="h-1 w-3/4 bg-gray-300 rounded-sm" />
+            </div>
+        ),
+    },
+    {
+        id: "maang-slate", name: "MAANG Slate", description: "Centered header, calm slate-green, clean scan",
+        accent: "#0f766e", bg: "#f0fdfa", component: T12, premium: true,
+        thumb: (
+            <div className="w-full h-full bg-white flex flex-col items-center px-2 pt-2 gap-0.5">
+                <div className="h-2 w-20 bg-slate-900 rounded-sm" />
+                <div className="h-1 w-24 bg-teal-700 rounded-sm" />
+                <div className="h-1 w-20 bg-gray-300 rounded-sm" />
+                <div className="h-0.5 w-10 bg-teal-700 mt-0.5 rounded-sm" />
+                <div className="h-px w-full bg-gray-300 mt-0.5" />
+                <div className="flex items-center gap-1 w-full mt-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-teal-700" />
+                    <div className="h-1 w-14 bg-slate-800 rounded-sm" />
+                </div>
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                <div className="h-1 w-4/5 bg-gray-300 rounded-sm" />
+                <div className="flex items-center gap-1 w-full mt-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-teal-700" />
+                    <div className="h-1 w-16 bg-slate-800 rounded-sm" />
+                </div>
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+            </div>
+        ),
+    },
+    {
+        id: "platform-prime", name: "Platform Prime", description: "Section bands, systems-role friendly, ATS-safe",
+        accent: "#475569", bg: "#f8fafc", component: T13, premium: true,
+        thumb: (
+            <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
+                <div className="h-2 w-20 bg-slate-900 rounded-sm" />
+                <div className="h-1 w-24 bg-slate-500 rounded-sm" />
+                <div className="h-1 w-20 bg-gray-300 rounded-sm" />
+                <div className="h-0.5 w-full bg-slate-600 mt-0.5" />
+                <div className="bg-slate-100 border-l-2 border-slate-600 px-1 py-0.5 mt-0.5">
+                    <div className="h-1 w-12 bg-slate-800 rounded-sm" />
+                </div>
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                <div className="h-1 w-4/5 bg-gray-300 rounded-sm" />
+                <div className="bg-slate-100 border-l-2 border-slate-600 px-1 py-0.5 mt-0.5">
+                    <div className="h-1 w-16 bg-slate-800 rounded-sm" />
+                </div>
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+            </div>
+        ),
+    },
+    {
+        id: "recruiter-scan", name: "Recruiter Scan", description: "Impact box + fast skim layout for hiring loops",
+        accent: "#1d4ed8", bg: "#eef2ff", component: T14, premium: true,
+        thumb: (
+            <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
+                <div className="h-2 w-20 bg-slate-900 rounded-sm" />
+                <div className="h-1 w-24 bg-blue-700 rounded-sm" />
+                <div className="h-1 w-20 bg-gray-300 rounded-sm" />
+                <div className="h-px w-full bg-blue-600 mt-0.5" />
+                <div className="border-l-2 border-blue-600 bg-blue-50 px-1 py-0.5 mt-0.5">
+                    <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                    <div className="h-1 w-4/5 bg-gray-300 rounded-sm mt-0.5" />
+                </div>
+                <div className="h-1 w-14 bg-slate-800 rounded-sm mt-0.5" />
+                <div className="h-px w-full bg-blue-200" />
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                <div className="h-1 w-3/4 bg-gray-300 rounded-sm" />
+            </div>
+        ),
+    },
+    {
+        id: "sde-compact", name: "SDE Compact", description: "Dense black-and-white ATS maximiser",
+        accent: "#111827", bg: "#f9fafb", component: T15, premium: true,
+        thumb: (
+            <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
+                <div className="h-2 w-20 bg-black rounded-sm" />
+                <div className="h-1 w-24 bg-gray-500 rounded-sm" />
+                <div className="h-1 w-20 bg-gray-400 rounded-sm" />
+                <div className="h-0.5 w-full bg-black mt-0.5" />
+                <div className="h-1 w-10 bg-black rounded-sm mt-0.5" />
+                <div className="h-px w-full bg-black" />
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
+                <div className="h-1 w-12 bg-black rounded-sm mt-0.5" />
+                <div className="h-px w-full bg-black" />
+                <div className="h-1 w-full bg-gray-300 rounded-sm" />
             </div>
         ),
     },
