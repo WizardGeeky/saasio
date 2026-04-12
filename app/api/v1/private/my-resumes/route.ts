@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
+import type { PipelineStage } from "mongoose";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
@@ -9,7 +10,7 @@ function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function buildSubscriptionStages() {
+function buildSubscriptionStages(): PipelineStage[] {
     return [
         {
             $lookup: {
@@ -29,7 +30,7 @@ function buildSubscriptionStages() {
                             },
                         },
                     },
-                    { $sort: { createdAt: -1 } },
+                    { $sort: { createdAt: -1 as const } },
                     { $limit: 1 },
                     {
                         $project: {
@@ -102,10 +103,10 @@ function buildSubscriptionStages() {
                 },
             },
         },
-    ];
+    ] as PipelineStage[];
 }
 
-function buildSearchStages(search: string) {
+function buildSearchStages(search: string): PipelineStage[] {
     if (!search) return [];
 
     const regex = new RegExp(escapeRegExp(search), "i");
@@ -125,7 +126,7 @@ function buildSearchStages(search: string) {
                 ],
             },
         },
-    ];
+    ] as PipelineStage[];
 }
 
 export const GET = withAuth(

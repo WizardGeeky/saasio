@@ -1871,7 +1871,8 @@ export default function ResumeConfigPage() {
         if (!CurrentTemplate) {
             throw new Error("Selected template is unavailable.");
         }
-        return pdf(React.createElement(CurrentTemplate, { data: resumeData })).toBlob();
+        const documentElement = React.createElement(CurrentTemplate, { data: resumeData }) as unknown as React.ReactElement;
+        return (pdf as any)(documentElement).toBlob();
     }, [resumeData, templateId]);
 
     const triggerBrowserDownload = useCallback((blob: Blob, fileName: string) => {
