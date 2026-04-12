@@ -38,6 +38,7 @@ import {
     FiBookmark,
     FiPieChart,
     FiFileText,
+    FiDownload,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -106,6 +107,12 @@ export const NAV_CONFIG: NavConfig[] = [
         name: "Resumes",
         href: "/dashboard/resume-config",
         icon: FiFileText,
+        privileges: [],
+    },
+    {
+        name: "My Resumes",
+        href: "/dashboard/my-resumes",
+        icon: FiDownload,
         privileges: [],
     },
     {

@@ -1757,7 +1757,7 @@ const INITIAL_DATA = {
 type ActiveTab = "templates" | "editor" | "preview";
 
 export default function ResumeConfigPage() {
-    const { error: toastError } = useToast();
+    const { error: toastError, success: toastSuccess } = useToast();
 
     const [resumeData,  setResumeData]  = useState(INITIAL_DATA);
     const [jsonInput,   setJsonInput]   = useState(() => JSON.stringify(INITIAL_DATA, null, 2));
@@ -1773,6 +1773,14 @@ export default function ResumeConfigPage() {
         remaining: number | null;
         loaded:    boolean;
     }>({ hasActive: false, hasUsage: false, remaining: null, loaded: false });
+    const [restoredResume, setRestoredResume] = useState<{
+        historyId: string;
+        fileName: string;
+        templateId: TemplateId;
+        templateName: string;
+        resumeName: string;
+        originalPayload: string;
+    } | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => setPdfReady(true), 300);
@@ -1803,11 +1811,105 @@ export default function ResumeConfigPage() {
             .catch(() => setSubStatus({ hasActive: false, hasUsage: false, remaining: null, loaded: true }));
     }, []);
 
-    // Consume one use from the active subscription, then trigger download via the provided blob URL
-    const handlePremiumDownload = useCallback(async (url: string | null) => {
-        if (!url || downloading) return;
+    useEffect(() => {
+        const resumeHistoryId = new URLSearchParams(window.location.search).get("resumeHistoryId");
+        if (!resumeHistoryId) return;
+
+        const token = getStoredToken();
+        let active = true;
+
+        fetch(`/api/v1/private/my-resumes/${resumeHistoryId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(async (response) => {
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Failed to restore saved resume.");
+                }
+                return data;
+            })
+            .then((data) => {
+                if (!active) return;
+
+                const snapshot = data.data?.resumePayload;
+                const restoredTemplateId = data.data?.templateId as string;
+                const matchedTemplate = TEMPLATES.find((template) => template.id === restoredTemplateId);
+
+                if (!snapshot || !matchedTemplate) {
+                    throw new Error("Saved resume format is unavailable.");
+                }
+
+                setResumeData(snapshot);
+                setJsonInput(JSON.stringify(snapshot, null, 2));
+                setJsonError(null);
+                setTemplateId(matchedTemplate.id);
+                setMobileTab("preview");
+                setPdfReady(true);
+                setRestoredResume({
+                    historyId: data.data._id,
+                    fileName: data.data.fileName || `${(snapshot.header?.name || "resume").replace(/\s+/g, "_")}_${matchedTemplate.id}.pdf`,
+                    templateId: matchedTemplate.id,
+                    templateName: data.data.templateName || matchedTemplate.name,
+                    resumeName: data.data.resumeName || snapshot.header?.name || "Saved Resume",
+                    originalPayload: JSON.stringify(snapshot),
+                });
+                toastSuccess(`Loaded saved resume: ${data.data.resumeName || data.data.fileName}`);
+            })
+            .catch((error: unknown) => {
+                if (!active) return;
+                toastError(error instanceof Error ? error.message : "Failed to restore saved resume.");
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [toastError, toastSuccess]);
+
+    const generatePdfBlob = useCallback(async () => {
+        const { pdf } = await import("@react-pdf/renderer");
+        const CurrentTemplate = TEMPLATES.find((template) => template.id === templateId)?.component;
+        if (!CurrentTemplate) {
+            throw new Error("Selected template is unavailable.");
+        }
+        return pdf(React.createElement(CurrentTemplate, { data: resumeData })).toBlob();
+    }, [resumeData, templateId]);
+
+    const triggerBrowserDownload = useCallback((blob: Blob, fileName: string) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = fileName;
+        anchor.style.display = "none";
+        document.body.appendChild(anchor);
+        anchor.click();
+
+        window.setTimeout(() => {
+            URL.revokeObjectURL(objectUrl);
+            anchor.remove();
+        }, 30000);
+    }, []);
+
+    // Generate a fresh PDF blob for each click, then consume usage and download it.
+    const handlePremiumDownload = useCallback(async () => {
+        if (downloading) return;
         setDownloading(true);
         try {
+            const blob = await generatePdfBlob();
+            const currentPayload = JSON.stringify(resumeData);
+            const isUnchangedRestoredResume = Boolean(
+                restoredResume &&
+                restoredResume.templateId === templateId &&
+                restoredResume.originalPayload === currentPayload
+            );
+
+            if (isUnchangedRestoredResume) {
+                const restoredFileName = restoredResume?.fileName || `${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`;
+                triggerBrowserDownload(blob, restoredFileName);
+                toastSuccess(`Re-downloaded ${restoredResume?.resumeName || "saved resume"} without using another subscription credit.`);
+                setDownloading(false);
+                return;
+            }
+
             const token = getStoredToken();
             const res  = await fetch("/api/v1/private/subscriptions/use", {
                 method: "POST",
@@ -1842,21 +1944,23 @@ export default function ResumeConfigPage() {
                         resumeName: resumeData.header?.name || "",
                         resumeTitle: resumeData.header?.title || "",
                         source: "resume-config",
+                        resumePayload: resumeData,
+                        subscriptionId: data.data?.subscription?.id || "",
+                        subscriptionUsageCount: data.data?.usageCount ?? null,
+                        subscriptionMaxUsage: data.data?.maxUsage ?? null,
+                        subscriptionRemaining: data.data?.remaining ?? null,
                     }),
                 });
             } catch {
                 // Analytics tracking should never block the download itself.
             }
 
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = fileName;
-            a.click();
+            triggerBrowserDownload(blob, fileName);
         } catch {
             toastError("Download failed. Please try again.");
         }
         setDownloading(false);
-    }, [downloading, resumeData, templateId, toastError]);
+    }, [downloading, generatePdfBlob, resumeData, restoredResume, templateId, toastError, toastSuccess, triggerBrowserDownload]);
 
     // Free template download — no subscription needed
     const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -1869,6 +1973,11 @@ export default function ResumeConfigPage() {
     const activeTpl   = TEMPLATES.find((t) => t.id === templateId)!;
     const TemplateDoc = activeTpl.component;
     const lineCount   = jsonInput.split("\n").length;
+    const isHistoryRedownloadReady = Boolean(
+        restoredResume &&
+        restoredResume.templateId === templateId &&
+        restoredResume.originalPayload === JSON.stringify(resumeData)
+    );
 
     const MTab = ({ id, label, icon }: { id: ActiveTab; label: string; icon: React.ReactNode }) => (
         <button
@@ -1883,6 +1992,19 @@ export default function ResumeConfigPage() {
 
     return (
         <div className="flex flex-col gap-3">
+            {restoredResume && (
+                <div className="flex flex-col gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <p className="font-semibold">Restored from My Resumes: {restoredResume.resumeName}</p>
+                        <p className="text-xs text-sky-700/80">
+                            Exact format: {restoredResume.templateName}. Re-downloading this unchanged saved version will not use another subscription credit.
+                        </p>
+                    </div>
+                    <p className="text-xs font-medium text-sky-700/80">
+                        If you edit the content or change the template, the next download will use a new credit.
+                    </p>
+                </div>
+            )}
 
             {/* ── Subscription status banner ───────────────────────────── */}
             {subStatus.loaded && (
@@ -1936,7 +2058,7 @@ export default function ResumeConfigPage() {
                     </span>
 
                     {pdfReady && !jsonError && (
-                        subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage) ? (
+                        subStatus.loaded && !isHistoryRedownloadReady && (!subStatus.hasActive || !subStatus.hasUsage) ? (
                             /* No active subscription — prompt to subscribe */
                             <a
                                 href="/dashboard/my-subscription"
@@ -1950,7 +2072,7 @@ export default function ResumeConfigPage() {
                                 {({ url, loading }: { url: string | null; loading: boolean }) => (
                                     <button
                                         disabled={loading || downloading}
-                                        onClick={() => handlePremiumDownload(url)}
+                                        onClick={() => handlePremiumDownload()}
                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-full transition-colors shadow-sm shadow-violet-500/20 disabled:opacity-50"
                                     >
                                         {(loading || downloading)
@@ -2131,7 +2253,7 @@ export default function ResumeConfigPage() {
 
                                             {/* Download bar */}
                                             <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-3">
-                                                {subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage) ? (
+                                                {subStatus.loaded && !isHistoryRedownloadReady && (!subStatus.hasActive || !subStatus.hasUsage) ? (
                                                     <a
                                                         href="/dashboard/my-subscription"
                                                         className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors"
@@ -2140,7 +2262,7 @@ export default function ResumeConfigPage() {
                                                     </a>
                                                 ) : (
                                                     <button
-                                                        onClick={() => handlePremiumDownload(url)}
+                                                        onClick={() => handlePremiumDownload()}
                                                         disabled={downloading}
                                                         className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-violet-500/20 disabled:opacity-50"
                                                     >
@@ -2179,7 +2301,7 @@ export default function ResumeConfigPage() {
 
                                             {/* Download bar */}
                                             <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-3">
-                                                {subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage) ? (
+                                                {subStatus.loaded && !isHistoryRedownloadReady && (!subStatus.hasActive || !subStatus.hasUsage) ? (
                                                     <a
                                                         href="/dashboard/my-subscription"
                                                         className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors"
@@ -2188,7 +2310,7 @@ export default function ResumeConfigPage() {
                                                     </a>
                                                 ) : (
                                                     <button
-                                                        onClick={() => handlePremiumDownload(url)}
+                                                        onClick={() => handlePremiumDownload()}
                                                         disabled={downloading}
                                                         className="flex flex-1 items-center justify-center gap-2 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-violet-500/20 disabled:opacity-50"
                                                     >
@@ -2216,3 +2338,4 @@ export default function ResumeConfigPage() {
         </div>
     );
 }
+

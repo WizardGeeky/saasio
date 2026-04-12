@@ -16,7 +16,11 @@ import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
  *   { success: false, message } — no active subscription or usage limit reached
  */
 export const POST = withAuth(
-    async (_req: NextRequest, _ctx: { params: any }, user: CustomJwtPayload): Promise<NextResponse> => {
+    async (
+        _req: NextRequest,
+        _ctx: { params: Record<string, string | string[] | undefined> },
+        user: CustomJwtPayload
+    ): Promise<NextResponse> => {
         try {
             await connectDB();
 
@@ -62,13 +66,33 @@ export const POST = withAuth(
             }
 
             const remaining = maxUsage === 0 ? null : Math.max(0, maxUsage - newUsage);
+            const nextStatus = maxUsage > 0 && newUsage >= maxUsage ? "EXPIRED" : sub.status;
 
             return NextResponse.json({
                 success: true,
-                data: { usageCount: newUsage, maxUsage, remaining },
+                data: {
+                    usageCount: newUsage,
+                    maxUsage,
+                    remaining,
+                    subscription: {
+                        id: sub._id,
+                        projectId: sub.projectId,
+                        projectName: sub.projectName,
+                        planName: sub.planName,
+                        planPrice: sub.planPrice,
+                        currency: sub.currency,
+                        status: nextStatus,
+                    },
+                },
             });
-        } catch (error: any) {
-            return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        } catch (error: unknown) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: error instanceof Error ? error.message : "Unexpected error",
+                },
+                { status: 500 }
+            );
         }
     }
 );

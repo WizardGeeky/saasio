@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import ResumeDownload from "@/models/ResumeDownload";
+import Subscription from "@/models/Subscription";
 
 type ResumeDownloadPayload = {
     fileName?: unknown;
@@ -12,10 +14,30 @@ type ResumeDownloadPayload = {
     resumeName?: unknown;
     resumeTitle?: unknown;
     source?: unknown;
+    resumePayload?: unknown;
+    subscriptionId?: unknown;
+    subscriptionUsageCount?: unknown;
+    subscriptionMaxUsage?: unknown;
+    subscriptionRemaining?: unknown;
 };
 
 function asTrimmedString(value: unknown, fallback = ""): string {
     return typeof value === "string" ? value.trim() : fallback;
+}
+
+function asNullableNumber(value: unknown): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+}
+
+function asPlainObject(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === "object" && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : null;
 }
 
 export const POST = withAuth(
@@ -35,6 +57,20 @@ export const POST = withAuth(
                 );
             }
 
+            const subscriptionId = asTrimmedString(body.subscriptionId);
+            const resumePayload = asPlainObject(body.resumePayload);
+            const subscriptionUsageCount = asNullableNumber(body.subscriptionUsageCount);
+            const subscriptionMaxUsage = asNullableNumber(body.subscriptionMaxUsage);
+            const subscriptionRemaining = asNullableNumber(body.subscriptionRemaining);
+
+            let subscriptionSnapshot: any = null;
+            if (subscriptionId && mongoose.Types.ObjectId.isValid(subscriptionId)) {
+                subscriptionSnapshot = await Subscription.findOne({
+                    _id: subscriptionId,
+                    userEmail: user.email,
+                }).lean();
+            }
+
             const record = await ResumeDownload.create({
                 userId: user.sub,
                 userEmail: user.email,
@@ -45,6 +81,21 @@ export const POST = withAuth(
                 resumeName: asTrimmedString(body.resumeName),
                 resumeTitle: asTrimmedString(body.resumeTitle),
                 source: asTrimmedString(body.source, "resume-config"),
+                ...(resumePayload ? { resumePayload } : {}),
+                ...(subscriptionSnapshot
+                    ? {
+                        subscriptionId: String(subscriptionSnapshot._id),
+                        subscriptionProjectId: subscriptionSnapshot.projectId,
+                        subscriptionProjectName: subscriptionSnapshot.projectName,
+                        subscriptionPlanName: subscriptionSnapshot.planName,
+                        subscriptionPlanPrice: subscriptionSnapshot.planPrice,
+                        subscriptionCurrency: subscriptionSnapshot.currency,
+                        subscriptionStatus: subscriptionSnapshot.status,
+                        subscriptionUsageCount,
+                        subscriptionMaxUsage,
+                        subscriptionRemaining,
+                    }
+                    : {}),
             });
 
             return NextResponse.json({
