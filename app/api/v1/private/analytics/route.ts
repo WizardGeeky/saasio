@@ -166,7 +166,7 @@ export const GET = withAuth(
                             memberCount: { $size: "$userIds" },
                         },
                     },
-                    { $sort: { memberCount: -1, downloadCount: -1, "_id.templateName": 1 } },
+                    { $sort: { downloadCount: -1, memberCount: -1, "_id.templateName": 1 } },
                     { $limit: RESUME_TEMPLATE_CATALOG.length },
                 ]),
                 Subscription.find({ status: "ACTIVE" }).lean(),
@@ -243,11 +243,11 @@ export const GET = withAuth(
                     return current;
                 }
 
-                if (current.memberCount > best.memberCount) {
+                if (current.downloadCount > best.downloadCount) {
                     return current;
                 }
 
-                if (current.memberCount === best.memberCount && current.downloadCount > best.downloadCount) {
+                if (current.downloadCount === best.downloadCount && current.memberCount > best.memberCount) {
                     return current;
                 }
 

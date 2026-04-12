@@ -193,7 +193,8 @@ const compConfig: ChartConfig = {
 };
 
 const resumeUsageConfig: ChartConfig = {
-    memberCount: { label: "Members", color: "hsl(173, 80%, 40%)" },
+    downloadCount: { label: "Downloads", color: "hsl(173, 80%, 40%)" },
+    memberCount: { label: "Users", color: "hsl(215, 90%, 55%)" },
 };
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -421,17 +422,20 @@ export default function DashboardPage() {
         ? `${unlimitedResumePlans} unlimited active plan${unlimitedResumePlans === 1 ? "" : "s"}`
         : "Across active subscriptions";
     const resumeUsageChartData = (g?.resumes?.topTemplates ?? [DEFAULT_MOST_USED_RESUME_TEMPLATE])
+        .filter((template) => template.downloadCount > 0)
         .map((template) => ({
             templateName: template.templateName,
+            downloadCount: template.downloadCount,
             memberCount: template.memberCount,
         }))
-        .sort((left, right) => right.memberCount - left.memberCount || left.templateName.localeCompare(right.templateName));
-    const resumeUsagePageCount = Math.max(1, Math.ceil(resumeUsageChartData.length / resumeItemsPerPage));
-    const safeResumePage = Math.min(resumePage, resumeUsagePageCount - 1);
-    const resumePageStart = safeResumePage * resumeItemsPerPage;
-    const resumePageEnd = Math.min(resumePageStart + resumeItemsPerPage, resumeUsageChartData.length);
-    const visibleResumeUsageData = resumeUsageChartData.slice(resumePageStart, resumePageEnd);
-    const resumeUsageChartMax = Math.max(1, ...visibleResumeUsageData.map((template) => template.memberCount));
+        .sort((left, right) => right.downloadCount - left.downloadCount || right.memberCount - left.memberCount || left.templateName.localeCompare(right.templateName));
+    const hasResumeUsageData = resumeUsageChartData.length > 0;
+    const resumeUsagePageCount = hasResumeUsageData ? Math.max(1, Math.ceil(resumeUsageChartData.length / resumeItemsPerPage)) : 1;
+    const safeResumePage = hasResumeUsageData ? Math.min(resumePage, resumeUsagePageCount - 1) : 0;
+    const resumePageStart = hasResumeUsageData ? safeResumePage * resumeItemsPerPage : 0;
+    const resumePageEnd = hasResumeUsageData ? Math.min(resumePageStart + resumeItemsPerPage, resumeUsageChartData.length) : 0;
+    const visibleResumeUsageData = hasResumeUsageData ? resumeUsageChartData.slice(resumePageStart, resumePageEnd) : [];
+    const resumeUsageChartMax = Math.max(1, ...visibleResumeUsageData.map((template) => template.downloadCount));
 
     useEffect(() => {
         setResumePage((current) => Math.min(current, resumeUsagePageCount - 1));
@@ -591,7 +595,9 @@ export default function DashboardPage() {
                                             Resume Usage by Format
                                         </h3>
                                         <p className="mt-0.5 text-xs text-gray-400 dark:text-slate-400">
-                                            Showing {resumePageStart + 1}-{resumePageEnd} of {resumeUsageChartData.length} resume formats
+                                            {hasResumeUsageData
+                                                ? `Showing ${resumePageStart + 1}-${resumePageEnd} of ${resumeUsageChartData.length} resume formats by total downloads`
+                                                : "Resume download insights will appear here after users download resumes."}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -602,7 +608,7 @@ export default function DashboardPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => setResumePage((current) => Math.max(0, current - 1))}
-                                                disabled={safeResumePage === 0}
+                                                disabled={!hasResumeUsageData || safeResumePage === 0}
                                                 className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                                                 aria-label="Previous resume formats page"
                                             >
@@ -611,7 +617,7 @@ export default function DashboardPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => setResumePage((current) => Math.min(resumeUsagePageCount - 1, current + 1))}
-                                                disabled={safeResumePage >= resumeUsagePageCount - 1}
+                                                disabled={!hasResumeUsageData || safeResumePage >= resumeUsagePageCount - 1}
                                                 className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                                                 aria-label="Next resume formats page"
                                             >
@@ -620,51 +626,57 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <ChartContainer config={resumeUsageConfig} className="h-[320px] w-full aspect-auto sm:h-[360px]">
-                                    <BarChart
-                                        data={visibleResumeUsageData}
-                                        margin={{ top: 8, right: 8, left: -8, bottom: 24 }}
-                                    >
-                                        <CartesianGrid
-                                            strokeDasharray="3 3"
-                                            stroke="rgba(148,163,184,0.24)"
-                                            vertical
-                                        />
-                                        <XAxis
-                                            dataKey="templateName"
-                                            tick={{ fontSize: 10 }}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            interval={0}
-                                            angle={-18}
-                                            textAnchor="end"
-                                            height={60}
-                                            tickFormatter={formatResumeTick}
-                                        />
-                                        <YAxis
-                                            tick={{ fontSize: 10 }}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            allowDecimals={false}
-                                            width={32}
-                                            domain={[0, resumeUsageChartMax]}
-                                        />
-                                        <ChartTooltip
-                                            cursor={false}
-                                            content={
-                                                <ChartTooltipContent
-                                                    labelFormatter={(value) => String(value)}
-                                                />
-                                            }
-                                        />
-                                        <Bar
-                                            dataKey="memberCount"
-                                            fill="var(--color-memberCount)"
-                                            radius={[8, 8, 0, 0]}
-                                            maxBarSize={56}
-                                        />
-                                    </BarChart>
-                                </ChartContainer>
+                                {hasResumeUsageData ? (
+                                    <ChartContainer config={resumeUsageConfig} className="h-[320px] w-full aspect-auto sm:h-[360px]">
+                                        <BarChart
+                                            data={visibleResumeUsageData}
+                                            margin={{ top: 8, right: 8, left: -8, bottom: 24 }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                stroke="rgba(148,163,184,0.24)"
+                                                vertical
+                                            />
+                                            <XAxis
+                                                dataKey="templateName"
+                                                tick={{ fontSize: 10 }}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                interval={0}
+                                                angle={-18}
+                                                textAnchor="end"
+                                                height={60}
+                                                tickFormatter={formatResumeTick}
+                                            />
+                                            <YAxis
+                                                tick={{ fontSize: 10 }}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                allowDecimals={false}
+                                                width={32}
+                                                domain={[0, resumeUsageChartMax]}
+                                            />
+                                            <ChartTooltip
+                                                cursor={false}
+                                                content={
+                                                    <ChartTooltipContent
+                                                        labelFormatter={(value) => String(value)}
+                                                    />
+                                                }
+                                            />
+                                            <Bar
+                                                dataKey="downloadCount"
+                                                fill="var(--color-downloadCount)"
+                                                radius={[8, 8, 0, 0]}
+                                                maxBarSize={56}
+                                            />
+                                        </BarChart>
+                                    </ChartContainer>
+                                ) : (
+                                    <div className="flex h-[320px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center text-sm text-gray-500 sm:h-[360px] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
+                                        Resume format insights will appear here once users download resumes.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </section>
