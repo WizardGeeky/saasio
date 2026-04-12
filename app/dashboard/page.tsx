@@ -627,7 +627,7 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                                 {hasResumeUsageData ? (
-                                    <ChartContainer config={resumeUsageConfig} className="h-[320px] w-full aspect-auto sm:h-[360px]">
+                                    <ChartContainer config={resumeUsageConfig} className="h-80 w-full aspect-auto sm:h-90">
                                         <BarChart
                                             data={visibleResumeUsageData}
                                             margin={{ top: 8, right: 8, left: -8, bottom: 24 }}
@@ -673,7 +673,7 @@ export default function DashboardPage() {
                                         </BarChart>
                                     </ChartContainer>
                                 ) : (
-                                    <div className="flex h-[320px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center text-sm text-gray-500 sm:h-[360px] dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
+                                    <div className="flex h-80 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center text-sm text-gray-500 sm:h-90 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
                                         Resume format insights will appear here once users download resumes.
                                     </div>
                                 )}

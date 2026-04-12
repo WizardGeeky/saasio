@@ -21,7 +21,27 @@ export type ExtraTemplateId =
     | "summit-panels"
     | "mono-ats-plus"
     | "ledger-ats"
-    | "precision-ats";
+    | "precision-ats"
+    | "harbor-profile"
+    | "zenith-stack"
+    | "cobalt-timeline"
+    | "sage-brief"
+    | "linen-column"
+    | "sterling-chronicle"
+    | "vertex-hybrid"
+    | "opal-direct"
+    | "summit-signal"
+    | "civic-outline"
+    | "atlas-brief"
+    | "northstar-ledger"
+    | "meridian-profile"
+    | "forged-ats"
+    | "clarity-grid"
+    | "quorum-compact"
+    | "elevate-column"
+    | "horizon-split"
+    | "anchor-clean"
+    | "pinnacle-flow";
 
 export interface ExtraTemplateInfo {
     id: ExtraTemplateId;
@@ -418,6 +438,26 @@ const EXTRA_TEMPLATE_SPECS: TemplateSpec[] = [
     { id: "mono-ats-plus", name: "Mono ATS Plus", description: "Monochrome density for maximum ATS readability", accent: "#111827", bg: "#f9fafb", pageBg: "#ffffff", text: "#111827", muted: "#4b5563", mode: "compact", premium: true },
     { id: "ledger-ats", name: "Ledger ATS", description: "Compact ledger lines with scan-first density", accent: "#334155", bg: "#f8fafc", pageBg: "#ffffff", text: "#0f172a", muted: "#475569", mode: "compact", premium: true },
     { id: "precision-ats", name: "Precision ATS", description: "Blue-gray compact layout with tight structure", accent: "#1d4ed8", bg: "#eff6ff", pageBg: "#ffffff", text: "#111827", muted: "#64748b", mode: "compact", premium: true },
+    { id: "harbor-profile", name: "Harbor Profile", description: "Split-header inspired ATS profile with polished hierarchy", accent: "#0f766e", bg: "#f0fdfa", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "band", summaryCard: true, premium: true },
+    { id: "zenith-stack", name: "Zenith Stack", description: "Centered one-page stack designed for ATS clarity", accent: "#4f46e5", bg: "#eef2ff", pageBg: "#ffffff", text: "#111827", muted: "#6b7280", mode: "compact", premium: true },
+    { id: "cobalt-timeline", name: "Cobalt Timeline", description: "Chronology-led ATS format with crisp blue scan lines", accent: "#1d4ed8", bg: "#eff6ff", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "compact", premium: true },
+    { id: "sage-brief", name: "Sage Brief", description: "Summary-first ATS brief with calm spacing", accent: "#15803d", bg: "#f0fdf4", pageBg: "#ffffff", text: "#14532d", muted: "#4b5563", mode: "band", summaryCard: true, premium: true },
+    { id: "linen-column", name: "Linen Column", description: "Warm minimal single-column layout for clean parsing", accent: "#a16207", bg: "#fefce8", pageBg: "#ffffff", text: "#292524", muted: "#78716c", mode: "compact", premium: true },
+    { id: "sterling-chronicle", name: "Sterling Chronicle", description: "Structured boxed format for chronological ATS scans", accent: "#475569", bg: "#f8fafc", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "boxed", premium: true },
+    { id: "vertex-hybrid", name: "Vertex Hybrid", description: "Balanced hybrid resume with ATS-safe right rail", accent: "#0f766e", bg: "#ecfeff", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "right-rail", panelBg: "#134e4a", panelText: "#ecfeff", panelMuted: "#a7f3d0", summaryCard: true, premium: true },
+    { id: "opal-direct", name: "Opal Direct", description: "Direct monochrome-forward ATS format for concise resumes", accent: "#1f2937", bg: "#f9fafb", pageBg: "#ffffff", text: "#111827", muted: "#4b5563", mode: "compact", premium: true },
+    { id: "summit-signal", name: "Summit Signal", description: "Leadership-style rail layout with strong ATS readability", accent: "#7c2d12", bg: "#fff7ed", pageBg: "#ffffff", text: "#431407", muted: "#9a3412", mode: "left-rail", panelBg: "#7c2d12", panelText: "#fff7ed", panelMuted: "#fdba74", summarySide: true, premium: true },
+    { id: "civic-outline", name: "Civic Outline", description: "Outlined boxed sections for operations and generalist roles", accent: "#334155", bg: "#f8fafc", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "boxed", premium: true },
+    { id: "atlas-brief", name: "Atlas Brief", description: "Polished ATS brief with centered visual rhythm", accent: "#0ea5e9", bg: "#f0f9ff", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "band", summaryCard: true, premium: true },
+    { id: "northstar-ledger", name: "Northstar Ledger", description: "Finance-friendly compact ATS format with firm structure", accent: "#4338ca", bg: "#eef2ff", pageBg: "#ffffff", text: "#111827", muted: "#6b7280", mode: "compact", premium: true },
+    { id: "meridian-profile", name: "Meridian Profile", description: "Profile-led hybrid layout with ATS-safe support rail", accent: "#0369a1", bg: "#f0f9ff", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "right-rail", panelBg: "#0c4a6e", panelText: "#f0f9ff", panelMuted: "#bae6fd", summaryCard: true, premium: true },
+    { id: "forged-ats", name: "Forged ATS", description: "Dense monochrome build tuned for high ATS compatibility", accent: "#111827", bg: "#f9fafb", pageBg: "#ffffff", text: "#111827", muted: "#4b5563", mode: "compact", premium: true },
+    { id: "clarity-grid", name: "Clarity Grid", description: "Boxed clarity format for fast recruiter and ATS review", accent: "#2563eb", bg: "#eff6ff", pageBg: "#ffffff", text: "#111827", muted: "#64748b", mode: "boxed", summaryCard: true, premium: true },
+    { id: "quorum-compact", name: "Quorum Compact", description: "High-signal compact layout for concise ATS targeting", accent: "#be123c", bg: "#fff1f2", pageBg: "#ffffff", text: "#1f2937", muted: "#6b7280", mode: "compact", premium: true },
+    { id: "elevate-column", name: "Elevate Column", description: "Skills-forward column layout that stays ATS-safe", accent: "#166534", bg: "#f0fdf4", pageBg: "#ffffff", text: "#14532d", muted: "#4b5563", mode: "left-rail", panelBg: "#14532d", panelText: "#f0fdf4", panelMuted: "#bbf7d0", premium: true },
+    { id: "horizon-split", name: "Horizon Split", description: "Executive split-style resume with ATS-friendly flow", accent: "#0f766e", bg: "#f0fdfa", pageBg: "#ffffff", text: "#0f172a", muted: "#64748b", mode: "band", premium: true },
+    { id: "anchor-clean", name: "Anchor Clean", description: "Calm boxed structure with steady ATS whitespace", accent: "#4b5563", bg: "#f9fafb", pageBg: "#ffffff", text: "#111827", muted: "#6b7280", mode: "boxed", premium: true },
+    { id: "pinnacle-flow", name: "Pinnacle Flow", description: "Executive-friendly ATS flow balancing summary and impact", accent: "#9a3412", bg: "#fff7ed", pageBg: "#ffffff", text: "#431407", muted: "#9a3412", mode: "band", serif: true, summaryCard: true, premium: true },
 ];
 
 export const EXTRA_TEMPLATES: ExtraTemplateInfo[] = EXTRA_TEMPLATE_SPECS.map((spec) => ({
