@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Document, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ComponentType, ReactNode } from "react";
+import {
+    getCareerSupplementalSections,
+    getProfileSupplementalSections,
+    renderSupplementalSections,
+    type ResumeSupplementalSection,
+} from "./resume-sections";
 
 type ResumeData = any;
 type TemplateMode = "band" | "left-rail" | "right-rail" | "boxed" | "compact";
@@ -249,6 +255,8 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
         const links = getHeaderLinks(data);
         const summary = !!data.summary?.trim() && <View style={styles.summary}><Text style={styles.body}>{data.summary}</Text></View>;
         const railSummary = !!data.summary?.trim() && <Text style={styles.railBody}>{data.summary}</Text>;
+        const careerSections: ResumeSupplementalSection[] = getCareerSupplementalSections(data);
+        const profileSections: ResumeSupplementalSection[] = getProfileSupplementalSections(data);
         const skills = hasItems(data.skills) && data.skills.map((skill: any, i: number) => (
             <Text key={i} style={spec.mode === "left-rail" || spec.mode === "right-rail" ? styles.railBody : styles.body}>
                 <Text style={spec.mode === "left-rail" || spec.mode === "right-rail" ? styles.railLabel : styles.strong}>{skill.label}: </Text>
@@ -303,6 +311,29 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
             ));
         };
 
+        const renderSupplementalMainSections = (sections: ResumeSupplementalSection[]) => renderSupplementalSections({
+            sections,
+            heading: (title) => (
+                spec.mode === "boxed"
+                    ? <Text style={styles.tag}>{title}</Text>
+                    : <><Text style={styles.sectionTitle}>{title}</Text><View style={styles.sectionLine} /></>
+            ),
+            bullet: (item, key) => (
+                <View key={key} style={styles.bulletRow}>
+                    <Text style={styles.bullet}>-</Text>
+                    <Text style={styles.bulletText}>{item}</Text>
+                </View>
+            ),
+            rowStyle: styles.row,
+            titleStyle: styles.strong,
+            subtitleStyle: styles.meta,
+            durationStyle: styles.meta,
+            detailStyle: styles.stack,
+            sectionStyle: spec.mode === "boxed" ? styles.box : undefined,
+            getEntryStyle: (index) => ({ marginTop: index > 0 ? 6 : 0 }),
+            subtitlePlacement: spec.mode === "left-rail" || spec.mode === "right-rail" ? "below" : "inline",
+        });
+
         if (spec.mode === "band") {
             return (
                 <Document>
@@ -320,8 +351,10 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                             {summary}
                             {mainSection("Skills", skills)}
                             {renderItems("Experience", data.experience, "role", "company")}
+                            {renderSupplementalMainSections(careerSections)}
                             {renderItems("Projects", data.projects, "name", "role")}
                             {mainSection("Education", education)}
+                            {renderSupplementalMainSections(profileSections)}
                         </View>
                     </Page>
                 </Document>
@@ -345,7 +378,9 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                             <View style={styles.main}>
                                 {!spec.summarySide && summary}
                                 {renderItems("Experience", data.experience, "role", "company")}
+                                {renderSupplementalMainSections(careerSections)}
                                 {renderItems("Projects", data.projects, "name", "role")}
+                                {renderSupplementalMainSections(profileSections)}
                             </View>
                         </View>
                     </Page>
@@ -364,7 +399,9 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                                 <Text style={styles.contact}>{data.header?.contact}</Text>
                                 {summary}
                                 {renderItems("Experience", data.experience, "role", "company")}
+                                {renderSupplementalMainSections(careerSections)}
                                 {renderItems("Projects", data.projects, "name", "role")}
+                                {renderSupplementalMainSections(profileSections)}
                             </View>
                             <View style={styles.rail}>
                                 {sideSection("Links", links.length > 0 ? <LinkList links={links} textStyle={styles.railLinkText} linkStyle={styles.railLink} /> : null)}
@@ -391,8 +428,10 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                             {summary}
                             {mainSection("Skills", skills)}
                             {renderItems("Experience", data.experience, "role", "company")}
+                            {renderSupplementalMainSections(careerSections)}
                             {renderItems("Projects", data.projects, "name", "role")}
                             {education}
+                            {renderSupplementalMainSections(profileSections)}
                         </View>
                     </Page>
                 </Document>
@@ -413,8 +452,10 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                         {summary}
                         {mainSection("Skills", skills)}
                         {renderItems("Experience", data.experience, "role", "company")}
+                        {renderSupplementalMainSections(careerSections)}
                         {renderItems("Projects", data.projects, "name", "role")}
                         {mainSection("Education", education)}
+                        {renderSupplementalMainSections(profileSections)}
                     </View>
                 </Page>
             </Document>

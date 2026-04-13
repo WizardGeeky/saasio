@@ -16,6 +16,12 @@ import {
 import { getStoredToken } from "@/app/utils/token";
 import { useToast } from "@/components/ui/toast";
 import { EXTRA_TEMPLATES, type ExtraTemplateId } from "./extra-templates";
+import {
+    getCareerSupplementalSections,
+    getProfileSupplementalSections,
+    renderSupplementalSections,
+    type ResumeSupplementalSection,
+} from "./resume-sections";
 
 // ── Lazy PDF components ───────────────────────────────────────────────────────
 
@@ -106,6 +112,61 @@ function PDFLoader() {
 // TEMPLATE 1 — CLASSIC  (Times, centered header, all-caps sections)
 // ─────────────────────────────────────────────────────────────────────────────
 
+function getOptionalSections(data: unknown): {
+    careerSections: ResumeSupplementalSection[];
+    profileSections: ResumeSupplementalSection[];
+} {
+    return {
+        careerSections: getCareerSupplementalSections(data),
+        profileSections: getProfileSupplementalSections(data),
+    };
+}
+
+function renderOptionalSections({
+    sections,
+    heading,
+    bullet,
+    rowStyle,
+    titleStyle,
+    subtitleStyle,
+    durationStyle,
+    detailStyle,
+    entryGap,
+    firstEntryGap = 0,
+    subtitlePlacement = "inline",
+    inlineSeparator = " | ",
+    sectionStyle,
+}: {
+    sections: ResumeSupplementalSection[];
+    heading: (title: string) => React.ReactNode;
+    bullet: (item: string, key: string) => React.ReactNode;
+    rowStyle: any;
+    titleStyle: any;
+    subtitleStyle: any;
+    durationStyle: any;
+    detailStyle: any;
+    entryGap: number;
+    firstEntryGap?: number;
+    subtitlePlacement?: "inline" | "below";
+    inlineSeparator?: string;
+    sectionStyle?: any;
+}) {
+    return renderSupplementalSections({
+        sections,
+        heading: (title) => heading(title),
+        bullet,
+        rowStyle,
+        titleStyle,
+        subtitleStyle,
+        durationStyle,
+        detailStyle,
+        sectionStyle,
+        getEntryStyle: (index) => ({ marginTop: index > 0 ? entryGap : firstEntryGap }),
+        subtitlePlacement,
+        inlineSeparator,
+    });
+}
+
 const s1 = StyleSheet.create({
     page:  { padding: "20 26", backgroundColor: "#fff" },
     hdr:   { alignItems: "center" },
@@ -125,6 +186,18 @@ const s1 = StyleSheet.create({
 });
 
 function T1({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s1.row,
+        titleStyle: s1.bold,
+        subtitleStyle: s1.body,
+        durationStyle: s1.body,
+        detailStyle: s1.ital,
+        entryGap: 6,
+    });
     const B = ({ t }: { t: string }) => <View style={s1.br}><Text style={s1.bd}>•</Text><Text style={s1.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <><Text style={s1.sh}>{v}</Text><View style={s1.sep} /></>;
     return (
@@ -158,6 +231,7 @@ function T1({ data }: { data: any }) {
                         ))}
                     </View>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <View style={{ marginTop: 4 }}><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
@@ -177,6 +251,7 @@ function T1({ data }: { data: any }) {
                         </View>
                     </View>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -206,6 +281,18 @@ const s2 = StyleSheet.create({
 });
 
 function T2({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s2.row,
+        titleStyle: s2.bold,
+        subtitleStyle: s2.body,
+        durationStyle: s2.meta,
+        detailStyle: s2.meta,
+        entryGap: 6,
+    });
     const B = ({ t }: { t: string }) => <View style={s2.br}><Text style={s2.bd}>-</Text><Text style={s2.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <><Text style={s2.sh}>{v}</Text><View style={s2.sl} /></>;
     return (
@@ -240,7 +327,8 @@ function T2({ data }: { data: any }) {
                             ))}
                         </>
                     )}
-                    {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    {supplementalSections(careerSections)}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><S v="PROJECTS" />
                             {data.projects.map((p: any, i: number) => (
                                 <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
@@ -259,6 +347,7 @@ function T2({ data }: { data: any }) {
                             </View>
                         </>
                     )}
+                {supplementalSections(profileSections)}
                 </View>
             </Page>
         </Document>
@@ -288,6 +377,19 @@ const s3 = StyleSheet.create({
 });
 
 function T3({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <Text style={s3.sh}>{title}</Text>,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s3.row,
+        titleStyle: s3.bold,
+        subtitleStyle: s3.btext,
+        durationStyle: s3.meta,
+        detailStyle: s3.meta,
+        entryGap: 7,
+        firstEntryGap: 4,
+    });
     const B = ({ t }: { t: string }) => <View style={s3.br}><Text style={s3.bd}>•</Text><Text style={s3.bt}>{t}</Text></View>;
     return (
         <Document>
@@ -320,7 +422,8 @@ function T3({ data }: { data: any }) {
                             ))}
                         </>
                     )}
-                    {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    {supplementalSections(careerSections)}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><Text style={s3.sh}>KEY PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
                                 <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }}>
@@ -339,6 +442,7 @@ function T3({ data }: { data: any }) {
                             </View>
                         </>
                     )}
+                {supplementalSections(profileSections)}
                 </View>
             </Page>
         </Document>
@@ -367,6 +471,19 @@ const s4 = StyleSheet.create({
 });
 
 function T4({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <Text style={s4.sh}>{title}</Text>,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s4.row,
+        titleStyle: s4.bold,
+        subtitleStyle: s4.meta,
+        durationStyle: s4.meta,
+        detailStyle: s4.meta,
+        entryGap: 8,
+        subtitlePlacement: "below",
+    });
     const B = ({ t }: { t: string }) => <View style={s4.br}><Text style={s4.bd}>—</Text><Text style={s4.bt}>{t}</Text></View>;
     return (
         <Document>
@@ -397,6 +514,7 @@ function T4({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><Text style={s4.sh}>PROJECTS</Text>
                         {data.projects.map((p: any, i: number) => (
@@ -417,6 +535,7 @@ function T4({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -445,6 +564,19 @@ const s5 = StyleSheet.create({
 });
 
 function T5({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <Text style={s5.sh}>{title}</Text>,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s5.row,
+        titleStyle: s5.bold,
+        subtitleStyle: s5.body,
+        durationStyle: s5.meta,
+        detailStyle: s5.meta,
+        entryGap: 7,
+        firstEntryGap: 4,
+    });
     const B = ({ t }: { t: string }) => <View style={s5.br}><Text style={s5.bd}>•</Text><Text style={s5.bt}>{t}</Text></View>;
     return (
         <Document>
@@ -477,6 +609,7 @@ function T5({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><Text style={s5.sh}>SELECTED PROJECTS</Text>
                         {data.projects.map((p: any, i: number) => (
@@ -496,6 +629,7 @@ function T5({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -527,6 +661,18 @@ const s6 = StyleSheet.create({
 });
 
 function T6({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s6.row,
+        titleStyle: s6.bold,
+        subtitleStyle: s6.body,
+        durationStyle: s6.meta,
+        detailStyle: s6.meta,
+        entryGap: 7,
+    });
     const B = ({ t }: { t: string }) => <View style={s6.br}><Text style={s6.bd}>{">"}</Text><Text style={s6.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <View style={s6.sw}><View style={s6.sbar} /><Text style={s6.sh}>{v}</Text></View>;
     return (
@@ -560,6 +706,7 @@ function T6({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
@@ -579,6 +726,7 @@ function T6({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -611,6 +759,19 @@ const s7 = StyleSheet.create({
 });
 
 function T7({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <Text style={s7.msh}>{title}</Text>,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s7.mrow,
+        titleStyle: s7.mbold,
+        subtitleStyle: s7.mmeta,
+        durationStyle: s7.mmeta,
+        detailStyle: s7.mmeta,
+        entryGap: 6,
+        subtitlePlacement: "below",
+    });
     const B = ({ t }: { t: string }) => <View style={s7.mbr}><Text style={s7.mbd}>•</Text><Text style={s7.mbt}>{t}</Text></View>;
     const contact = (data.header?.contact ?? "").split(" | ").join("\n");
     return (
@@ -656,7 +817,8 @@ function T7({ data }: { data: any }) {
                             ))}
                         </>
                     )}
-                    {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    {supplementalSections(careerSections)}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><Text style={s7.msh}>PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
                                 <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
@@ -668,6 +830,7 @@ function T7({ data }: { data: any }) {
                             ))}
                         </>
                     )}
+                    {supplementalSections(profileSections)}
                 </View>
             </Page>
         </Document>
@@ -702,6 +865,19 @@ const s8 = StyleSheet.create({
 });
 
 function T8({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <Text style={s8.msh}>{title}</Text>,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s8.mrow,
+        titleStyle: s8.mbold,
+        subtitleStyle: s8.mmeta,
+        durationStyle: s8.mmeta,
+        detailStyle: s8.mmeta,
+        entryGap: 7,
+        subtitlePlacement: "below",
+    });
     const B = ({ t }: { t: string }) => <View style={s8.mbr}><Text style={s8.mbd}>•</Text><Text style={s8.mbt}>{t}</Text></View>;
     const contact = (data.header?.contact ?? "").split(" | ").join("\n");
     return (
@@ -750,7 +926,8 @@ function T8({ data }: { data: any }) {
                             ))}
                         </>
                     )}
-                    {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    {supplementalSections(careerSections)}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><Text style={s8.msh}>PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
                                 <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
@@ -761,6 +938,7 @@ function T8({ data }: { data: any }) {
                             ))}
                         </>
                     )}
+                    {supplementalSections(profileSections)}
                 </View>
             </Page>
         </Document>
@@ -790,6 +968,18 @@ const s9 = StyleSheet.create({
 });
 
 function T9({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s9.row,
+        titleStyle: s9.bold,
+        subtitleStyle: s9.body,
+        durationStyle: s9.meta,
+        detailStyle: s9.meta,
+        entryGap: 7,
+    });
     const B = ({ t }: { t: string }) => <View style={s9.br}><Text style={s9.bd}>•</Text><Text style={s9.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <><Text style={s9.sh}>{v}</Text><View style={s9.dthin} /></>;
     return (
@@ -821,6 +1011,7 @@ function T9({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
@@ -840,6 +1031,7 @@ function T9({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -868,6 +1060,18 @@ const s10 = StyleSheet.create({
 });
 
 function T10({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s10.row,
+        titleStyle: s10.bold,
+        subtitleStyle: s10.body,
+        durationStyle: s10.meta,
+        detailStyle: s10.meta,
+        entryGap: 5,
+    });
     const B = ({ t }: { t: string }) => <View style={s10.br}><Text style={s10.bd}>•</Text><Text style={s10.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <><Text style={s10.sh}>{v}</Text><View style={s10.shbar} /></>;
     return (
@@ -899,6 +1103,7 @@ function T10({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
@@ -918,6 +1123,7 @@ function T10({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -947,6 +1153,19 @@ const s11 = StyleSheet.create({
 });
 
 function T11({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s11.row,
+        titleStyle: s11.bold,
+        subtitleStyle: s11.body,
+        durationStyle: s11.meta,
+        detailStyle: s11.meta,
+        entryGap: 6,
+        subtitlePlacement: "below",
+    });
     const B = ({ t }: { t: string }) => <View style={s11.br}><Text style={s11.bd}>-</Text><Text style={s11.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <><Text style={s11.sh}>{v}</Text><View style={s11.sl} /></>;
     return (
@@ -986,6 +1205,7 @@ function T11({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="Projects" />
                         {data.projects.map((p: any, i: number) => (
@@ -1006,6 +1226,7 @@ function T11({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -1033,6 +1254,18 @@ const s12 = StyleSheet.create({
 });
 
 function T12({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s12.row,
+        titleStyle: s12.bold,
+        subtitleStyle: s12.body,
+        durationStyle: s12.meta,
+        detailStyle: s12.meta,
+        entryGap: 6,
+    });
     const B = ({ t }: { t: string }) => <View style={s12.br}><Text style={s12.bd}>{">"}</Text><Text style={s12.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <View style={s12.srow}><View style={s12.dot} /><Text style={s12.sh}>{v}</Text></View>;
     return (
@@ -1068,6 +1301,7 @@ function T12({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="Projects" />
                         {data.projects.map((p: any, i: number) => (
@@ -1087,6 +1321,7 @@ function T12({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -1112,6 +1347,19 @@ const s13 = StyleSheet.create({
 });
 
 function T13({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s13.row,
+        titleStyle: s13.bold,
+        subtitleStyle: s13.meta,
+        durationStyle: s13.meta,
+        detailStyle: s13.meta,
+        entryGap: 6,
+        subtitlePlacement: "below",
+    });
     const B = ({ t }: { t: string }) => <View style={s13.br}><Text style={s13.bd}>-</Text><Text style={s13.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <View style={s13.sw}><Text style={s13.sh}>{v}</Text></View>;
     return (
@@ -1146,6 +1394,7 @@ function T13({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="Projects" />
                         {data.projects.map((p: any, i: number) => (
@@ -1166,6 +1415,7 @@ function T13({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -1192,6 +1442,18 @@ const s14 = StyleSheet.create({
 });
 
 function T14({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s14.row,
+        titleStyle: s14.bold,
+        subtitleStyle: s14.meta,
+        durationStyle: s14.meta,
+        detailStyle: s14.meta,
+        entryGap: 6,
+    });
     const B = ({ t }: { t: string }) => <View style={s14.br}><Text style={s14.bd}>-</Text><Text style={s14.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <><Text style={s14.sh}>{v}</Text><View style={s14.sl} /></>;
     return (
@@ -1231,6 +1493,7 @@ function T14({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="Projects" />
                         {data.projects.map((p: any, i: number) => (
@@ -1251,6 +1514,7 @@ function T14({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -1276,6 +1540,18 @@ const s15 = StyleSheet.create({
 });
 
 function T15({ data }: { data: any }) {
+    const { careerSections, profileSections } = getOptionalSections(data);
+    const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
+        sections,
+        heading: (title) => <S v={title} />,
+        bullet: (item, key) => <B key={key} t={item} />,
+        rowStyle: s15.row,
+        titleStyle: s15.bold,
+        subtitleStyle: s15.body,
+        durationStyle: s15.meta,
+        detailStyle: s15.meta,
+        entryGap: 4,
+    });
     const B = ({ t }: { t: string }) => <View style={s15.br}><Text style={s15.bd}>-</Text><Text style={s15.bt}>{t}</Text></View>;
     const S = ({ v }: { v: string }) => <><Text style={s15.sh}>{v}</Text><View style={s15.sl} /></>;
     return (
@@ -1309,6 +1585,7 @@ function T15({ data }: { data: any }) {
                         ))}
                     </>
                 )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="Projects" />
                         {data.projects.map((p: any, i: number) => (
@@ -1328,6 +1605,7 @@ function T15({ data }: { data: any }) {
                         </View>
                     </>
                 )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
@@ -1743,11 +2021,75 @@ const INITIAL_DATA = {
             techStack: "Spring Boot, React, MySQL, Docker, AWS",
         },
     ],
+    internships: [
+        {
+            company: "TechNova Labs",
+            role: "Software Engineer Intern",
+            duration: "Jan 2023 - Jun 2023",
+            points: [
+                "Built internal dashboard modules and reusable UI components for the engineering team.",
+                "Improved API response handling and fixed production issues across the internship project lifecycle.",
+            ],
+            techStack: "Next.js, Node.js, MongoDB, Tailwind CSS",
+        },
+    ],
     education: {
         college: "JNTUGV",
         degree: "B.Tech in Information Technology",
         duration: "2020-2023",
     },
+    certifications: [
+        {
+            name: "AWS Certified Cloud Practitioner",
+            issuer: "Amazon Web Services",
+            date: "2024",
+            details: "Validated cloud fundamentals, billing basics, and secure deployment concepts.",
+        },
+        {
+            name: "Oracle Java Foundations",
+            issuer: "Oracle",
+            date: "2023",
+            details: "Covered core Java, object-oriented design, and problem-solving fundamentals.",
+        },
+    ],
+    achievements: [
+        "Solved 500+ DSA problems across LeetCode and CodeChef.",
+        "Built and shipped multiple full-stack projects with live deployments and production-ready authentication.",
+    ],
+    positions: [
+        {
+            organization: "Developer Community Club",
+            role: "Technical Lead",
+            duration: "2022 - 2023",
+            points: [
+                "Ran weekly coding sessions for junior students and reviewed project submissions.",
+                "Organized resume reviews, mock interviews, and peer mentorship circles.",
+            ],
+        },
+    ],
+    volunteering: [],
+    awards: [],
+    coursework: [
+        "Data Structures and Algorithms",
+        "Database Management Systems",
+        "Operating Systems",
+        "Computer Networks",
+    ],
+    languages: [
+        "English - Professional",
+        "Telugu - Native",
+        "Hindi - Conversational",
+    ],
+    publications: [],
+    customSections: [
+        {
+            title: "Open Source & Community",
+            items: [
+                "Published reusable code samples and resume-builder experiments on GitHub.",
+                "Helped peers with backend design, resume reviews, and interview preparation.",
+            ],
+        },
+    ],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
