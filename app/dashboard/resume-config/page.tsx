@@ -11,7 +11,7 @@ import {
 } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
 import {
-    FiFileText, FiCode, FiEye, FiCheckCircle, FiAlertCircle, FiDownload, FiLayers, FiLock,
+    FiFileText, FiCode, FiEye, FiCheckCircle, FiAlertCircle, FiDownload, FiLayers, FiLock, FiZap, FiCpu, FiX, FiBriefcase, FiUploadCloud,
 } from "react-icons/fi";
 import { getStoredToken } from "@/app/utils/token";
 import { useToast } from "@/components/ui/toast";
@@ -2123,6 +2123,16 @@ export default function ResumeConfigPage() {
         resumeName: string;
         originalPayload: string;
     } | null>(null);
+    const [aiResumeModalOpen, setAiResumeModalOpen] = useState(false);
+    const [aiModels, setAiModels] = useState<AiModelOption[]>([]);
+    const [aiModelsLoading, setAiModelsLoading] = useState(false);
+    const [aiModelsError, setAiModelsError] = useState<string | null>(null);
+    const [aiResumeForm, setAiResumeForm] = useState<AiResumeFormState>({
+        aiModel: "",
+        targetRole: "",
+        existingResumeFile: null,
+        jobDescription: "",
+    });
 
     useEffect(() => {
         const t = setTimeout(() => setPdfReady(true), 300);
@@ -2206,6 +2216,63 @@ export default function ResumeConfigPage() {
             active = false;
         };
     }, [toastError, toastSuccess]);
+
+    useEffect(() => {
+        if (!aiResumeModalOpen) return;
+
+        const token = getStoredToken();
+        let active = true;
+
+        setAiModelsLoading(true);
+        setAiModelsError(null);
+
+        fetch("/api/v1/private/ai-models", {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(async (response) => {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || "Failed to load AI models.");
+                }
+                return Array.isArray(data.models) ? data.models : [];
+            })
+            .then((models: AiModelOption[]) => {
+                if (!active) return;
+                setAiModels(models);
+                setAiResumeForm((prev) => {
+                    if (models.some((model) => model._id === prev.aiModel)) return prev;
+                    return { ...prev, aiModel: models[0]?._id || "" };
+                });
+            })
+            .catch((error: unknown) => {
+                if (!active) return;
+                setAiModels([]);
+                setAiModelsError(error instanceof Error ? error.message : "Failed to load AI models.");
+            })
+            .finally(() => {
+                if (!active) return;
+                setAiModelsLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [aiResumeModalOpen]);
+
+    const handleOpenAiResumeModal = useCallback(() => {
+        setAiResumeForm({
+            aiModel: aiModels[0]?._id || "",
+            targetRole: "",
+            existingResumeFile: null,
+            jobDescription: "",
+        });
+        setAiResumeModalOpen(true);
+    }, [aiModels]);
+
+    const handleAiResumeSubmit = useCallback(() => {
+        toastSuccess("Resume With AI modal UI is ready. Connect the generation flow next.");
+        setAiResumeModalOpen(false);
+    }, [toastSuccess]);
 
     const generatePdfBlob = useCallback(async () => {
         const { pdf } = await import("@react-pdf/renderer");
@@ -2399,6 +2466,14 @@ export default function ResumeConfigPage() {
                     <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200">
                         <FiLayers size={11} /> {activeTpl.name}
                     </span>
+
+                    <button
+                        type="button"
+                        onClick={handleOpenAiResumeModal}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200 transition-colors shadow-sm"
+                    >
+                        <FiZap size={11} /> Resume With AI
+                    </button>
 
                     {pdfReady && !jsonError && (
                         subStatus.loaded && !isHistoryRedownloadReady && (!subStatus.hasActive || !subStatus.hasUsage) ? (
@@ -2672,12 +2747,283 @@ export default function ResumeConfigPage() {
                 </div>
             </div>
 
+            {aiResumeModalOpen && (
+                <ResumeWithAIModal
+                    form={aiResumeForm}
+                    models={aiModels}
+                    modelsLoading={aiModelsLoading}
+                    modelsError={aiModelsError}
+                    onClose={() => setAiResumeModalOpen(false)}
+                    onSubmit={handleAiResumeSubmit}
+                    setForm={setAiResumeForm}
+                />
+            )}
+
             <style>{`
                 textarea::-webkit-scrollbar        { width: 4px; }
                 textarea::-webkit-scrollbar-track  { background: #0C0A1B; }
                 textarea::-webkit-scrollbar-thumb  { background: #3b1e7a; border-radius: 2px; }
                 textarea::-webkit-scrollbar-thumb:hover { background: #5b2ea8; }
             `}</style>
+        </div>
+    );
+}
+
+type AiModelOption = {
+    _id: string;
+    displayName: string;
+    modelName: string;
+    provider: string;
+};
+
+type AiResumeFormState = {
+    aiModel: string;
+    targetRole: string;
+    existingResumeFile: File | null;
+    jobDescription: string;
+};
+
+const AI_MODEL_PROVIDER_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+    openai:    { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+    anthropic: { bg: "bg-orange-50",  text: "text-orange-700",  border: "border-orange-200" },
+    google:    { bg: "bg-blue-50",    text: "text-blue-700",    border: "border-blue-200" },
+    mistral:   { bg: "bg-purple-50",  text: "text-purple-700",  border: "border-purple-200" },
+    groq:      { bg: "bg-cyan-50",    text: "text-cyan-700",    border: "border-cyan-200" },
+    custom:    { bg: "bg-gray-100",   text: "text-gray-600",    border: "border-gray-200" },
+};
+
+function ResumeWithAIModal({
+    form,
+    models,
+    modelsLoading,
+    modelsError,
+    onClose,
+    onSubmit,
+    setForm,
+}: {
+    form: AiResumeFormState;
+    models: AiModelOption[];
+    modelsLoading: boolean;
+    modelsError: string | null;
+    onClose: () => void;
+    onSubmit: () => void;
+    setForm: React.Dispatch<React.SetStateAction<AiResumeFormState>>;
+}) {
+    const [dragOver, setDragOver] = useState(false);
+    const selectedModel = models.find((model) => model._id === form.aiModel) ?? null;
+    const providerStyles = selectedModel
+        ? (AI_MODEL_PROVIDER_STYLES[selectedModel.provider] ?? AI_MODEL_PROVIDER_STYLES.custom)
+        : null;
+    const canSubmit =
+        form.aiModel.trim().length > 0 &&
+        form.targetRole.trim().length > 0 &&
+        form.existingResumeFile !== null &&
+        form.jobDescription.trim().length > 0;
+
+    const handleResumeFile = (file: File) => {
+        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+        if (!isPdf) return;
+        setForm((prev) => ({ ...prev, existingResumeFile: file }));
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) handleResumeFile(file);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full sm:max-w-3xl bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-gray-100 flex flex-col max-h-[92dvh] sm:max-h-[88vh] animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
+                <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 shrink-0">
+                    <div>
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2.5">
+                            <div className="p-1.5 bg-emerald-100 rounded-lg">
+                                <FiZap size={14} className="text-emerald-600" />
+                            </div>
+                            Resume With AI
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                            UI only: choose a stored AI model, target role, existing resume, and job description.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                    >
+                        <FiX size={17} />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5">
+                    <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <FiCpu size={12} className="text-orange-500" />
+                            AI Model <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                            value={form.aiModel}
+                            onChange={(e) => setForm((prev) => ({ ...prev, aiModel: e.target.value }))}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm text-gray-800 transition-all"
+                            disabled={modelsLoading}
+                        >
+                            <option value="">
+                                {modelsLoading
+                                    ? "Loading models..."
+                                    : models.length === 0
+                                        ? "No AI models configured"
+                                        : "Select a stored AI model"}
+                            </option>
+                            {models.map((model) => (
+                                <option key={model._id} value={model._id}>
+                                    {model.displayName} | {model.provider} | {model.modelName}
+                                </option>
+                            ))}
+                        </select>
+                        {selectedModel && providerStyles && (
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                                <span className={`px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wide ${providerStyles.bg} ${providerStyles.text} ${providerStyles.border}`}>
+                                    {selectedModel.provider}
+                                </span>
+                                <span className="text-sm font-semibold text-gray-800">{selectedModel.displayName}</span>
+                                <span className="text-xs font-mono text-gray-400">{selectedModel.modelName}</span>
+                            </div>
+                        )}
+                        {!modelsLoading && models.length === 0 && (
+                            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                <span>No AI models found in the database.</span>
+                                <a href="/dashboard/ai-models" className="font-semibold text-amber-800 hover:underline whitespace-nowrap">
+                                    Open AI Models
+                                </a>
+                            </div>
+                        )}
+                        {modelsError && (
+                            <p className="text-xs text-red-500">{modelsError}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <FiBriefcase size={12} className="text-violet-500" />
+                            Targeted Role <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={form.targetRole}
+                            onChange={(e) => setForm((prev) => ({ ...prev, targetRole: e.target.value }))}
+                            placeholder="e.g. Senior Frontend Engineer"
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm text-gray-800 transition-all placeholder:text-gray-400"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <FiFileText size={12} className="text-emerald-500" />
+                            Existing Resume (PDF) <span className="text-red-400">*</span>
+                        </label>
+
+                        {form.existingResumeFile ? (
+                            <div className="flex items-center gap-3 px-4 py-3.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                                <div className="p-2 bg-emerald-100 rounded-lg shrink-0">
+                                    <FiFileText size={16} className="text-emerald-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-emerald-800 truncate">{form.existingResumeFile.name}</p>
+                                    <p className="text-xs text-emerald-500 mt-0.5">
+                                        {(form.existingResumeFile.size / 1024).toFixed(1)} KB | PDF
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setForm((prev) => ({ ...prev, existingResumeFile: null }))}
+                                    className="p-1.5 text-emerald-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all shrink-0"
+                                    title="Remove file"
+                                >
+                                    <FiX size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <label
+                                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                                onDragLeave={() => setDragOver(false)}
+                                onDrop={handleDrop}
+                                className={`flex flex-col items-center justify-center gap-3 px-6 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                                    dragOver
+                                        ? "border-emerald-400 bg-emerald-50"
+                                        : "border-gray-200 bg-gray-50 hover:border-emerald-300 hover:bg-emerald-50/50"
+                                }`}
+                            >
+                                <input
+                                    type="file"
+                                    accept="application/pdf"
+                                    className="sr-only"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleResumeFile(file);
+                                    }}
+                                />
+                                <div className={`p-3 rounded-xl transition-colors ${dragOver ? "bg-emerald-100" : "bg-white border border-gray-200"}`}>
+                                    <FiUploadCloud size={22} className={dragOver ? "text-emerald-600" : "text-gray-400"} />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-semibold text-gray-700">
+                                        Drop your resume PDF here, or{" "}
+                                        <span className="text-emerald-600 underline underline-offset-2">browse</span>
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-1">PDF files only</p>
+                                </div>
+                            </label>
+                        )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <FiCode size={12} className="text-blue-500" />
+                            Job Description <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                            <textarea
+                                value={form.jobDescription}
+                                onChange={(e) => setForm((prev) => ({ ...prev, jobDescription: e.target.value }))}
+                                placeholder="Paste the job description here..."
+                                rows={8}
+                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm text-gray-800 resize-none transition-all placeholder:text-gray-400 leading-relaxed"
+                            />
+                            {form.jobDescription.trim().length > 0 && (
+                                <span className="absolute bottom-3 right-3 text-[10px] font-mono text-gray-300">
+                                    {form.jobDescription.trim().split(/\s+/).length} words
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="px-5 sm:px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0 bg-white rounded-b-2xl">
+                    <p className="text-[11px] text-gray-400 hidden sm:block">
+                        UI only for now. Submit can be connected to the AI resume flow next.
+                    </p>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onSubmit}
+                            disabled={!canSubmit}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <FiZap size={14} /> Continue
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
