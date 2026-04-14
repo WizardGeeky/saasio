@@ -398,7 +398,7 @@ function LoginContent() {
     <div className="grid h-dvh w-screen overflow-hidden bg-[#fffdf9]/95 lg:grid-cols-[minmax(0,1.02fr)_minmax(380px,0.98fr)]">
       <BrandPanel />
 
-      <div className="relative flex h-dvh items-center justify-center overflow-hidden px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="relative flex h-dvh items-start justify-center overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-6 sm:py-6 lg:items-center lg:px-10 lg:py-10">
         <div
           className="absolute inset-0"
           style={{
@@ -417,34 +417,12 @@ function LoginContent() {
         <div className="absolute -left-12 top-10 h-36 w-36 rounded-full bg-white/80 blur-3xl" />
         <div className="absolute bottom-6 right-0 h-36 w-36 rounded-full bg-[#ffcfbe]/45 blur-3xl" />
 
-        <div className="relative z-10 w-full max-w-[32rem]">
-          <div className="mb-8 flex items-center justify-between lg:hidden">
-            <Link href="/" className="inline-flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#102033] text-sm font-black text-white">
-                S
-              </span>
-              <div>
-                <div className="font-heading text-lg font-bold text-[#102033]">
-                  SAASIO
-                </div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c6d54]">
-                  Resume Studio
-                </div>
-              </div>
-            </Link>
-            <Link
-              href="/"
-              className="text-sm font-semibold text-slate-500 transition-colors hover:text-[#102033]"
-            >
-              Back home
-            </Link>
-          </div>
-
+        <div className="relative z-10 w-full max-w-[32rem] py-4 sm:py-4 lg:py-0">
           {step === "otp" && (
             <button
               type="button"
               onClick={handleBack}
-              className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition-colors hover:text-[#102033]"
+              className="mb-5 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition-colors hover:text-[#102033] sm:mb-6"
             >
               <FiChevronLeft className="h-4 w-4" />
               Back to email
@@ -459,12 +437,12 @@ function LoginContent() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.28 }}
-                className="rounded-[2rem] border border-[#eadfce] bg-white/90 p-8 text-center shadow-[0_24px_70px_-45px_rgba(15,23,42,0.45)]"
+                className="rounded-[1.6rem] border border-[#eadfce] bg-white/90 p-5 text-center shadow-[0_24px_70px_-45px_rgba(15,23,42,0.45)] sm:rounded-[2rem] sm:p-8"
               >
                 <div className="mx-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-[#102033] shadow-[0_20px_45px_-24px_rgba(15,23,42,0.8)]">
                   <FiCheckCircle className="h-8 w-8 text-[#ffb489]" />
                 </div>
-                <h2 className="mt-6 font-heading text-3xl font-bold text-[#102033]">
+                <h2 className="mt-5 font-heading text-2xl font-bold text-[#102033] sm:mt-6 sm:text-3xl">
                   Check your inbox
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -490,20 +468,20 @@ function LoginContent() {
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
               >
-                <div className="mb-7 text-center">
-                  <span className="inline-flex rounded-full border border-[#e8d8c8] bg-white/80 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8c6d54] shadow-[0_15px_30px_-20px_rgba(15,23,42,0.3)]">
+                <div className="mb-5 block text-center sm:mb-7">
+                  <span className="inline-flex rounded-full border border-[#e8d8c8] bg-white/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#8c6d54] shadow-[0_15px_30px_-20px_rgba(15,23,42,0.3)] sm:px-4 sm:text-[11px] sm:tracking-[0.22em]">
                     {step === "otp" ? "Secure verification" : "Account access"}
                   </span>
-                  <h1 className="mt-5 font-heading text-4xl font-bold tracking-[-0.04em] text-[#102033]">
+                  <h1 className="mt-4 font-heading text-[2rem] font-bold tracking-[-0.04em] text-[#102033] sm:mt-5 sm:text-4xl">
                     {heading}
                   </h1>
-                  <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-600">
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600 sm:mt-3 sm:leading-7">
                     {subheading}
                   </p>
                 </div>
 
                 {step === "form" && (
-                  <div className="mb-6 flex rounded-[1.2rem] border border-[#eadfce] bg-white/75 p-1 shadow-[0_15px_35px_-28px_rgba(15,23,42,0.3)]">
+                  <div className="mb-5 flex rounded-[1.1rem] border border-[#eadfce] bg-white/75 p-1 shadow-[0_15px_35px_-28px_rgba(15,23,42,0.3)] sm:mb-6 sm:rounded-[1.2rem]">
                     {(["login", "signup"] as AuthMode[]).map((value) => (
                       <button
                         key={value}
@@ -512,7 +490,7 @@ function LoginContent() {
                           setMode(value);
                           setStep("form");
                         }}
-                        className={`flex-1 rounded-[0.95rem] px-4 py-2.5 text-sm font-semibold transition-all ${
+                        className={`flex-1 rounded-[0.9rem] px-3 py-2.5 text-sm font-semibold transition-all sm:rounded-[0.95rem] sm:px-4 ${
                           mode === value
                             ? "bg-[#102033] text-white shadow-[0_18px_35px_-24px_rgba(15,23,42,0.8)]"
                             : "text-slate-500 hover:text-[#102033]"
@@ -524,7 +502,7 @@ function LoginContent() {
                   </div>
                 )}
 
-                <div className="rounded-[2rem] border border-[#eadfce] bg-white/92 p-6 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.4)] sm:p-7">
+                <div className="rounded-[1.5rem] border border-[#eadfce] bg-white/92 p-4 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.4)] sm:rounded-[2rem] sm:p-7">
                   <form
                     onSubmit={
                       step === "otp"
@@ -548,7 +526,7 @@ function LoginContent() {
                           <p className="text-center text-[11px] font-bold uppercase tracking-[0.18em] text-[#8c6d54]">
                             6-digit code
                           </p>
-                          <div className="flex justify-center gap-2 sm:gap-2.5">
+                          <div className="flex justify-center gap-1.5 sm:gap-2.5">
                             {otp.map((digit, index) => (
                               <input
                                 key={index}
@@ -560,7 +538,7 @@ function LoginContent() {
                                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                                 onPaste={handleOtpPaste}
                                 maxLength={1}
-                                className="h-14 w-11 rounded-[1rem] border-2 border-[#eadfce] bg-[#fffaf4] text-center text-lg font-bold text-[#102033] focus:border-[#d9481f] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#ff6b4a]/15 sm:w-12"
+                                className="h-[3.25rem] w-10 rounded-[0.95rem] border-2 border-[#eadfce] bg-[#fffaf4] text-center text-lg font-bold text-[#102033] focus:border-[#d9481f] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#ff6b4a]/15 sm:h-14 sm:w-12 sm:rounded-[1rem]"
                                 placeholder="-"
                               />
                             ))}
@@ -604,7 +582,7 @@ function LoginContent() {
                           transition={{ duration: 0.22 }}
                           className="space-y-3.5"
                         >
-                          <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="grid gap-3 lg:grid-cols-2">
                             <Field label="Full Name" icon={<FiUser className="h-4 w-4" />}>
                               <input
                                 type="text"
@@ -638,7 +616,7 @@ function LoginContent() {
                             />
                           </Field>
 
-                          <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="grid gap-3 lg:grid-cols-2">
                             <Field label="Occupation" icon={<FiBriefcase className="h-4 w-4" />}>
                               <input
                                 type="text"
@@ -661,7 +639,7 @@ function LoginContent() {
                             </Field>
                           </div>
 
-                          <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="grid gap-3 lg:grid-cols-2">
                             <Field label="Country" icon={<FiGlobe className="h-4 w-4" />}>
                               <input
                                 type="text"
@@ -688,7 +666,7 @@ function LoginContent() {
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="relative mt-2 w-full overflow-hidden rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-all focus:outline-none focus:ring-4 focus:ring-[#ff6b4a]/25 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="relative mt-2 w-full overflow-hidden rounded-full px-6 py-3 text-sm font-semibold text-white transition-all focus:outline-none focus:ring-4 focus:ring-[#ff6b4a]/25 disabled:cursor-not-allowed disabled:opacity-70 sm:py-3.5"
                       style={{
                         background: isLoading
                           ? "#d9481f"
@@ -735,7 +713,7 @@ function LoginContent() {
                 </div>
 
                 <div className="mt-5 text-center">
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm leading-6 text-slate-500">
                     {mode === "login" ? "New to SAASIO?" : "Already have an account?"}{" "}
                     <button
                       type="button"
@@ -747,7 +725,7 @@ function LoginContent() {
                   </p>
                 </div>
 
-                <p className="mt-8 text-center text-xs leading-6 text-slate-400">
+                <p className="mt-6 px-1 text-center text-xs leading-6 text-slate-400 sm:mt-8">
                   By continuing, you agree to our{" "}
                   <Link
                     href="/terms"
