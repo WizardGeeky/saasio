@@ -15,16 +15,24 @@ import {
   FiMapPin,
   FiGlobe,
   FiInfo,
-  FiZap,
   FiSun,
   FiMoon,
 } from "react-icons/fi";
+import { Footer } from "@/components/landing/faq-footer";
+import { Navbar } from "@/components/landing/shared";
 import { useToast } from "@/components/ui/toast";
 import { useAuthGuard } from "@/app/utils/useAuthGuard";
 import { motion, AnimatePresence } from "framer-motion";
 
 type AuthMode = "login" | "signup";
 type AuthStep = "form" | "otp" | "success";
+
+const LOGIN_NAV_LINKS = [
+  { label: "Features", href: "/#features" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "FAQ", href: "/#faq" },
+  { label: "Terms", href: "/terms" },
+];
 
 // ── Animated ATS score card (left panel decoration) ─────────────────────────
 function MiniScoreCard({
@@ -348,7 +356,9 @@ function LoginContent() {
     );
 
   return (
-    <div className={`min-h-screen w-full flex bg-white font-sans transition-colors duration-300 ${isDark ? "lp-dark" : ""}`}>
+    <div
+      className={`relative flex min-h-[calc(100vh-8rem)] w-full overflow-hidden rounded-[2rem] border border-[#eadfce] bg-white font-sans shadow-[0_40px_90px_-55px_rgba(15,23,42,0.35)] transition-colors duration-300 ${isDark ? "lp-dark border-slate-700 bg-[#090d16]/90" : ""}`}
+    >
       <BrandPanel />
 
       {/* ── Right panel ─────────────────────────────────────────────────────── */}
@@ -375,8 +385,7 @@ function LoginContent() {
         <div className="relative z-10 w-full max-w-md my-8">
 
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center justify-center gap-2.5 mb-10">
-            
+          <div className="hidden items-center justify-center gap-2.5 mb-10">
             <span className="text-3xl font-extrabold tracking-tight font-heading">
               <span className="text-gradient">SAASIO</span>
             </span>
@@ -705,12 +714,34 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-        </div>
+        <main className="overflow-x-hidden bg-[#fffaf4] text-[#102033]">
+          <Navbar
+            links={LOGIN_NAV_LINKS}
+            secondaryAction={{ label: "Back Home", href: "/" }}
+            primaryAction={null}
+          />
+          <div className="px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8">
+            <div className="mx-auto flex min-h-[calc(100vh-10rem)] max-w-[88rem] items-center justify-center rounded-[2rem] border border-[#eadfce] bg-white/70 shadow-[0_40px_90px_-55px_rgba(15,23,42,0.25)]">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d9481f]/20 border-t-[#d9481f]" />
+            </div>
+          </div>
+          <Footer />
+        </main>
       }
     >
-      <LoginContent />
+      <main className="overflow-x-hidden bg-[#fffaf4] text-[#102033]">
+        <Navbar
+          links={LOGIN_NAV_LINKS}
+          secondaryAction={{ label: "Back Home", href: "/" }}
+          primaryAction={null}
+        />
+        <div className="px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8">
+          <div className="mx-auto max-w-[88rem]">
+            <LoginContent />
+          </div>
+        </div>
+        <Footer />
+      </main>
     </Suspense>
   );
 }
