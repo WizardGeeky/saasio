@@ -2133,6 +2133,7 @@ export default function ResumeConfigPage() {
         existingResumeFile: null,
         jobDescription: "",
     });
+    const [isAiGenerating, setIsAiGenerating] = useState(false);
 
     useEffect(() => {
         const t = setTimeout(() => setPdfReady(true), 300);
@@ -2269,10 +2270,49 @@ export default function ResumeConfigPage() {
         setAiResumeModalOpen(true);
     }, [aiModels]);
 
-    const handleAiResumeSubmit = useCallback(() => {
-        toastSuccess("Resume With AI modal UI is ready. Connect the generation flow next.");
-        setAiResumeModalOpen(false);
-    }, [toastSuccess]);
+    const handleAiResumeSubmit = useCallback(async () => {
+        if (!aiResumeForm.existingResumeFile) {
+            toastError("Please upload a resume file first.");
+            return;
+        }
+
+        setIsAiGenerating(true);
+
+        try {
+            const token = getStoredToken();
+            const formData = new FormData();
+            formData.append("modelId", aiResumeForm.aiModel);
+            formData.append("targetRole", aiResumeForm.targetRole);
+            formData.append("jobDescription", aiResumeForm.jobDescription);
+            formData.append("templateId", templateId);
+            const templateName = TEMPLATES.find((t) => t.id === templateId)?.name || "";
+            formData.append("templateName", templateName);
+            formData.append("resumeFile", aiResumeForm.existingResumeFile);
+
+            const res = await fetch("/api/v1/private/resume-ai", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            });
+
+            const responseData = await res.json();
+            if (!res.ok) {
+                throw new Error(responseData.message || "Failed to generate AI resume.");
+            }
+
+            const newResumeData = responseData.resumeJson;
+            setResumeData(newResumeData);
+            setJsonInput(JSON.stringify(newResumeData, null, 2));
+            setJsonError(null);
+
+            setAiResumeModalOpen(false);
+            toastSuccess("Resume generated successfully!");
+        } catch (error: unknown) {
+            toastError(error instanceof Error ? error.message : "Failed to generate AI resume.");
+        } finally {
+            setIsAiGenerating(false);
+        }
+    }, [aiResumeForm, templateId, toastError, toastSuccess]);
 
     const generatePdfBlob = useCallback(async () => {
         const { pdf } = await import("@react-pdf/renderer");
@@ -2756,6 +2796,7 @@ export default function ResumeConfigPage() {
                     onClose={() => setAiResumeModalOpen(false)}
                     onSubmit={handleAiResumeSubmit}
                     setForm={setAiResumeForm}
+                    isGenerating={isAiGenerating}
                 />
             )}
 
@@ -2800,6 +2841,7 @@ function ResumeWithAIModal({
     onClose,
     onSubmit,
     setForm,
+    isGenerating,
 }: {
     form: AiResumeFormState;
     models: AiModelOption[];
@@ -2808,6 +2850,7 @@ function ResumeWithAIModal({
     onClose: () => void;
     onSubmit: () => void;
     setForm: React.Dispatch<React.SetStateAction<AiResumeFormState>>;
+    isGenerating: boolean;
 }) {
     const [dragOver, setDragOver] = useState(false);
     const selectedModel = models.find((model) => model._id === form.aiModel) ?? null;
@@ -2818,7 +2861,8 @@ function ResumeWithAIModal({
         form.aiModel.trim().length > 0 &&
         form.targetRole.trim().length > 0 &&
         form.existingResumeFile !== null &&
-        form.jobDescription.trim().length > 0;
+        form.jobDescription.trim().length > 0 &&
+        !isGenerating;
 
     const handleResumeFile = (file: File) => {
         const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
@@ -3003,13 +3047,14 @@ function ResumeWithAIModal({
 
                 <div className="px-5 sm:px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0 bg-white rounded-b-2xl">
                     <p className="text-[11px] text-gray-400 hidden sm:block">
-                        UI only for now. Submit can be connected to the AI resume flow next.
+                        AI will replace your editor content. You can preview or adjust it before downloading.
                     </p>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
+                            disabled={isGenerating}
+                            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-all disabled:opacity-50"
                         >
                             Cancel
                         </button>
@@ -3019,7 +3064,11 @@ function ResumeWithAIModal({
                             disabled={!canSubmit}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                            <FiZap size={14} /> Continue
+                            {isGenerating ? (
+                                <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Generating...</>
+                            ) : (
+                                <><FiZap size={14} /> Generate Resume</>
+                            )}
                         </button>
                     </div>
                 </div>
