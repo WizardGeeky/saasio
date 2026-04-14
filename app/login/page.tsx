@@ -1,41 +1,55 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  FiMail,
   FiArrowRight,
-  FiCheckCircle,
-  FiChevronLeft,
-  FiShield,
-  FiUser,
-  FiPhone,
   FiBriefcase,
-  FiMapPin,
+  FiCheck,
+  FiCheckCircle,
+  FiChevronDown,
+  FiChevronLeft,
   FiGlobe,
   FiInfo,
-  FiSun,
-  FiMoon,
+  FiMail,
+  FiMapPin,
+  FiPhone,
+  FiShield,
+  FiUser,
 } from "react-icons/fi";
-import { Footer } from "@/components/landing/faq-footer";
-import { Navbar } from "@/components/landing/shared";
+
 import { useToast } from "@/components/ui/toast";
 import { useAuthGuard } from "@/app/utils/useAuthGuard";
-import { motion, AnimatePresence } from "framer-motion";
 
 type AuthMode = "login" | "signup";
 type AuthStep = "form" | "otp" | "success";
 
-const LOGIN_NAV_LINKS = [
-  { label: "Features", href: "/#features" },
-  { label: "Pricing", href: "/#pricing" },
-  { label: "FAQ", href: "/#faq" },
-  { label: "Terms", href: "/terms" },
+type SelectOption = {
+  value: string;
+  label: string;
+};
+
+const showcaseCards = [
+  { company: "Google", role: "Senior SWE", score: 96, delay: 0.18 },
+  { company: "Swiggy", role: "Product Manager", score: 91, delay: 0.28 },
+  { company: "PhonePe", role: "Data Scientist", score: 88, delay: 0.38 },
 ];
 
-// ── Animated ATS score card (left panel decoration) ─────────────────────────
-function MiniScoreCard({
+const sourceOptions: SelectOption[] = [
+  { value: "GOOGLE", label: "Google" },
+  { value: "LINKEDIN", label: "LinkedIn" },
+  { value: "TWITTER", label: "Twitter (X)" },
+  { value: "YOUTUBE", label: "YouTube" },
+  { value: "FRIEND", label: "Friend" },
+  { value: "OTHER", label: "Other" },
+];
+
+const inputCls =
+  "w-full rounded-[1rem] border border-[#e5d8c9] bg-[#fffaf4] py-3 pl-11 pr-4 text-sm font-medium text-[#102033] placeholder:text-slate-400 focus:border-[#d9481f] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#ff6b4a]/15 transition-all";
+
+function MatchCard({
   company,
   role,
   score,
@@ -46,152 +60,121 @@ function MiniScoreCard({
   score: number;
   delay: number;
 }) {
-  const color = score >= 90 ? "#10b981" : score >= 80 ? "#a78bfa" : "#f59e0b";
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay, duration: 0.5, ease: "easeOut" }}
-      className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-4 py-3"
+      transition={{ duration: 0.4, delay }}
+      className="rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm"
     >
-      <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0"
-        style={{ background: `${color}22`, color }}
-      >
-        {score}
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-black text-[#102033]">
+          {score}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white">{role}</p>
+          <p className="truncate text-xs text-white/62">{company}</p>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#ffd0c2] bg-[#fff4ec] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#d9481f]">
+          <FiCheck className="h-3 w-3" />
+          Match
+        </span>
       </div>
-      <div className="min-w-0">
-        <p className="text-white/90 font-semibold text-sm leading-tight truncate">{role}</p>
-        <p className="text-white/50 text-xs">{company}</p>
-      </div>
-      <div
-        className="ml-auto w-2 h-2 rounded-full shrink-0 animate-pulse"
-        style={{ background: color }}
-      />
     </motion.div>
   );
 }
 
-// ── Left branding panel ──────────────────────────────────────────────────────
 function BrandPanel() {
-  const cards = [
-    { company: "Google", role: "Senior SWE", score: 96, delay: 0.6 },
-    { company: "Swiggy", role: "Product Manager", score: 91, delay: 0.8 },
-    { company: "PhonePe", role: "Data Scientist", score: 88, delay: 1.0 },
-  ];
-
   return (
-    <div className="hidden lg:flex flex-col justify-between w-[460px] shrink-0 relative overflow-hidden p-12"
-      style={{ background: "linear-gradient(145deg, #1a1040 0%, #1e1553 55%, #0f0a2e 100%)" }}
-    >
-      {/* Background grid */}
+    <div className="relative hidden h-full min-h-dvh overflow-hidden bg-[#102033] px-10 py-10 text-white lg:flex lg:flex-col lg:justify-between">
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-40"
         style={{
-          backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
+          background:
+            "radial-gradient(circle at 18% 20%, rgba(255,107,74,0.24), transparent 26%), radial-gradient(circle at 82% 18%, rgba(15,118,110,0.2), transparent 24%), linear-gradient(180deg, rgba(16,32,51,0.95) 0%, rgba(13,21,32,1) 100%)",
         }}
       />
-      {/* Radial glows */}
-      <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-16 right-0 w-56 h-56 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute bottom-40 right-8 w-32 h-32 bg-violet-400/10 rounded-full blur-xl pointer-events-none" />
+      <div
+        className="absolute inset-0 opacity-[0.08]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+        }}
+      />
+      <div className="absolute -left-16 bottom-16 h-48 w-48 rounded-full bg-[#ff6b4a]/18 blur-3xl" />
+      <div className="absolute right-0 top-14 h-44 w-44 rounded-full bg-[#0f766e]/18 blur-3xl" />
 
-      {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative flex items-center gap-3"
-      >
-        {/* <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-violet-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-          <FiZap className="w-5 h-5 text-white" />
-        </div> */}
-        <span className="text-2xl font-extrabold text-white tracking-tight font-heading">SAASIO</span>
-      </motion.div>
+      <div className="relative">
+        <Link href="/" className="inline-flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-black text-[#102033]">
+            S
+          </span>
+          <div>
+            <div className="font-heading text-xl font-bold">SAASIO</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/60">
+              Resume Studio
+            </div>
+          </div>
+        </Link>
+      </div>
 
-      {/* Main copy */}
-      <div className="relative space-y-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.6 }}
-          className="space-y-4"
-        >
-          <h2 className="text-4xl font-extrabold text-white leading-[1.1] tracking-tight font-heading">
-            Build Resumes That{" "}
-            <span
-              className="block"
-              style={{
-                background: "linear-gradient(135deg, #34d399 0%, #a78bfa 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              Actually Get Hired
-            </span>
-          </h2>
-          <p className="text-white/60 text-base leading-relaxed">
-            AI-powered, ATS-optimized resumes matched to any job description — in under 30 seconds.
-          </p>
-        </motion.div>
+      <div className="relative max-w-xl">
+        <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white/70">
+          Resume Access
+        </span>
+        <h1 className="mt-6 font-heading text-5xl font-bold leading-[0.98] tracking-[-0.04em]">
+          Turn any job description into
+          <span className="mt-2 block text-[#ffb489]">
+            a resume recruiters want to open.
+          </span>
+        </h1>
+        <p className="mt-5 max-w-lg text-base leading-8 text-white/68">
+          The auth flow now uses the same SAASIO visual language as the landing
+          page. Desktop stays in a clean two-column split, and mobile collapses
+          down to one focused form column.
+        </p>
 
-        {/* Live ATS score cards */}
-        <div className="space-y-2.5">
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-xs font-bold uppercase tracking-widest text-white/40"
-          >
-            Live ATS Scores
-          </motion.p>
-          {cards.map((c) => (
-            <MiniScoreCard key={c.company} {...c} />
+        <div className="mt-8 space-y-3">
+          {showcaseCards.map((card) => (
+            <MatchCard key={card.role} {...card} />
           ))}
         </div>
 
-        {/* Stats row */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
-          className="grid grid-cols-3 gap-3 pt-2"
-        >
+        <div className="mt-8 grid grid-cols-3 gap-3">
           {[
-            { n: "10K+", label: "Hired" },
-            { n: "₹9", label: "Starting" },
-            { n: "30s", label: "Generation" },
-          ].map(({ n, label }) => (
-            <div key={label} className="text-center bg-white/5 rounded-2xl py-3 border border-white/10">
-              <p className="text-xl font-extrabold text-white font-heading">{n}</p>
-              <p className="text-xs text-white/40 mt-0.5">{label}</p>
+            { value: "10K+", label: "Users" },
+            { value: "Rs9", label: "Starting" },
+            { value: "30s", label: "Average" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4"
+            >
+              <p className="font-heading text-2xl font-bold text-white">
+                {item.value}
+              </p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                {item.label}
+              </p>
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
 
-      {/* Back to home */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="relative"
-      >
+      <div className="relative">
         <Link
           href="/"
-          className="flex items-center gap-2 text-sm font-semibold text-white/40 hover:text-emerald-400 transition-colors group"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-white/55 transition-colors hover:text-white"
         >
-          <FiChevronLeft size={15} className="group-hover:-translate-x-1 transition-transform" />
+          <FiChevronLeft className="h-4 w-4" />
           Back to home
         </Link>
-      </motion.div>
+      </div>
     </div>
   );
 }
 
-// ── Input field wrapper ──────────────────────────────────────────────────────
 function Field({
   label,
   icon,
@@ -203,9 +186,11 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</label>
+      <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8c6d54]">
+        {label}
+      </label>
       <div className="relative">
-        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8c6d54]">
           {icon}
         </span>
         {children}
@@ -214,10 +199,6 @@ function Field({
   );
 }
 
-const inputCls =
-  "w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 focus:bg-white transition-all";
-
-// ── Main login content ───────────────────────────────────────────────────────
 function LoginContent() {
   useAuthGuard("requireGuest");
 
@@ -225,21 +206,11 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const { error: toastError, success: toastSuccess } = useToast();
 
-  const [isDark, setIsDark] = useState(false);
   const [mode, setMode] = useState<AuthMode>("login");
   const [step, setStep] = useState<AuthStep>("form");
   const [isLoading, setIsLoading] = useState(false);
-
   const hasShownActivationToast = React.useRef(false);
 
-  useEffect(() => {
-    if (searchParams.get("activated") === "true" && !hasShownActivationToast.current) {
-      toastSuccess("Account activated successfully! You can now sign in.");
-      hasShownActivationToast.current = true;
-    }
-  }, [searchParams, toastSuccess]);
-
-  // Form states
   const [email, setEmail] = useState("");
   const [fullname, setFullname] = useState("");
   const [mobile, setMobile] = useState("");
@@ -249,11 +220,26 @@ function LoginContent() {
   const [source, setSource] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (
+      searchParams.get("activated") === "true" &&
+      !hasShownActivationToast.current
+    ) {
+      toastSuccess("Account activated successfully! You can now sign in.");
+      hasShownActivationToast.current = true;
+    }
+  }, [searchParams, toastSuccess]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes("@")) { toastError("Please enter a valid email address."); return; }
+
+    if (!email.includes("@")) {
+      toastError("Please enter a valid email address.");
+      return;
+    }
+
     setIsLoading(true);
+
     try {
       const res = await fetch("/api/v1/public/auth/login", {
         method: "POST",
@@ -261,7 +247,12 @@ function LoginContent() {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      if (!res.ok) { toastError(data.message || "Something went wrong."); return; }
+
+      if (!res.ok) {
+        toastError(data.message || "Something went wrong.");
+        return;
+      }
+
       toastSuccess("OTP sent! Check your inbox.");
       setStep("otp");
     } catch {
@@ -274,14 +265,28 @@ function LoginContent() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
       const res = await fetch("/api/v1/public/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, fullname, mobile, occupation, state, country, source }),
+        body: JSON.stringify({
+          email,
+          fullname,
+          mobile,
+          occupation,
+          state,
+          country,
+          source,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) { toastError(data.message || "Signup failed."); return; }
+
+      if (!res.ok) {
+        toastError(data.message || "Signup failed.");
+        return;
+      }
+
       toastSuccess("Account created! Please check your email for activation link.");
       setStep("success");
     } catch {
@@ -293,9 +298,15 @@ function LoginContent() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const code = otp.join("");
-    if (code.length < 6) { toastError("Please enter the complete 6-digit code."); return; }
+    if (code.length < 6) {
+      toastError("Please enter the complete 6-digit code.");
+      return;
+    }
+
     setIsLoading(true);
+
     try {
       const res = await fetch("/api/v1/public/auth/verify-otp", {
         method: "POST",
@@ -303,7 +314,12 @@ function LoginContent() {
         body: JSON.stringify({ email, otp: code }),
       });
       const data = await res.json();
-      if (!res.ok) { toastError(data.message || "Invalid or expired OTP."); return; }
+
+      if (!res.ok) {
+        toastError(data.message || "Invalid or expired OTP.");
+        return;
+      }
+
       localStorage.setItem("token", data.token);
       toastSuccess("Logged in successfully!");
       router.push("/dashboard");
@@ -315,181 +331,224 @@ function LoginContent() {
   };
 
   const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) value = value.slice(-1);
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-    if (value && index < 5) document.getElementById(`otp-${index + 1}`)?.focus();
+    const nextValue = value.slice(-1);
+    const nextOtp = [...otp];
+    nextOtp[index] = nextValue;
+    setOtp(nextOtp);
+
+    if (nextValue && index < otp.length - 1) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
   };
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0)
+  const handleOtpKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
       document.getElementById(`otp-${index - 1}`)?.focus();
+    }
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pasted) return;
-    const newOtp = [...otp];
-    pasted.split("").forEach((char, i) => { newOtp[i] = char; });
-    setOtp(newOtp);
+
+    if (!pasted) {
+      return;
+    }
+
+    const nextOtp = [...otp];
+    pasted.split("").forEach((char, index) => {
+      nextOtp[index] = char;
+    });
+    setOtp(nextOtp);
     document.getElementById(`otp-${Math.min(pasted.length - 1, 5)}`)?.focus();
   };
 
-  const handleBack = () => { setStep("form"); setOtp(["", "", "", "", "", ""]); };
-  const toggleMode = () => { setMode(mode === "login" ? "signup" : "login"); setStep("form"); };
+  const handleBack = () => {
+    setStep("form");
+    setOtp(["", "", "", "", "", ""]);
+  };
 
-  // ── Step heading copy ────────────────────────────────────────────────────────
+  const toggleMode = () => {
+    setMode((current) => (current === "login" ? "signup" : "login"));
+    setStep("form");
+  };
+
   const heading =
-    step === "otp" ? "Verify your email" :
-    mode === "login" ? "Welcome back" :
-    "Create your account";
+    step === "otp"
+      ? "Verify your email"
+      : mode === "login"
+        ? "Welcome back"
+        : "Create your account";
 
   const subheading =
     step === "otp" ? (
-      <>Code sent to <span className="font-semibold text-slate-800">{email}</span></>
+      <>
+        Enter the code sent to <span className="font-semibold text-[#102033]">{email}</span>.
+      </>
     ) : mode === "login" ? (
-      "Enter your email — we'll send a one-time code."
+      "Enter your email and we will send a one-time sign-in code."
     ) : (
-      "Start building ATS-optimized resumes today."
+      "Start building ATS-optimized resumes in the same flow as the landing page."
     );
 
   return (
-    <div
-      className={`relative flex min-h-[calc(100vh-8rem)] w-full overflow-hidden rounded-[2rem] border border-[#eadfce] bg-white font-sans shadow-[0_40px_90px_-55px_rgba(15,23,42,0.35)] transition-colors duration-300 ${isDark ? "lp-dark border-slate-700 bg-[#090d16]/90" : ""}`}
-    >
+    <div className="grid h-dvh w-screen overflow-hidden bg-[#fffdf9]/95 lg:grid-cols-[minmax(0,1.02fr)_minmax(380px,0.98fr)]">
       <BrandPanel />
 
-      {/* ── Right panel ─────────────────────────────────────────────────────── */}
-      <div className={`flex-1 flex flex-col items-center justify-center relative p-6 sm:p-12 overflow-y-auto transition-colors duration-300 ${isDark ? "bg-hero-radial-dark" : "bg-hero-radial"}`}>
-        {/* Theme toggle */}
-        <button
-          onClick={() => setIsDark((d) => !d)}
-          className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all backdrop-blur-sm shadow-sm ${
-            isDark
-              ? "border-slate-600 bg-slate-800/80 text-slate-300 hover:border-violet-400 hover:text-violet-300"
-              : "border-slate-200 bg-white/80 text-slate-500 hover:border-violet-300 hover:text-violet-600"
-          }`}
-        >
-          {isDark ? <FiSun size={13} /> : <FiMoon size={13} />}
-          {isDark ? "Light" : "Dark"}
-        </button>
+      <div className="relative flex h-dvh items-center justify-center overflow-hidden px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at top left, rgba(255,107,74,0.18), transparent 28%), radial-gradient(circle at 82% 16%, rgba(15,118,110,0.14), transparent 22%), linear-gradient(180deg, #fffdf9 0%, #f8f1e7 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-45"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(15,23,42,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.05) 1px, transparent 1px)",
+            backgroundSize: "72px 72px",
+          }}
+        />
+        <div className="absolute -left-12 top-10 h-36 w-36 rounded-full bg-white/80 blur-3xl" />
+        <div className="absolute bottom-6 right-0 h-36 w-36 rounded-full bg-[#ffcfbe]/45 blur-3xl" />
 
-        {/* Subtle blurs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-80 h-80 bg-violet-100/40 rounded-full blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-50/60 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative z-10 w-full max-w-md my-8">
-
-          {/* Mobile logo */}
-          <div className="hidden items-center justify-center gap-2.5 mb-10">
-            <span className="text-3xl font-extrabold tracking-tight font-heading">
-              <span className="text-gradient">SAASIO</span>
-            </span>
+        <div className="relative z-10 w-full max-w-[32rem]">
+          <div className="mb-8 flex items-center justify-between lg:hidden">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#102033] text-sm font-black text-white">
+                S
+              </span>
+              <div>
+                <div className="font-heading text-lg font-bold text-[#102033]">
+                  SAASIO
+                </div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c6d54]">
+                  Resume Studio
+                </div>
+              </div>
+            </Link>
+            <Link
+              href="/"
+              className="text-sm font-semibold text-slate-500 transition-colors hover:text-[#102033]"
+            >
+              Back home
+            </Link>
           </div>
 
-          {/* Back button (OTP) */}
           {step === "otp" && (
             <button
+              type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-violet-600 transition-colors mb-6 group"
+              className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition-colors hover:text-[#102033]"
             >
-              <FiChevronLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+              <FiChevronLeft className="h-4 w-4" />
               Back to email
             </button>
           )}
 
-          {/* ── Success state ──────────────────────────────────────────────── */}
           <AnimatePresence mode="wait">
             {step === "success" ? (
               <motion.div
                 key="success"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.35 }}
-                className="text-center space-y-5 py-6"
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.28 }}
+                className="rounded-[2rem] border border-[#eadfce] bg-white/90 p-8 text-center shadow-[0_24px_70px_-45px_rgba(15,23,42,0.45)]"
               >
-                <div className="flex justify-center">
-                  <div className="w-20 h-20 rounded-full bg-linear-to-br from-emerald-400 to-violet-500 flex items-center justify-center shadow-xl shadow-violet-500/25">
-                    <FiCheckCircle className="w-9 h-9 text-white" />
-                  </div>
+                <div className="mx-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-[#102033] shadow-[0_20px_45px_-24px_rgba(15,23,42,0.8)]">
+                  <FiCheckCircle className="h-8 w-8 text-[#ffb489]" />
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-extrabold text-slate-900 font-heading">Check your inbox</h2>
-                  <p className="text-slate-500 text-sm leading-relaxed">
-                    We&apos;ve sent an activation link to{" "}
-                    <span className="font-semibold text-slate-800">{email}</span>.{" "}
-                    Click the link to activate your account.
-                  </p>
-                </div>
+                <h2 className="mt-6 font-heading text-3xl font-bold text-[#102033]">
+                  Check your inbox
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  We sent an activation link to <span className="font-semibold text-[#102033]">{email}</span>.
+                  Open that email, activate your account, then come back here to sign in.
+                </p>
                 <button
-                  onClick={() => { setMode("login"); setStep("form"); }}
-                  className="text-violet-600 font-bold hover:text-violet-500 transition-colors text-sm"
+                  type="button"
+                  onClick={() => {
+                    setMode("login");
+                    setStep("form");
+                  }}
+                  className="mt-6 inline-flex items-center justify-center rounded-full border border-[#d8c9b6] px-5 py-3 text-sm font-semibold text-[#102033] transition-colors hover:bg-[#fffaf4]"
                 >
-                  Go to Login →
+                  Go to sign in
                 </button>
               </motion.div>
-
             ) : (
               <motion.div
-                key="form"
+                key={`${mode}-${step}`}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.25 }}
               >
-                {/* Heading */}
-                <div className="mb-7">
-                  <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight text-center font-heading">
+                <div className="mb-7 text-center">
+                  <span className="inline-flex rounded-full border border-[#e8d8c8] bg-white/80 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8c6d54] shadow-[0_15px_30px_-20px_rgba(15,23,42,0.3)]">
+                    {step === "otp" ? "Secure verification" : "Account access"}
+                  </span>
+                  <h1 className="mt-5 font-heading text-4xl font-bold tracking-[-0.04em] text-[#102033]">
                     {heading}
                   </h1>
-                  <p className="text-sm text-slate-500 mt-1.5 text-center">{subheading}</p>
+                  <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-600">
+                    {subheading}
+                  </p>
                 </div>
 
-                {/* Mode toggle tabs (only on form step) */}
                 {step === "form" && (
-                  <div className="flex mb-7 bg-slate-100 rounded-2xl p-1 gap-1">
-                    {(["login", "signup"] as AuthMode[]).map((m) => (
+                  <div className="mb-6 flex rounded-[1.2rem] border border-[#eadfce] bg-white/75 p-1 shadow-[0_15px_35px_-28px_rgba(15,23,42,0.3)]">
+                    {(["login", "signup"] as AuthMode[]).map((value) => (
                       <button
-                        key={m}
-                        onClick={() => { setMode(m); setStep("form"); }}
-                        className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all duration-200 ${
-                          mode === m
-                            ? "bg-white text-violet-700 shadow-sm"
-                            : "text-slate-500 hover:text-slate-700"
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setMode(value);
+                          setStep("form");
+                        }}
+                        className={`flex-1 rounded-[0.95rem] px-4 py-2.5 text-sm font-semibold transition-all ${
+                          mode === value
+                            ? "bg-[#102033] text-white shadow-[0_18px_35px_-24px_rgba(15,23,42,0.8)]"
+                            : "text-slate-500 hover:text-[#102033]"
                         }`}
                       >
-                        {m === "login" ? "Sign In" : "Sign Up"}
+                        {value === "login" ? "Sign In" : "Sign Up"}
                       </button>
                     ))}
                   </div>
                 )}
 
-                {/* Card */}
-                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/60 p-7">
+                <div className="rounded-[2rem] border border-[#eadfce] bg-white/92 p-6 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.4)] sm:p-7">
                   <form
-                    onSubmit={step === "otp" ? handleVerifyOtp : mode === "login" ? handleLogin : handleSignup}
+                    onSubmit={
+                      step === "otp"
+                        ? handleVerifyOtp
+                        : mode === "login"
+                          ? handleLogin
+                          : handleSignup
+                    }
                     className="space-y-4"
                   >
                     <AnimatePresence mode="wait">
                       {step === "otp" ? (
-                        /* ── OTP step ── */
                         <motion.div
                           key="otp"
-                          initial={{ opacity: 0, x: 20 }}
+                          initial={{ opacity: 0, x: 18 }}
                           animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.25 }}
-                          className="space-y-4"
+                          exit={{ opacity: 0, x: -18 }}
+                          transition={{ duration: 0.22 }}
+                          className="space-y-5"
                         >
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center">
-                            6-Digit Code
+                          <p className="text-center text-[11px] font-bold uppercase tracking-[0.18em] text-[#8c6d54]">
+                            6-digit code
                           </p>
-                          <div className="flex justify-center gap-2.5">
+                          <div className="flex justify-center gap-2 sm:gap-2.5">
                             {otp.map((digit, index) => (
                               <input
                                 key={index}
@@ -501,26 +560,25 @@ function LoginContent() {
                                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                                 onPaste={handleOtpPaste}
                                 maxLength={1}
-                                className="w-11 h-13 text-center bg-slate-50 border-2 border-slate-200 rounded-xl text-lg font-bold text-slate-900 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15 focus:bg-white transition-all"
-                                placeholder="·"
+                                className="h-14 w-11 rounded-[1rem] border-2 border-[#eadfce] bg-[#fffaf4] text-center text-lg font-bold text-[#102033] focus:border-[#d9481f] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#ff6b4a]/15 sm:w-12"
+                                placeholder="-"
                               />
                             ))}
                           </div>
-                          <p className="text-xs text-slate-400 text-center">
+                          <p className="text-center text-xs text-slate-400">
                             Code expires in 3 minutes
                           </p>
                         </motion.div>
-
                       ) : mode === "login" ? (
-                        /* ── Login step ── */
                         <motion.div
                           key="login"
                           initial={{ opacity: 0, x: -12 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 12 }}
-                          transition={{ duration: 0.25 }}
+                          transition={{ duration: 0.22 }}
+                          className="space-y-3"
                         >
-                          <Field label="Email Address" icon={<FiMail size={16} />}>
+                          <Field label="Email Address" icon={<FiMail className="h-4 w-4" />}>
                             <input
                               type="email"
                               placeholder="name@company.com"
@@ -530,24 +588,24 @@ function LoginContent() {
                               className={inputCls}
                             />
                           </Field>
-                          <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-3">
-                            <FiShield size={11} className="text-emerald-500" />
-                            We&apos;ll send a one-time code — no password needed
-                          </p>
+                          <div className="rounded-[1rem] border border-[#e9ddd0] bg-[#fffaf4] px-4 py-3 text-sm text-slate-600">
+                            <span className="flex items-start gap-2.5">
+                              <FiShield className="mt-0.5 h-4 w-4 shrink-0 text-[#d9481f]" />
+                              No password needed. We send a secure one-time code to your email.
+                            </span>
+                          </div>
                         </motion.div>
-
                       ) : (
-                        /* ── Signup step ── */
                         <motion.div
                           key="signup"
                           initial={{ opacity: 0, x: 12 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -12 }}
-                          transition={{ duration: 0.25 }}
+                          transition={{ duration: 0.22 }}
                           className="space-y-3.5"
                         >
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Full Name" icon={<FiUser size={16} />}>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="Full Name" icon={<FiUser className="h-4 w-4" />}>
                               <input
                                 type="text"
                                 placeholder="John Doe"
@@ -557,7 +615,7 @@ function LoginContent() {
                                 className={inputCls}
                               />
                             </Field>
-                            <Field label="Mobile" icon={<FiPhone size={16} />}>
+                            <Field label="Mobile" icon={<FiPhone className="h-4 w-4" />}>
                               <input
                                 type="tel"
                                 placeholder="+91 XXXXX"
@@ -569,7 +627,7 @@ function LoginContent() {
                             </Field>
                           </div>
 
-                          <Field label="Email Address" icon={<FiMail size={16} />}>
+                          <Field label="Email Address" icon={<FiMail className="h-4 w-4" />}>
                             <input
                               type="email"
                               placeholder="name@company.com"
@@ -580,8 +638,8 @@ function LoginContent() {
                             />
                           </Field>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Occupation" icon={<FiBriefcase size={16} />}>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="Occupation" icon={<FiBriefcase className="h-4 w-4" />}>
                               <input
                                 type="text"
                                 placeholder="Engineer"
@@ -591,7 +649,7 @@ function LoginContent() {
                                 className={inputCls}
                               />
                             </Field>
-                            <Field label="State" icon={<FiMapPin size={16} />}>
+                            <Field label="State" icon={<FiMapPin className="h-4 w-4" />}>
                               <input
                                 type="text"
                                 placeholder="Karnataka"
@@ -603,8 +661,8 @@ function LoginContent() {
                             </Field>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <Field label="Country" icon={<FiGlobe size={16} />}>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="Country" icon={<FiGlobe className="h-4 w-4" />}>
                               <input
                                 type="text"
                                 placeholder="India"
@@ -614,19 +672,12 @@ function LoginContent() {
                                 className={inputCls}
                               />
                             </Field>
-                            <Field label="How did you hear?" icon={<FiInfo size={16} />}>
+                            <Field label="How Did You Hear?" icon={<FiInfo className="h-4 w-4" />}>
                               <CustomSelect
                                 value={source}
                                 onChange={setSource}
-                                options={[
-                                  { value: "GOOGLE", label: "Google" },
-                                  { value: "LINKEDIN", label: "LinkedIn" },
-                                  { value: "TWITTER", label: "Twitter (X)" },
-                                  { value: "YOUTUBE", label: "YouTube" },
-                                  { value: "FRIEND", label: "Friend" },
-                                  { value: "OTHER", label: "Other" },
-                                ]}
-                                placeholder="Select…"
+                                options={sourceOptions}
+                                placeholder="Select"
                               />
                             </Field>
                           </div>
@@ -634,179 +685,218 @@ function LoginContent() {
                       )}
                     </AnimatePresence>
 
-                    {/* Submit */}
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="relative w-full overflow-hidden rounded-xl py-3.5 font-bold text-white focus:outline-none focus:ring-4 focus:ring-violet-500/30 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                      className="relative mt-2 w-full overflow-hidden rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-all focus:outline-none focus:ring-4 focus:ring-[#ff6b4a]/25 disabled:cursor-not-allowed disabled:opacity-70"
                       style={{
                         background: isLoading
-                          ? "#8b5cf6"
-                          : "linear-gradient(135deg, #10b981 0%, #8b5cf6 100%)",
-                        boxShadow: "0 8px 24px rgba(139,92,246,0.25)",
+                          ? "#d9481f"
+                          : "linear-gradient(135deg,#ff6b4a,#ff9b5f)",
+                        boxShadow: "0 20px 45px -26px rgba(217,72,31,0.75)",
                       }}
                     >
-                      {/* shimmer overlay */}
                       {!isLoading && (
                         <span
-                          className="absolute inset-0 pointer-events-none"
+                          className="pointer-events-none absolute inset-0"
                           style={{
                             background:
-                              "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%)",
-                            animation: "shimmer-traverse 2.5s ease-in-out infinite",
+                              "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.22) 50%, transparent 65%)",
+                            animation: "shimmer-traverse 2.6s ease-in-out infinite",
                           }}
                         />
                       )}
                       <span className="relative flex items-center justify-center gap-2">
                         {isLoading ? (
                           <>
-                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]" />
-                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]" />
-                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white [animation-delay:-0.3s]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white [animation-delay:-0.15s]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white" />
                           </>
                         ) : step === "otp" ? (
-                          <>Verify &amp; Sign In <FiCheckCircle size={16} /></>
+                          <>
+                            Verify and sign in
+                            <FiCheckCircle className="h-4 w-4" />
+                          </>
                         ) : mode === "login" ? (
-                          <>Continue <FiArrowRight size={16} /></>
+                          <>
+                            Continue
+                            <FiArrowRight className="h-4 w-4" />
+                          </>
                         ) : (
-                          <>Create Account <FiArrowRight size={16} /></>
+                          <>
+                            Create account
+                            <FiArrowRight className="h-4 w-4" />
+                          </>
                         )}
                       </span>
                     </button>
                   </form>
                 </div>
 
-                {/* Footer links */}
-                <div className="mt-5 text-center space-y-3">
+                <div className="mt-5 text-center">
                   <p className="text-sm text-slate-500">
                     {mode === "login" ? "New to SAASIO?" : "Already have an account?"}{" "}
                     <button
+                      type="button"
                       onClick={toggleMode}
-                      className="text-violet-600 font-bold hover:text-violet-500 transition-colors"
+                      className="font-semibold text-[#d9481f] transition-colors hover:text-[#b93812]"
                     >
                       {mode === "login" ? "Create account" : "Sign in"}
                     </button>
                   </p>
-                  <Link
-                    href="/"
-                    className="block text-xs text-slate-400 hover:text-violet-500 transition-colors"
-                  >
-                    ← Back to home
-                  </Link>
                 </div>
+
+                <p className="mt-8 text-center text-xs leading-6 text-slate-400">
+                  By continuing, you agree to our{" "}
+                  <Link
+                    href="/terms"
+                    className="font-medium text-slate-500 underline underline-offset-2 transition-colors hover:text-[#102033]"
+                  >
+                    Terms
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    className="font-medium text-slate-500 underline underline-offset-2 transition-colors hover:text-[#102033]"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
-
-          <p className="text-center text-xs text-slate-400 mt-8">
-            By continuing, you agree to our{" "}
-            <Link href="/terms" className="hover:text-violet-500 transition-colors underline underline-offset-2">Terms</Link>
-            {" "}&amp;{" "}
-            <Link href="/privacy" className="hover:text-violet-500 transition-colors underline underline-offset-2">Privacy Policy</Link>
-          </p>
         </div>
       </div>
     </div>
   );
 }
 
+function LoginShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="relative h-dvh overflow-hidden bg-[#fffaf4] text-[#102033]">
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at top left, rgba(255,107,74,0.22), transparent 34%), radial-gradient(circle at 82% 18%, rgba(15,118,110,0.16), transparent 26%), linear-gradient(180deg, #fffaf4 0%, #f2eadf 100%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-50"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(15,23,42,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.05) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+        }}
+      />
+      <div className="absolute left-1/2 top-16 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-white/55 blur-3xl" />
+
+      <div className="relative flex h-dvh w-screen items-stretch">
+        {children}
+      </div>
+    </main>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <LoginShell>
+      <div className="flex h-dvh w-screen items-center justify-center bg-white/80 backdrop-blur-xl">
+        <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#d9481f]/20 border-t-[#d9481f]" />
+      </div>
+    </LoginShell>
+  );
+}
+
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="overflow-x-hidden bg-[#fffaf4] text-[#102033]">
-          <Navbar
-            links={LOGIN_NAV_LINKS}
-            secondaryAction={{ label: "Back Home", href: "/" }}
-            primaryAction={null}
-          />
-          <div className="px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8">
-            <div className="mx-auto flex min-h-[calc(100vh-10rem)] max-w-[88rem] items-center justify-center rounded-[2rem] border border-[#eadfce] bg-white/70 shadow-[0_40px_90px_-55px_rgba(15,23,42,0.25)]">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d9481f]/20 border-t-[#d9481f]" />
-            </div>
-          </div>
-          <Footer />
-        </main>
-      }
-    >
-      <main className="overflow-x-hidden bg-[#fffaf4] text-[#102033]">
-        <Navbar
-          links={LOGIN_NAV_LINKS}
-          secondaryAction={{ label: "Back Home", href: "/" }}
-          primaryAction={null}
-        />
-        <div className="px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8">
-          <div className="mx-auto max-w-[88rem]">
-            <LoginContent />
-          </div>
-        </div>
-        <Footer />
-      </main>
+    <Suspense fallback={<LoginFallback />}>
+      <LoginShell>
+        <LoginContent />
+      </LoginShell>
     </Suspense>
   );
 }
 
-// ── CustomSelect ─────────────────────────────────────────────────────────────
-interface CustomSelectProps {
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
   value: string;
   onChange: (value: string) => void;
-  options: { value: string; label: string }[];
+  options: SelectOption[];
   placeholder: string;
-}
-
-function CustomSelect({ value, onChange, options, placeholder }: CustomSelectProps) {
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node))
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
+      }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const selectedLabel = options.find((o) => o.value === value)?.label || placeholder;
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label || placeholder;
 
   return (
-    <div className="relative w-full" ref={containerRef}>
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-slate-50 border ${
-          isOpen ? "border-violet-500 ring-4 ring-violet-500/10" : "border-slate-200"
-        } rounded-xl py-2.5 pl-10 pr-3 text-sm font-medium cursor-pointer transition-all flex items-center justify-between hover:border-violet-500`}
+    <div ref={containerRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        className={`flex w-full items-center justify-between rounded-[1rem] border bg-[#fffaf4] py-3 pl-11 pr-4 text-sm font-medium transition-all ${
+          isOpen
+            ? "border-[#d9481f] bg-white ring-4 ring-[#ff6b4a]/15"
+            : "border-[#e5d8c9] hover:border-[#d8c9b6]"
+        }`}
       >
-        <span className={value ? "text-slate-900 truncate" : "text-slate-400 truncate"}>
+        <span className={value ? "truncate text-[#102033]" : "truncate text-slate-400"}>
           {selectedLabel}
         </span>
-        <FiChevronLeft
-          size={14}
-          className={`text-slate-400 transition-transform duration-200 shrink-0 ml-1 ${isOpen ? "rotate-90" : "-rotate-90"}`}
+        <FiChevronDown
+          className={`h-4 w-4 shrink-0 text-[#8c6d54] transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
         />
-      </div>
+      </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 4, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1"
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 6, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            className="absolute z-50 mt-1 w-full overflow-hidden rounded-[1rem] border border-[#eadfce] bg-white shadow-[0_24px_60px_-35px_rgba(15,23,42,0.35)]"
           >
             {options.map((option) => (
-              <div
+              <button
                 key={option.value}
-                onClick={() => { onChange(option.value); setIsOpen(false); }}
-                className={`px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors ${
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={`block w-full px-4 py-3 text-left text-sm font-medium transition-colors ${
                   value === option.value
-                    ? "bg-violet-50 text-violet-600"
-                    : "text-slate-700 hover:bg-slate-50 hover:text-violet-600"
+                    ? "bg-[#fff4ec] text-[#d9481f]"
+                    : "text-slate-700 hover:bg-[#fffaf4] hover:text-[#102033]"
                 }`}
               >
                 {option.label}
-              </div>
+              </button>
             ))}
           </motion.div>
         )}
