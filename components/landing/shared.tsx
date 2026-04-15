@@ -130,18 +130,57 @@ export function Navbar({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    if (open) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [open]);
+
+  const shellTone =
+    open || scrolled
+      ? "border-[#e5d7c7] bg-[#fffaf4]/94 shadow-[0_22px_60px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl"
+      : "border-transparent bg-transparent";
+
   return (
     <nav className="fixed inset-x-0 top-0 z-50 px-2.5 pt-2.5 sm:px-6 sm:pt-4 lg:px-8">
+      <AnimatePresence>
+        {open && (
+          <motion.button
+            type="button"
+            aria-label="Close navigation"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-[#102033]/18 backdrop-blur-[3px] md:hidden"
+            onClick={() => setOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <div
         className={cn(
-          "mx-auto max-w-352 rounded-[1.75rem] border transition-all duration-300",
-          scrolled
-            ? "border-[#e5d7c7] bg-[#fffaf4]/90 shadow-[0_22px_60px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl"
-            : "border-transparent bg-transparent",
+          "relative z-10 mx-auto w-full max-w-[88rem] rounded-[1.75rem] border transition-all duration-300",
+          shellTone,
         )}
       >
         <div className="flex items-center justify-between px-2.5 py-2.5 sm:px-5 sm:py-3">
-          <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <Link
+            href="/"
+            onClick={() => setOpen(false)}
+            className="flex min-w-0 items-center gap-2.5 sm:gap-3"
+          >
             <span className="flex h-9 w-9 items-center justify-center rounded-[1.2rem] bg-[#102033] text-sm font-black text-white shadow-[0_16px_35px_-18px_rgba(16,32,51,0.9)] sm:h-11 sm:w-11 sm:rounded-2xl">
               S
             </span>
@@ -213,44 +252,51 @@ export function Navbar({
             </AnimatePresence>
           </button>
         </div>
+      </div>
 
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.24, ease: "easeInOut" }}
-              className="overflow-hidden md:hidden"
-            >
-              <div className="border-t border-[#eadfce] px-4 py-4">
-                <div className="space-y-1">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="fixed inset-x-2.5 top-[4.7rem] bottom-3 z-10 md:hidden sm:inset-x-6 sm:top-[6rem]"
+          >
+            <div className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-[#eadfce] bg-[#fffaf4] shadow-[0_28px_60px_-28px_rgba(16,32,51,0.32)]">
+              <div className="border-b border-[#efe3d6] bg-[linear-gradient(180deg,#fffdf9,#fff7ee)] px-5 py-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#8c6d54]">
+                  Navigation
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[#102033]">
+                  Explore SAASIO on mobile
+                </p>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3">
+                <div className="space-y-1.5">
                   {links.map((link, index) => (
                     <motion.a
                       key={link.label}
                       href={link.href}
                       onClick={() => setOpen(false)}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="block rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-white hover:text-[#102033]"
+                      className="block rounded-[1.4rem] border border-[#efe3d6] bg-white px-4 py-4 text-sm font-semibold text-slate-700 shadow-[0_14px_28px_-24px_rgba(16,32,51,0.28)] transition-all hover:border-[#e5d7c7] hover:-translate-y-0.5 hover:text-[#102033]"
                     >
                       {link.label}
                     </motion.a>
                   ))}
                 </div>
+
                 {mobileActions.length > 0 && (
-                  <div
-                    className={cn(
-                      "mt-4 grid gap-3",
-                      mobileActions.length > 1 && "sm:grid-cols-2",
-                    )}
-                  >
+                  <div className="mt-5 grid gap-3">
                     {secondaryAction && (
                       <Link
                         href={secondaryAction.href}
                         onClick={() => setOpen(false)}
-                        className="inline-flex items-center justify-center rounded-full border border-[#d8c8b8] px-4 py-3 text-sm font-semibold text-[#102033]"
+                        className="inline-flex items-center justify-center rounded-full border border-[#d8c8b8] bg-white px-4 py-3.5 text-sm font-semibold text-[#102033] transition-colors hover:bg-[#fffdf9]"
                       >
                         {secondaryAction.label}
                       </Link>
@@ -259,7 +305,7 @@ export function Navbar({
                       <CtaLink
                         href={primaryAction.href}
                         onClick={() => setOpen(false)}
-                        className="justify-center px-4 py-3 text-sm"
+                        className="justify-center px-4 py-3.5 text-sm"
                       >
                         {primaryAction.label}
                       </CtaLink>
@@ -267,10 +313,10 @@ export function Navbar({
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
