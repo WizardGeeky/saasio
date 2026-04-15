@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getStoredToken } from "@/app/utils/token";
 import { useToast } from "@/components/ui/toast";
 import { usePrivilege } from "@/app/utils/usePrivilege";
@@ -82,7 +82,7 @@ export default function AiAtsPage() {
         aiModel: "",
     });
 
-    const fetchHistory = async () => {
+    const fetchHistory = useCallback(async () => {
         setHistoryLoading(true);
         try {
             const res = await fetch("/api/v1/private/ai-ats", {
@@ -92,39 +92,31 @@ export default function AiAtsPage() {
             if (res.ok) { setHistory(data.records ?? []); setUserEmail(data.email ?? ""); }
         } catch { /* silently ignore */ }
         finally { setHistoryLoading(false); }
-    };
+    }, [token]);
 
-    useEffect(() => { fetchHistory(); }, []);
+    useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
     const handleRunAnalysis = async () => {
         if (!form.resumeFile) return;
         setIsAnalyzing(true);
         try {
-            // Convert PDF to base64
-            const base64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve((reader.result as string).split(",")[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(form.resumeFile!);
-            });
+            const body = new FormData();
+            body.append("modelId", form.aiModel);
+            body.append("jobRoleName", form.jobRoleName);
+            body.append("jobDescription", form.jobDescription);
+            body.append("resumeFile", form.resumeFile);
 
             const res = await fetch("/api/v1/private/ai-ats", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    modelId:        form.aiModel,
-                    jobRoleName:    form.jobRoleName,
-                    jobDescription: form.jobDescription,
-                    resumeBase64:   base64,
-                    fileName:       form.resumeFile.name,
-                }),
+                headers: { Authorization: `Bearer ${token}` },
+                body,
             });
 
             const data = await res.json();
             if (res.ok) {
                 toastSuccess("Analysis complete!");
                 setModalOpen(false);
-                setForm({ jobRoleName: "", jobDescription: "", resumeFile: null, aiModel: "" });
+                setForm({ jobRoleName: "", jobDescription: "", resumeFile: null, aiModel: form.aiModel });
                 fetchHistory();
             } else {
                 toastError(data.message ?? "Analysis failed");
@@ -142,6 +134,8 @@ export default function AiAtsPage() {
     const highMatch = history.filter(r => r.analysis.score >= 80).length;
     const weekAgo   = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const thisWeek  = history.filter(r => new Date(r.createdAt) >= weekAgo).length;
+
+    const latestAnalysis = history[0] ?? null;
 
     const STATS = [
         { label: "Total Analyses",  value: historyLoading ? "—" : total,          icon: <FiBarChart2 size={16} />, color: "text-emerald-600", bg: "bg-emerald-50" },
@@ -221,6 +215,65 @@ export default function AiAtsPage() {
                                 <span className="text-xs font-bold text-gray-600 w-6 text-right">{band.count}</span>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {!historyLoading && latestAnalysis && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h2 className="font-semibold text-gray-800">Latest ATS Result</h2>
+                            <p className="mt-1 text-sm text-gray-500">{latestAnalysis.jobRoleName}</p>
+                            <p className="mt-1 text-xs text-gray-400">
+                                {latestAnalysis.fileName} · {formatDate(latestAnalysis.createdAt)} · {formatTime(latestAnalysis.createdAt)}
+                            </p>
+                        </div>
+                        {(() => {
+                            const s = scoreStyle(latestAnalysis.analysis.score);
+                            return (
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold border w-fit ${s.bg} ${s.text} ${s.border}`}>
+                                    <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+                                    {latestAnalysis.analysis.score}% Match
+                                </span>
+                            );
+                        })()}
+                    </div>
+
+                    <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                        <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                            <h3 className="mb-3 text-sm font-semibold text-gray-700">Suggestions</h3>
+                            {latestAnalysis.analysis.suggestions.length > 0 ? (
+                                <div className="space-y-2">
+                                    {latestAnalysis.analysis.suggestions.map((suggestion, index) => (
+                                        <div key={`${latestAnalysis._id}-suggestion-${index}`} className="flex gap-2 text-sm text-gray-600">
+                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                                            <span>{suggestion}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-400">No suggestions available for the latest analysis.</p>
+                            )}
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2 lg:col-span-2">
+                            <div className="rounded-2xl border border-gray-100 p-4">
+                                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                                    <FiCheckCircle size={14} />
+                                    Matched Keywords ({latestAnalysis.analysis.matchedKeywords.length})
+                                </h3>
+                                <KeywordChips keywords={latestAnalysis.analysis.matchedKeywords} variant="matched" />
+                            </div>
+
+                            <div className="rounded-2xl border border-gray-100 p-4">
+                                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-red-600">
+                                    <FiAlertCircle size={14} />
+                                    Missing Keywords ({latestAnalysis.analysis.missingKeywords.length})
+                                </h3>
+                                <KeywordChips keywords={latestAnalysis.analysis.missingKeywords} variant="missing" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -407,7 +460,7 @@ function AnalyzeModal({
         form.aiModel.trim().length > 0;
 
     const handleFile = (file: File) => {
-        if (file.type === "application/pdf") {
+        if ((file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) && file.size <= 10 * 1024 * 1024) {
             setForm((f) => ({ ...f, resumeFile: file }));
         }
     };
@@ -705,24 +758,15 @@ function ModelDropdown({
 function KeywordChips({
     keywords,
     variant,
-    limit = 4,
 }: {
     keywords: string[];
     variant: "matched" | "missing";
     limit?: number;
 }) {
-    const visible = keywords.slice(0, limit);
-    const overflow = keywords.length - limit;
-
     const chip =
         variant === "matched"
             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
             : "bg-red-50 text-red-600 border-red-200";
-
-    const more =
-        variant === "matched"
-            ? "bg-emerald-100 text-emerald-600"
-            : "bg-red-100 text-red-500";
 
     if (keywords.length === 0) {
         return <p className="text-[11px] text-gray-400 italic">None</p>;
@@ -730,7 +774,7 @@ function KeywordChips({
 
     return (
         <div className="flex flex-wrap gap-1">
-            {visible.map((kw) => (
+            {keywords.map((kw) => (
                 <span
                     key={kw}
                     className={`inline-block px-2 py-0.5 rounded-md border text-[11px] font-medium ${chip}`}
@@ -738,11 +782,6 @@ function KeywordChips({
                     {kw}
                 </span>
             ))}
-            {overflow > 0 && (
-                <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold ${more}`}>
-                    +{overflow} more
-                </span>
-            )}
         </div>
     );
 }
