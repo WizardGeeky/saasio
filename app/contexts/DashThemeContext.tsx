@@ -27,8 +27,15 @@ function resolveDashboardThemeSnapshot() {
 function applyThemeToDocument(isDark: boolean) {
   if (typeof document === "undefined") return;
 
-  document.documentElement.classList.toggle("dark", isDark);
+  document.documentElement.dataset.dashboardTheme = isDark ? "dark" : "light";
   document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+}
+
+function clearThemeFromDocument() {
+  if (typeof document === "undefined") return;
+
+  delete document.documentElement.dataset.dashboardTheme;
+  document.documentElement.style.colorScheme = "";
 }
 
 function subscribeToDashboardTheme(onStoreChange: () => void) {
@@ -60,6 +67,8 @@ export function DashThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyThemeToDocument(isDark);
   }, [isDark]);
+
+  useEffect(() => clearThemeFromDocument, []);
 
   const toggle = useCallback(() => {
     const nextTheme = !resolveDashboardThemeSnapshot();

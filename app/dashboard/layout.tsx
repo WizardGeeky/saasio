@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useSyncExternalStore } from "react";
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard-topbar";
@@ -64,6 +64,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { isDark } = useDashTheme();
   const { hasPrivilege, isLoading } = usePrivilegeContext();
   const pathname = usePathname();
+  const shellRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const [mobileMenuState, setMobileMenuState] = useState({ open: false, path: "" });
   const isMobileMenuOpen = mobileMenuState.open && mobileMenuState.path === pathname;
   const dashboardIdentity = useSyncExternalStore(
@@ -101,17 +104,64 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     return NAV_CONFIG.map(filterItem).filter((i): i is NavItem => i !== null);
   }, [hasPrivilege, isLoading]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const resetHorizontalOffset = () => {
+      window.scrollTo({ left: 0, top: window.scrollY });
+
+      const scrollTargets = [
+        document.scrollingElement as HTMLElement | null,
+        document.documentElement,
+        document.body,
+        shellRef.current,
+        contentRef.current,
+        mainRef.current,
+      ];
+
+      scrollTargets.forEach((target) => {
+        if (!target) return;
+
+        const currentTop = target.scrollTop;
+        target.scrollLeft = 0;
+        target.scrollTo?.({ left: 0, top: currentTop });
+      });
+    };
+
+    let nestedFrameId = 0;
+
+    resetHorizontalOffset();
+
+    const frameId = window.requestAnimationFrame(() => {
+      resetHorizontalOffset();
+      nestedFrameId = window.requestAnimationFrame(resetHorizontalOffset);
+    });
+
+    const timeoutId = window.setTimeout(resetHorizontalOffset, 180);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      if (nestedFrameId) {
+        window.cancelAnimationFrame(nestedFrameId);
+      }
+      window.clearTimeout(timeoutId);
+    };
+  }, [isDark, pathname]);
+
   return (
-    <div className={`db-theme relative isolate flex h-screen w-full overflow-hidden font-sans transition-colors duration-500 ${isDark ? "db-dark" : ""}`}>
+    <div
+      ref={shellRef}
+      className={`db-theme relative block h-dvh min-h-dvh w-full max-w-full overflow-hidden font-sans transition-colors duration-500 lg:isolate lg:flex ${isDark ? "db-dark dark" : ""}`}
+    >
       <div className="db-theme-shell pointer-events-none absolute inset-0" />
 
       {/* Mobile Overlay */}
-      <div
-        className={`fixed inset-0 z-40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
-          isMobileMenuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-        } ${isDark ? "bg-[#020617]/60" : "bg-[#102033]/28"}`}
-        onClick={() => setMobileMenuState((currentState) => ({ ...currentState, open: false }))}
-      />
+      {isMobileMenuOpen && (
+        <div
+          className={`fixed inset-0 z-40 bg-[#102033]/28 transition-opacity duration-300 lg:hidden ${isDark ? "bg-[#020617]/60" : "bg-[#102033]/28"}`}
+          onClick={() => setMobileMenuState((currentState) => ({ ...currentState, open: false }))}
+        />
+      )}
 
       {/* Sidebar — receives privilege-filtered nav items */}
       <DashboardSidebar
@@ -121,14 +171,20 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       />
 
       {/* Main Content */}
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        ref={contentRef}
+        className="relative z-10 flex h-full min-h-0 min-w-0 w-full max-w-full flex-col overflow-hidden lg:flex-1"
+      >
         <DashboardTopbar
           onMobileMenuToggle={() => setMobileMenuState({ open: true, path: pathname })}
           userName={dashboardIdentity.name}
           userRole={dashboardIdentity.role}
         />
 
-        <main className="db-theme-main custom-scrollbar relative flex-1 overflow-y-auto bg-transparent p-3 lg:px-8 lg:py-8">
+        <main
+          ref={mainRef}
+          className="db-theme-main custom-scrollbar relative flex-1 min-h-0 max-w-full overflow-x-hidden overflow-y-auto bg-transparent p-3 lg:px-8 lg:py-8"
+        >
           {children}
         </main>
       </div>

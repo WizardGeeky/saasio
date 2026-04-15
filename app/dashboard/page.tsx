@@ -218,7 +218,7 @@ function StatCard({
 }) {
     const cls = COLOR_MAP[color] ?? COLOR_MAP.blue;
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+        <div className="min-w-0 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
             <div className={`inline-flex p-2.5 rounded-xl border mb-3 ${cls}`}>
                 <Icon size={18} />
             </div>
@@ -235,8 +235,8 @@ function ChartCard({ title, subtitle, children, className = "" }: {
     title: string; subtitle?: string; children: React.ReactNode; className?: string;
 }) {
     return (
-        <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 ${className}`}>
-            <div className="mb-4">
+        <div className={`min-w-0 overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ${className}`}>
+            <div className="mb-4 min-w-0">
                 <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
                 {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
             </div>
@@ -445,21 +445,21 @@ export default function DashboardPage() {
     if (!privLoading && !canView) return null;
 
     return (
-        <div className="mx-auto w-full space-y-8 pb-10">
+        <div className="analytics-page mx-auto w-full max-w-full min-w-0 space-y-8 overflow-x-hidden pb-10">
 
             {/* ── Header ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                     <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
                     <p className="text-sm text-gray-500 mt-0.5">Platform-wide metrics and insights</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex bg-gray-100 rounded-xl p-1 gap-0.5">
+                <div className="flex w-full min-w-0 items-start gap-2 sm:w-auto sm:items-center">
+                    <div className="custom-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-xl bg-gray-100 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-none">
                         {PERIODS.map(({ label, value }) => (
                             <button
                                 key={value}
                                 onClick={() => setPeriod(value)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                                className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                                     period === value
                                         ? "bg-white text-gray-900 shadow-sm"
                                         : "text-gray-500 hover:text-gray-700"
@@ -472,7 +472,7 @@ export default function DashboardPage() {
                     <button
                         onClick={fetchData}
                         disabled={loading}
-                        className="p-2 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        className="shrink-0 rounded-xl bg-gray-100 p-2 text-gray-500 transition-colors hover:bg-gray-200 disabled:opacity-50"
                         title="Refresh"
                     >
                         <FiRefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -588,7 +588,7 @@ export default function DashboardPage() {
                     <section>
                         <SectionHeading>Resume Insights</SectionHeading>
                         <div className="grid grid-cols-1 gap-4">
-                            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-950/80">
+                            <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-950/80">
                                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="min-w-0">
                                         <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-100">
@@ -600,11 +600,11 @@ export default function DashboardPage() {
                                                 : "Resume download insights will appear here after users download resumes."}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                                        <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                    <div className="flex min-w-0 flex-wrap items-center gap-2 self-start sm:self-auto">
+                                        <span className="max-w-full rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                                             Page {safeResumePage + 1} of {resumeUsagePageCount}
                                         </span>
-                                        <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-slate-700 dark:bg-slate-900">
+                                        <div className="flex shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-slate-700 dark:bg-slate-900">
                                             <button
                                                 type="button"
                                                 onClick={() => setResumePage((current) => Math.max(0, current - 1))}

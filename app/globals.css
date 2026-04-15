@@ -501,6 +501,50 @@
     radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 55%);
 }
 
+.db-dark {
+  background-color: #040814;
+}
+
+@media (max-width: 1023px) {
+  .db-theme-shell::before {
+    mask-image: none;
+    opacity: 0.08;
+  }
+
+  .db-theme-shell::after {
+    filter: none;
+    opacity: 0.42;
+  }
+
+  .db-dark .db-theme-shell {
+    background:
+      radial-gradient(circle at 12% 10%, rgba(255, 168, 132, 0.16) 0%, transparent 24%),
+      radial-gradient(circle at 84% 10%, rgba(45, 212, 191, 0.12) 0%, transparent 20%),
+      radial-gradient(circle at 56% 78%, rgba(129, 140, 248, 0.09) 0%, transparent 22%),
+      linear-gradient(180deg, #040814 0%, #09101e 54%, #0b1321 100%);
+  }
+
+  .db-dark .db-theme-shell::before {
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 96px 96px;
+    mask-image: none;
+    opacity: 0.1;
+  }
+
+  .db-dark .db-theme-shell::after {
+    filter: none;
+    opacity: 0.46;
+  }
+
+  .db-dark .db-theme-main {
+    background:
+      linear-gradient(180deg, rgba(6, 11, 22, 0.62) 0%, rgba(6, 11, 22, 0.24) 100%),
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 55%);
+  }
+}
+
 /* Main light-mode surfaces */
 .db-theme .bg-white        { background-color: #fffdf9; }
 .db-theme .bg-gray-50      { background-color: #fbf5ee; }
@@ -845,6 +889,30 @@
   box-shadow:
     0 28px 54px -34px rgba(0, 0, 0, 0.94),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.analytics-page .shadow-sm {
+  box-shadow:
+    0 18px 34px -30px rgba(16, 32, 51, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.analytics-page .shadow-md {
+  box-shadow:
+    0 22px 42px -30px rgba(16, 32, 51, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+.db-dark .analytics-page .shadow-sm {
+  box-shadow:
+    0 16px 30px -28px rgba(0, 0, 0, 0.74),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.db-dark .analytics-page .shadow-md {
+  box-shadow:
+    0 20px 40px -28px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .db-dark .shadow-lg,

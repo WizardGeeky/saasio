@@ -43,7 +43,7 @@ export function DashboardTopbar({
     .slice(0, 2);
 
   return (
-    <header className={`relative z-30 flex h-16 sm:h-20 items-center justify-between overflow-hidden border-b px-4 lg:px-8 shrink-0 backdrop-blur-xl transition-all duration-300 ${headerTone}`}>
+    <header className={`relative z-30 flex h-16 shrink-0 items-center justify-between overflow-hidden border-b px-4 backdrop-blur-none transition-all duration-300 sm:h-20 lg:px-8 lg:backdrop-blur-xl ${headerTone}`}>
       {isDark && (
         <>
           <div

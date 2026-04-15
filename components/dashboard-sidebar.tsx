@@ -160,8 +160,8 @@ export function DashboardSidebar({ navItems, isOpen, onClose }: DashboardSidebar
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex w-72 sm:w-[300px] flex-col border-r backdrop-blur-xl transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarTone} ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
+      className={`fixed inset-y-0 left-0 z-50 w-72 flex-col border-r backdrop-blur-none transition-transform duration-300 ease-in-out sm:w-[300px] lg:static lg:flex lg:translate-x-0 lg:backdrop-blur-xl ${sidebarTone} ${
+        isOpen ? "flex translate-x-0" : "hidden -translate-x-full"
       }`}
     >
       {isDark && (
