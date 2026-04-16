@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { BiLogoLinkedin } from "react-icons/bi";
 import {
   FiArrowRight,
@@ -50,6 +50,89 @@ const WORKS_WITH_ITEMS = [
     iconClassName: "text-[#b45309]",
   },
 ];
+
+type AnimatedStatValueProps = {
+  value: number;
+  suffix: string;
+  shouldStart: boolean;
+  delay: number;
+};
+
+function AnimatedStatValue({
+  value,
+  suffix,
+  shouldStart,
+  delay,
+}: AnimatedStatValueProps) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
+  const hasAnimatedRef = useRef(false);
+
+  useEffect(() => {
+    if (!shouldStart || hasAnimatedRef.current) {
+      return;
+    }
+
+    hasAnimatedRef.current = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    if (prefersReducedMotion) {
+      timeoutId = setTimeout(() => {
+        setDisplayValue(value);
+      }, delay);
+
+      return () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      };
+    }
+
+    let frameId = 0;
+    let startTime = 0;
+    const duration = value >= 1000 ? 1800 : 1300;
+
+    const updateValue = (timestamp: number) => {
+      if (startTime === 0) {
+        startTime = timestamp;
+      }
+
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const nextValue = Math.round(value * easedProgress);
+
+      setDisplayValue((current) => (current === nextValue ? current : nextValue));
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(updateValue);
+        return;
+      }
+
+      setDisplayValue(value);
+    };
+
+    timeoutId = setTimeout(() => {
+      frameId = requestAnimationFrame(updateValue);
+    }, delay);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [delay, prefersReducedMotion, shouldStart, value]);
+
+  return (
+    <span>
+      {displayValue}
+      {suffix}
+    </span>
+  );
+}
 
 export function AIScannerAnimation() {
   const [activeJob, setActiveJob] = useState(0);
@@ -118,7 +201,7 @@ export function AIScannerAnimation() {
   const job = RESUME_JOBS[activeJob];
 
   return (
-    <div className="relative mx-auto w-full max-w-[440px] select-none">
+    <div className="relative mx-auto w-full max-w-110 select-none">
       <div className="absolute inset-0 scale-105 rounded-[2rem] bg-[#ffb99e]/35 blur-3xl" />
 
       <div className="relative overflow-hidden rounded-[1.75rem] border border-[#eadfce] bg-[#fffdf9] shadow-[0_38px_90px_-38px_rgba(15,23,42,0.5)] sm:rounded-[2rem]">
@@ -157,7 +240,7 @@ export function AIScannerAnimation() {
           </div>
         </div>
 
-        <div className="relative h-40 px-4 pt-4 sm:h-[172px] sm:px-5 sm:pt-5">
+        <div className="relative h-40 px-4 pt-4 sm:h-43 sm:px-5 sm:pt-5">
           <div className="rounded-[1.5rem] border border-[#eadfce] bg-[#f7efe5] p-4">
             <div className="space-y-2.5">
               <div className="h-3 w-2/5 rounded-full bg-[#1f2937]" />
@@ -183,7 +266,7 @@ export function AIScannerAnimation() {
           {scanPhase === "scanning" && (
             <>
               <motion.div
-                className="pointer-events-none absolute left-4 right-4 h-[2px] sm:left-5 sm:right-5"
+                className="pointer-events-none absolute left-4 right-4 h-0.5 sm:left-5 sm:right-5"
                 style={{ top: `${scanY}%` }}
               >
                 <div className="h-full bg-linear-to-r from-transparent via-[#0f766e] to-transparent opacity-90" />
@@ -358,11 +441,11 @@ export function HeroSection() {
           backgroundSize: "72px 72px",
         }}
       />
-      <div className="absolute left-1/2 top-16 h-[24rem] w-[24rem] -translate-x-1/2 rounded-full bg-white/55 blur-3xl sm:h-[32rem] sm:w-[32rem]" />
+      <div className="absolute left-1/2 top-16 h-96 w-[24rem] -translate-x-1/2 rounded-full bg-white/55 blur-3xl sm:h-128 sm:w-lg" />
 
       <div className={cn(CONTAINER, "relative")}>
         <div className="grid items-center gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:gap-14">
-          <div className="mx-auto max-w-[23rem] text-center sm:mx-0 sm:max-w-2xl sm:text-left" data-aos="fade-right">
+          <div className="mx-auto max-w-92 text-center sm:mx-0 sm:max-w-2xl sm:text-left" data-aos="fade-right">
             <span className="mx-auto inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-full border border-[#e6d8c7] bg-white/80 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#8c6d54] shadow-[0_15px_30px_-20px_rgba(15,23,42,0.3)] sm:mx-0 sm:justify-start sm:gap-2 sm:px-4 sm:text-[11px] sm:tracking-[0.22em]">
               <FiAward className="h-3.5 w-3.5 text-[#d9481f]" />
               <span className="sm:hidden">Built for Indian job seekers</span>
@@ -371,14 +454,12 @@ export function HeroSection() {
               </span>
             </span>
 
-            <h1 className="mt-4 font-heading text-[2.14rem] font-bold leading-[0.94] tracking-[-0.05em] text-[#102033] [text-wrap:balance] sm:mt-6 sm:text-6xl sm:leading-[0.97] sm:tracking-normal lg:text-7xl">
-              Create a resume from any job description
-              <span className="mt-1.5 block text-[#d9481f] sm:mt-0">
-                recruiters want to open.
-              </span>
+            <h1 className="mt-4 font-heading text-[2.14rem] font-bold leading-[0.94] tracking-[-0.05em] text-[#102033] sm:mt-6 sm:text-6xl sm:leading-[0.97] sm:tracking-normal lg:text-7xl">
+              Generate resumes optimized for ATS and recruiter screening.
+              
             </h1>
 
-            <p className="mx-auto mt-4 max-w-[19.5rem] text-[14px] leading-7 text-slate-600 sm:mx-0 sm:mt-6 sm:max-w-xl sm:text-xl sm:leading-8">
+            <p className="mx-auto mt-4 max-w-78 text-[14px] leading-7 text-slate-600 sm:mx-0 sm:mt-6 sm:max-w-xl sm:text-xl sm:leading-8">
               SAASIO crafts ATS-optimized resumes in under 30 seconds, rewrites
               your story for the exact role, and lets you pay once instead of
               subscribing forever.
@@ -437,7 +518,7 @@ export function HeroSection() {
           </div>
 
           <div
-            className="relative mx-auto w-full max-w-[560px]"
+            className="relative mx-auto w-full max-w-140"
             data-aos="zoom-in-left"
             data-aos-delay="120"
           >
@@ -468,10 +549,14 @@ export function HeroSection() {
 }
 
 export function StatsSection() {
+  const statsRef = useRef<HTMLDivElement | null>(null);
+  const shouldAnimateStats = useInView(statsRef, { once: true, amount: 0.4 });
+
   return (
     <section className="relative -mt-4 pb-20 sm:-mt-6 sm:pb-24">
       <div className={CONTAINER}>
         <div
+          ref={statsRef}
           className="rounded-[2rem] border border-[#e7dbc9] bg-white/80 p-3 shadow-[0_30px_70px_-45px_rgba(15,23,42,0.55)] backdrop-blur-xl sm:rounded-[2.25rem] sm:p-6"
           data-aos="fade-up"
         >
@@ -486,9 +571,13 @@ export function StatsSection() {
                 <div className={cn("inline-flex h-10 w-10 items-center justify-center rounded-2xl sm:h-11 sm:w-11", stat.accent)}>
                   <stat.icon className="h-5 w-5" />
                 </div>
-                <div className="mt-4 text-3xl font-black tracking-tight text-[#102033] sm:mt-5 sm:text-4xl">
-                  {stat.value}
-                  {stat.suffix}
+                <div className="mt-4 tabular-nums text-3xl font-black tracking-tight text-[#102033] sm:mt-5 sm:text-4xl">
+                  <AnimatedStatValue
+                    value={stat.value}
+                    suffix={stat.suffix}
+                    shouldStart={shouldAnimateStats}
+                    delay={index * 120}
+                  />
                 </div>
                 <p className="mt-2 text-xs font-medium text-slate-600 sm:text-sm">
                   {stat.label}
