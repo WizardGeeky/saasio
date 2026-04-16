@@ -1,17 +1,55 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { BiLogoLinkedin } from "react-icons/bi";
 import {
   FiArrowRight,
   FiAward,
+  FiBriefcase,
   FiCheck,
   FiCpu,
   FiStar,
 } from "react-icons/fi";
+import { SiIndeed } from "react-icons/si";
 
 import { cn } from "@/lib/utils";
 
-import { CONTAINER, HERO_POINTS, RESUME_JOBS, STATS } from "./data";
+import { CONTAINER, RESUME_JOBS, STATS } from "./data";
 import { CtaLink } from "./shared";
+
+function NaukriMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="#2563eb" />
+      <path
+        d="M8 16V8h1.9l4.5 4.6V8H16v8h-1.8l-4.6-4.6V16H8Z"
+        fill="#fff"
+      />
+      <circle cx="17.8" cy="6.2" r="1.6" fill="#fb923c" />
+    </svg>
+  );
+}
+
+const WORKS_WITH_ITEMS = [
+  {
+    label: "LinkedIn",
+    icon: BiLogoLinkedin,
+    iconClassName: "text-[#0a66c2]",
+  },
+  {
+    label: "Naukri",
+    icon: NaukriMark,
+  },
+  {
+    label: "Indeed",
+    icon: SiIndeed,
+    iconClassName: "text-[#2557a7]",
+  },
+  {
+    label: "Company career pages",
+    icon: FiBriefcase,
+    iconClassName: "text-[#b45309]",
+  },
+];
 
 export function AIScannerAnimation() {
   const [activeJob, setActiveJob] = useState(0);
@@ -334,9 +372,9 @@ export function HeroSection() {
             </span>
 
             <h1 className="mt-4 font-heading text-[2.14rem] font-bold leading-[0.94] tracking-[-0.05em] text-[#102033] [text-wrap:balance] sm:mt-6 sm:text-6xl sm:leading-[0.97] sm:tracking-normal lg:text-7xl">
-              Turn any job description into
+              Create a resume from any job description
               <span className="mt-1.5 block text-[#d9481f] sm:mt-0">
-                a resume recruiters want to open.
+                recruiters want to open.
               </span>
             </h1>
 
@@ -347,10 +385,33 @@ export function HeroSection() {
             </p>
 
             <div className="mt-6 grid gap-2.5 sm:mt-8 sm:flex sm:gap-3">
+              <motion.div
+                animate={{
+                  y: [0, -2, 0],
+                  boxShadow: [
+                    "0 18px 38px -22px rgba(255,107,74,0.35)",
+                    "0 24px 48px -22px rgba(255,107,74,0.5)",
+                    "0 18px 38px -22px rgba(255,107,74,0.35)",
+                  ],
+                }}
+                transition={{
+                  duration: 2.6,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                }}
+                className="rounded-full"
+              >
               <CtaLink href="/login" className="w-full justify-center px-6 py-3.5 text-[15px] sm:w-auto sm:justify-start sm:px-7 sm:py-4 sm:text-base">
                 Start Building
-                <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                <motion.span
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ duration: 1.4, ease: "easeInOut", repeat: Infinity }}
+                  className="inline-flex"
+                >
+                  <FiArrowRight className="h-4 w-4" />
+                </motion.span>
               </CtaLink>
+              </motion.div>
               <a
                 href="#how-it-works"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#d8c9b6] bg-white/80 px-6 py-3.5 text-[15px] font-semibold text-[#102033] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white sm:w-auto sm:px-7 sm:py-4 sm:text-base"
@@ -359,37 +420,17 @@ export function HeroSection() {
               </a>
             </div>
 
-            <div className="mt-7 grid grid-cols-2 gap-3 text-left sm:mt-10 sm:grid-cols-3">
-              {HERO_POINTS.map((point, index) => (
-                <div
-                  key={point.label}
-                  className={cn(
-                    "rounded-[1.35rem] border border-[#e8dccd] bg-white/80 px-4 py-4 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.45)] backdrop-blur-sm sm:rounded-[1.5rem]",
-                    index === HERO_POINTS.length - 1 && "col-span-2 sm:col-span-1",
-                  )}
-                  data-aos="zoom-in-up"
-                  data-aos-delay={120 + index * 70}
-                >
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8c6d54]">
-                    {point.label}
-                  </p>
-                  <p className="mt-2 text-base font-bold text-[#102033] sm:text-lg">
-                    {point.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600 sm:mt-8 sm:justify-start sm:text-sm">
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600 sm:mt-8 sm:justify-start sm:text-sm">
               <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8c6d54] sm:mr-2 sm:text-xs">
                 Works with
               </span>
-              {["LinkedIn", "Naukri", "Indeed", "Company career pages"].map((item) => (
+              {WORKS_WITH_ITEMS.map(({ label, icon: Icon, iconClassName }) => (
                 <span
-                  key={item}
-                  className="rounded-full border border-[#e6d8c7] bg-white/75 px-3 py-1.5 font-medium"
+                  key={label}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#e6d8c7] bg-white/75 px-3 py-1.5 font-medium"
                 >
-                  {item}
+                  <Icon className={cn("h-3.5 w-3.5 shrink-0", iconClassName)} />
+                  <span>{label}</span>
                 </span>
               ))}
             </div>
