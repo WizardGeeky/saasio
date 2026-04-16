@@ -8,7 +8,7 @@ import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
-type RouteContext = { params: Record<string, string | string[] | undefined> };
+type RouteContext = { params: Promise<Record<string, never>> };
 type CreateOrderBody = {
     amount?: unknown;
     currency?: string;

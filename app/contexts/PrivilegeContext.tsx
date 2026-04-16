@@ -8,7 +8,8 @@ import React, {
     useCallback,
     ReactNode,
 } from "react";
-import { getStoredToken } from "@/app/utils/token";
+import { useRouter } from "next/navigation";
+import { clearStoredToken, getStoredToken } from "@/app/utils/token";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ function toKey(method: string, apiPath: string): string {
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function PrivilegeProvider({ children }: { children: ReactNode }) {
+    const router = useRouter();
     const [privileges, setPrivileges] = useState<PrivilegeItem[]>([]);
     const [privilegeSet, setPrivilegeSet] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +54,7 @@ export function PrivilegeProvider({ children }: { children: ReactNode }) {
             if (!token) {
                 setPrivileges([]);
                 setPrivilegeSet(new Set());
+                router.replace("/login");
                 return;
             }
 
@@ -62,6 +65,10 @@ export function PrivilegeProvider({ children }: { children: ReactNode }) {
             if (!res.ok) {
                 setPrivileges([]);
                 setPrivilegeSet(new Set());
+                if (res.status === 401) {
+                    clearStoredToken();
+                    router.replace("/login");
+                }
                 return;
             }
 
@@ -77,7 +84,7 @@ export function PrivilegeProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [router]);
 
     useEffect(() => {
         fetchPrivileges();

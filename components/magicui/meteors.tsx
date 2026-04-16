@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
 
 interface MeteorStyle {
   top: string;
@@ -15,19 +14,23 @@ interface MeteorsProps {
   className?: string;
 }
 
-export function Meteors({ number = 18, className }: MeteorsProps) {
-  const [styles, setStyles] = useState<MeteorStyle[]>([]);
+function seededFraction(seed: number) {
+  const value = Math.sin(seed * 9301 + 49297) * 233280;
+  return value - Math.floor(value);
+}
 
-  useEffect(() => {
-    setStyles(
-      Array.from({ length: number }, () => ({
-        top: Math.floor(Math.random() * 80) + "%",
-        left: Math.floor(Math.random() * 100) + "%",
-        animationDelay: (Math.random() * 2 + 0.1).toFixed(2) + "s",
-        animationDuration: (Math.floor(Math.random() * 7) + 3).toString() + "s",
-      })),
-    );
-  }, [number]);
+function createMeteorStyle(index: number): MeteorStyle {
+  return {
+    top: Math.floor(seededFraction(index + 1) * 80) + "%",
+    left: Math.floor(seededFraction(index + 11) * 100) + "%",
+    animationDelay: (seededFraction(index + 21) * 2 + 0.1).toFixed(2) + "s",
+    animationDuration: (Math.floor(seededFraction(index + 31) * 7) + 3).toString() + "s",
+  };
+}
+
+export function Meteors({ number = 18, className }: MeteorsProps) {
+  const meteorCount = Math.max(0, Math.floor(number));
+  const styles = Array.from({ length: meteorCount }, (_, index) => createMeteorStyle(index));
 
   return (
     <>

@@ -40,7 +40,7 @@ export const generateToken = (payload: {
     sub: string;
     email: string;
     name: string;
-    status: any;
+    status: AccountStatus;
     role: string;
 }): string => {
 
@@ -132,28 +132,3 @@ export const getEmail = (token: string) => getClaim(token, "email");
 export const getUserId = (token: string) => getClaim(token, "sub");
 export const getStatus = (token: string) => getClaim(token, "status");
 export const getRole = (token: string) => getClaim(token, "role");
-
-export const authMiddleware = (req: any, res: any, next: any) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({
-            success: false,
-            message: "Authorization header missing",
-        });
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    const result = verifyToken(token);
-
-    if (!result.valid) {
-        return res.status(401).json({
-            success: false,
-            message: result.error,
-        });
-    }
-
-    req.user = result.payload;
-    next();
-};

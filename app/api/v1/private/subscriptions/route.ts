@@ -6,7 +6,7 @@ import Subscription from "@/models/Subscription";
 import { sendSubscriptionConfirmationEmail } from "@/app/notifications/subscription.notification";
 import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
-type RouteContext = { params: Record<string, string | string[] | undefined> };
+type RouteContext = { params: Promise<Record<string, never>> };
 type CreateSubscriptionBody = {
     projectId?: string;
     projectName?: string;

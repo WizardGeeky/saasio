@@ -8,7 +8,7 @@ import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import { fetchRazorpayPaymentMode } from "@/app/utils/razorpay-payment-mode";
 
-type RouteContext = { params: Record<string, string | string[] | undefined> };
+type RouteContext = { params: Promise<Record<string, never>> };
 type VerifyPaymentBody = {
     razorpayOrderId?: unknown;
     razorpayPaymentId?: unknown;

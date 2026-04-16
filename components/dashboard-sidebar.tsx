@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FiLayers, FiLogOut, FiX, FiChevronDown } from "react-icons/fi";
 import { useDashTheme } from "@/app/contexts/DashThemeContext";
+import { clearStoredToken } from "@/app/utils/token";
 
 export type NavItem = {
   name: string;
@@ -154,8 +155,8 @@ export function DashboardSidebar({ navItems, isOpen, onClose }: DashboardSidebar
     : "border-[#ffd7c9] bg-[#fff3e9] text-[#d9481f] hover:border-[#ffc4ae] hover:bg-[#ffe9db]";
 
   const handleLogout = () => {
-    localStorage.clear();
-    router.replace("/");
+    clearStoredToken();
+    router.replace("/login");
   };
 
   return (

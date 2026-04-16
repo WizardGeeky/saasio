@@ -6,13 +6,21 @@ if (!MONGODB_URI) {
     throw new Error("Please define the MONGODB_URI in .env.local");
 }
 
+type MongooseCache = {
+    conn: typeof mongoose | null;
+    promise: Promise<typeof mongoose> | null;
+};
+
+declare global {
+    var _mongooseCache: MongooseCache | undefined;
+}
+
 // Always reference the SAME global object so concurrent requests
 // share the in-progress promise instead of each creating a new one.
-if (!(global as any)._mongooseCache) {
-    (global as any)._mongooseCache = { conn: null, promise: null };
+if (!globalThis._mongooseCache) {
+    globalThis._mongooseCache = { conn: null, promise: null };
 }
-const cached: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } =
-    (global as any)._mongooseCache;
+const cached = globalThis._mongooseCache;
 
 export async function connectDB() {
     if (cached.conn) return cached.conn;

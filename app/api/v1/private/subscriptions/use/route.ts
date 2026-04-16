@@ -18,7 +18,7 @@ import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 export const POST = withAuth(
     async (
         _req: NextRequest,
-        _ctx: { params: Record<string, string | string[] | undefined> },
+        _ctx: { params: Promise<Record<string, never>> },
         user: CustomJwtPayload
     ): Promise<NextResponse> => {
         try {

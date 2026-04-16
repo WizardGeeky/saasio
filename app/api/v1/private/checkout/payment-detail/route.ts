@@ -11,7 +11,7 @@ import {
     RazorpayPaymentDetail,
 } from "@/app/utils/razorpay-payment-mode";
 
-type RouteContext = { params: Record<string, string | string[] | undefined> };
+type RouteContext = { params: Promise<Record<string, never>> };
 type PaymentOrderRecord = {
     userId?: string;
     paymentMethod?: string;

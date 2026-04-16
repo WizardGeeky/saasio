@@ -7,6 +7,11 @@ import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import { AccountStatus } from "@/app/constants/AccountStatus";
 import { sendWelcomeEmail } from "@/app/notifications/welcome.notification";
 
+function getAppUrl(req: NextRequest) {
+    const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
+    return (configuredUrl ?? new URL(req.url).origin).replace(/\/$/, "");
+}
+
 function decryptUser(user: any) {
     try {
         return {
@@ -118,7 +123,7 @@ export const POST = withAuth(async (
 
         // Send welcome email in the background — don't block the response
         const plainEmail = email.toLowerCase().trim();
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.JWT_AUDIENCE ?? "http://localhost:3000";
+        const appUrl = getAppUrl(req);
         sendWelcomeEmail({
             to: plainEmail,
             fullname: fullname.trim(),

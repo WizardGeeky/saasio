@@ -3,11 +3,20 @@ import { verifyToken, CustomJwtPayload } from "@/app/configs/jwt.config";
 import { connectDB } from "@/app/configs/database.config";
 import { Role } from "@/models/Role";
 
-type AuthHandler = (
+type AuthRouteContext = {
+    params: unknown;
+};
+
+type AuthHandler<TContext extends AuthRouteContext = AuthRouteContext> = (
     req: NextRequest,
-    context: { params: any },
+    context: TContext,
     user: CustomJwtPayload
 ) => Promise<NextResponse>;
+
+type RolePrivilege = {
+    apiPath?: string;
+    method?: string;
+};
 
 /**
  * withAuth — server-side HOF for private API routes.
@@ -18,8 +27,8 @@ type AuthHandler = (
  * Extracts the Bearer token from the Authorization header,
  * verifies it using jwt.config, and passes the decoded payload as `user`.
  */
-export function withAuth(handler: AuthHandler) {
-    return async (req: NextRequest, context: { params: any }): Promise<NextResponse> => {
+export function withAuth<TContext extends AuthRouteContext>(handler: AuthHandler<TContext>) {
+    return async (req: NextRequest, context: TContext): Promise<NextResponse> => {
         const authHeader = req.headers.get("authorization") ?? "";
 
         if (!authHeader.startsWith("Bearer ")) {
@@ -71,9 +80,9 @@ export async function checkPrivilege(
         );
     }
 
-    const privileges = role.privileges as any[];
+    const privileges = Array.isArray(role.privileges) ? role.privileges as RolePrivilege[] : [];
     const authorized = privileges.some(
-        (p: any) => p.apiPath === apiPath && p.method.toUpperCase() === method.toUpperCase()
+        (p) => p.apiPath === apiPath && p.method?.toUpperCase() === method.toUpperCase()
     );
 
     if (!authorized) {

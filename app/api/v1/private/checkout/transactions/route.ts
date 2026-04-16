@@ -7,7 +7,7 @@ import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import { enrichMissingPaymentModes } from "@/app/utils/razorpay-payment-mode";
 
-type RouteContext = { params: Record<string, string | string[] | undefined> };
+type RouteContext = { params: Promise<Record<string, never>> };
 type StatusAggregate = {
     _id: string;
     count: number;
