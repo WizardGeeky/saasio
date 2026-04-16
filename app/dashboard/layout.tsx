@@ -58,9 +58,17 @@ function subscribeToDashboardIdentity(onStoreChange: () => void) {
 
 // ─── Inner layout (has access to PrivilegeContext) ────────────────────────────
 
-function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
-  useAuthGuard("requireAuth");
+function DashboardAuthGate({ children }: { children: React.ReactNode }) {
+  const { isChecking, isAuthenticated } = useAuthGuard("requireAuth");
 
+  if (isChecking || !isAuthenticated) {
+    return null;
+  }
+
+  return children;
+}
+
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { isDark } = useDashTheme();
   const { hasPrivilege, isLoading } = usePrivilegeContext();
   const pathname = usePathname();
@@ -206,9 +214,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashThemeProvider>
-      <PrivilegeProvider>
-        <DashboardLayoutInner>{children}</DashboardLayoutInner>
-      </PrivilegeProvider>
+      <DashboardAuthGate>
+        <PrivilegeProvider>
+          <DashboardLayoutInner>{children}</DashboardLayoutInner>
+        </PrivilegeProvider>
+      </DashboardAuthGate>
     </DashThemeProvider>
   );
 }

@@ -335,8 +335,6 @@ type SortKey = "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
 
 export default function TransactionsPage() {
     const { error: toastError } = useToast();
-    const token = getStoredToken();
-    const authHeader = { Authorization: `Bearer ${token}` } as const;
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [stats, setStats]               = useState<Stats | null>(null);
@@ -347,13 +345,12 @@ export default function TransactionsPage() {
 
     // Filters
     const [search,    setSearch]    = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [status,    setStatus]    = useState<string>("ALL");
     const [sort,      setSort]      = useState<SortKey>("date_desc");
     const [page,      setPage]      = useState(1);
     const [limit,     setLimit]     = useState(20);
     const [showFilter, setShowFilter] = useState(false);
-
-    const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ── Fetch ────────────────────────────────────────────────────────────────
     const fetchTransactions = useCallback(async (
@@ -361,6 +358,8 @@ export default function TransactionsPage() {
     ) => {
         setIsLoading(true);
         try {
+            const token = getStoredToken();
+            const authHeader = { Authorization: `Bearer ${token}` } as const;
             const params = new URLSearchParams({
                 page: String(p), limit: String(lim),
                 search: q, status: st, sort: so,
@@ -379,21 +378,21 @@ export default function TransactionsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [token]);
+    }, [toastError]);
 
     // Debounce search
     useEffect(() => {
-        if (searchTimer.current) clearTimeout(searchTimer.current);
-        searchTimer.current = setTimeout(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
             setPage(1);
-            fetchTransactions(1, limit, search, status, sort);
         }, 350);
+        return () => clearTimeout(timer);
     }, [search]);
 
     // Immediate re-fetch for non-search filters
     useEffect(() => {
-        fetchTransactions(page, limit, search, status, sort);
-    }, [page, limit, status, sort]);
+        fetchTransactions(page, limit, debouncedSearch, status, sort);
+    }, [fetchTransactions, page, limit, debouncedSearch, status, sort]);
 
     // ── View Receipt ─────────────────────────────────────────────────────────
     const viewReceipt = async (t: Transaction) => {
@@ -404,6 +403,8 @@ export default function TransactionsPage() {
         }
         setReceiptLoading(t._id);
         try {
+            const token = getStoredToken();
+            const authHeader = { Authorization: `Bearer ${token}` } as const;
             const res = await fetch(
                 `/api/v1/private/checkout/payment-detail?paymentId=${t.razorpayPaymentId}`,
                 { headers: authHeader }
@@ -640,7 +641,7 @@ export default function TransactionsPage() {
                                         { label: "Customer",   cls: "" },
                                         { label: "Amount",     cls: "" },
                                         { label: "Status",     cls: "" },
-                                        { label: "Method",     cls: "hidden sm:table-cell" },
+                                        { label: "Payment Mode", cls: "hidden sm:table-cell" },
                                         { label: "Payment ID", cls: "hidden lg:table-cell" },
                                         { label: "Order ID",   cls: "hidden xl:table-cell" },
                                         { label: "Date",       cls: "hidden md:table-cell" },

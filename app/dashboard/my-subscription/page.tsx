@@ -5,7 +5,6 @@ import {
     FiBookmark,
     FiRefreshCw,
     FiCheckCircle,
-    FiXCircle,
     FiClock,
     FiPackage,
     FiAlertCircle,
@@ -20,7 +19,6 @@ import {
     FiCreditCard,
     FiCheck,
     FiStar,
-    FiUser,
 } from "react-icons/fi";
 import { useToast } from "@/components/ui/toast";
 import { getStoredToken } from "@/app/utils/token";
@@ -28,7 +26,7 @@ import CheckoutButton, { PaymentSuccessData } from "@/components/checkout-button
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SubscriptionStatus = "ACTIVE" | "CANCELLED" | "EXPIRED";
+type SubscriptionStatus = "ACTIVE" | "EXPIRED";
 
 interface PaymentPlan {
     name: string;
@@ -65,11 +63,20 @@ interface Subscription {
     updatedAt: string;
 }
 
+interface ActiveSubscription {
+    _id: string;
+    planName: string;
+    projectName: string;
+    status: "ACTIVE";
+    usageCount: number;
+    maxUsage: number;
+    hasUsage: boolean;
+    remaining: number | null;
+}
+
 interface Stats {
     active:    { count: number; totalAmount: number };
-    cancelled: { count: number; totalAmount: number };
     expired:   { count: number; totalAmount: number };
-    total:     { count: number; totalAmount: number };
 }
 
 interface Pagination {
@@ -95,9 +102,10 @@ const fmtDateTime = (iso: string) =>
 
 const STATUS_CFG: Record<SubscriptionStatus, { label: string; bg: string; text: string; dot: string }> = {
     ACTIVE:    { label: "Active",    bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
-    CANCELLED: { label: "Cancelled", bg: "bg-red-50",     text: "text-red-700",     dot: "bg-red-500" },
     EXPIRED:   { label: "Expired",   bg: "bg-amber-50",   text: "text-amber-700",   dot: "bg-amber-500" },
 };
+
+const SUBSCRIPTION_STATUS_FILTERS: SubscriptionStatus[] = ["ACTIVE", "EXPIRED"];
 
 const PLAN_STYLES = [
     { badge: "bg-slate-100 text-slate-600",   border: "border-slate-200 hover:border-slate-400", highlight: false },
@@ -174,8 +182,9 @@ export default function MySubscriptionPage() {
     const [subLoading, setSubLoading] = useState(true);
     const [subError, setSubError]     = useState<string | null>(null);
     const [page, setPage]             = useState(1);
-    const [statusFilter, setStatusFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState<SubscriptionStatus>("ACTIVE");
     const [expanded, setExpanded]     = useState<string | null>(null);
+    const [activeSubscription, setActiveSubscription] = useState<ActiveSubscription | null>(null);
 
     // ── Fetch projects ────────────────────────────────────────────────────────
     const fetchProjects = useCallback(async () => {
@@ -189,8 +198,8 @@ export default function MySubscriptionPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to load projects");
             setProjects((data.projects as Project[]).filter((p) => p.status === "ACTIVE"));
-        } catch (err: any) {
-            setProjError(err.message);
+        } catch (err: unknown) {
+            setProjError(err instanceof Error ? err.message : "Failed to load projects");
         } finally {
             setProjLoading(false);
         }
@@ -203,7 +212,7 @@ export default function MySubscriptionPage() {
         try {
             const token = getStoredToken();
             const params = new URLSearchParams({ page: String(page), limit: "10" });
-            if (statusFilter) params.set("status", statusFilter);
+            params.set("status", statusFilter);
 
             const res = await fetch(`/api/v1/private/subscriptions/my?${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -214,15 +223,43 @@ export default function MySubscriptionPage() {
             setSubscriptions(data.data.subscriptions);
             setPagination(data.data.pagination);
             setStats(data.data.stats);
-        } catch (err: any) {
-            setSubError(err.message);
+        } catch (err: unknown) {
+            setSubError(err instanceof Error ? err.message : "Failed to load subscriptions");
         } finally {
             setSubLoading(false);
         }
     }, [page, statusFilter]);
 
+    const fetchActiveSubscription = useCallback(async () => {
+        try {
+            const token = getStoredToken();
+            const res = await fetch("/api/v1/private/subscriptions/active", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                setActiveSubscription(null);
+                return;
+            }
+
+            setActiveSubscription((data.data as ActiveSubscription | null) ?? null);
+        } catch {
+            setActiveSubscription(null);
+        }
+    }, []);
+
     useEffect(() => { fetchProjects(); }, [fetchProjects]);
     useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
+    useEffect(() => { fetchActiveSubscription(); }, [fetchActiveSubscription]);
+
+    const showActiveSubscriptionAlert = useCallback(() => {
+        const activePlanText = activeSubscription
+            ? `${activeSubscription.projectName} - ${activeSubscription.planName}`
+            : "your current plan";
+
+        toastError(`You already have an active subscription (${activePlanText}). Please use or finish it before buying another plan.`);
+    }, [activeSubscription, toastError]);
 
     // ── Payment success handler ───────────────────────────────────────────────
     const handlePaymentSuccess = useCallback(async (
@@ -251,12 +288,13 @@ export default function MySubscriptionPage() {
 
             toastSuccess(`Subscribed to ${project.name} — ${plan.name} plan! A confirmation email has been sent.`);
             fetchSubscriptions();
-        } catch (err: any) {
-            toastError(`Payment was successful but subscription record failed: ${err.message}`);
+            fetchActiveSubscription();
+        } catch (err: unknown) {
+            toastError(`Payment was successful but subscription record failed: ${err instanceof Error ? err.message : "Unexpected error"}`);
         }
-    }, [toastSuccess, toastError, fetchSubscriptions]);
+    }, [toastSuccess, toastError, fetchSubscriptions, fetchActiveSubscription]);
 
-    const handleStatusFilter = (val: string) => { setStatusFilter(val); setPage(1); };
+    const handleStatusFilter = (val: SubscriptionStatus) => { setStatusFilter(val); setPage(1); };
     const isLoading = projLoading || subLoading;
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -275,7 +313,7 @@ export default function MySubscriptionPage() {
                     </div>
                 </div>
                 <button
-                    onClick={() => { fetchProjects(); fetchSubscriptions(); }}
+                    onClick={() => { fetchProjects(); fetchSubscriptions(); fetchActiveSubscription(); }}
                     disabled={isLoading}
                     className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 disabled:opacity-50 transition-colors"
                 >
@@ -293,6 +331,18 @@ export default function MySubscriptionPage() {
                     title="Available Plans"
                     subtitle="Choose a project and subscribe to a plan"
                 />
+
+                {activeSubscription && (
+                    <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                        <FiAlertCircle size={18} className="mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold">You already have an active subscription.</p>
+                            <p className="mt-0.5 text-xs text-amber-700">
+                                Current plan: {activeSubscription.projectName} - {activeSubscription.planName}. New purchases are disabled until this active subscription is used or expires.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {projLoading && (
                     <div className="flex items-center justify-center py-16 gap-3">
@@ -394,6 +444,15 @@ export default function MySubscriptionPage() {
                                                 >
                                                     Free Plan
                                                 </button>
+                                            ) : activeSubscription ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={showActiveSubscriptionAlert}
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 active:bg-amber-800"
+                                                >
+                                                    <FiAlertCircle size={15} />
+                                                    Active subscription exists
+                                                </button>
                                             ) : (
                                                 <CheckoutButton
                                                     amount={plan.price}
@@ -430,11 +489,9 @@ export default function MySubscriptionPage() {
 
                 {/* Stats */}
                 {stats && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                        <StatCard label="Total"     count={stats.total.count}     amount={stats.total.totalAmount}     icon={<FiPackage size={16} />}     bg="bg-indigo-50"  text="text-indigo-600" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                         <StatCard label="Active"    count={stats.active.count}    amount={stats.active.totalAmount}    icon={<FiCheckCircle size={16} />} bg="bg-emerald-50" text="text-emerald-600" />
                         <StatCard label="Expired"   count={stats.expired.count}   amount={stats.expired.totalAmount}   icon={<FiClock size={16} />}       bg="bg-amber-50"   text="text-amber-600" />
-                        <StatCard label="Cancelled" count={stats.cancelled.count} amount={stats.cancelled.totalAmount} icon={<FiXCircle size={16} />}     bg="bg-red-50"     text="text-red-600" />
                     </div>
                 )}
 
@@ -442,7 +499,7 @@ export default function MySubscriptionPage() {
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                     <FiFilter size={13} className="text-slate-400" />
                     <span className="text-xs text-slate-500 mr-1">Status:</span>
-                    {(["", "ACTIVE", "CANCELLED", "EXPIRED"] as const).map((s) => (
+                    {SUBSCRIPTION_STATUS_FILTERS.map((s) => (
                         <button
                             key={s}
                             onClick={() => handleStatusFilter(s)}
@@ -452,7 +509,7 @@ export default function MySubscriptionPage() {
                                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                             }`}
                         >
-                            {s === "" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
+                            {STATUS_CFG[s].label}
                         </button>
                     ))}
                 </div>

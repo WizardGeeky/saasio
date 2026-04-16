@@ -143,7 +143,7 @@ export function DashboardSidebar({ navItems, isOpen, onClose }: DashboardSidebar
   const router = useRouter();
   const { isDark } = useDashTheme();
   const sidebarTone = isDark
-    ? "relative overflow-hidden border-white/10 bg-[linear-gradient(180deg,rgba(5,10,22,0.94),rgba(8,13,28,0.97)_22%,rgba(7,11,24,0.94)_100%)] text-white shadow-[18px_0_60px_-34px_rgba(0,0,0,0.95)]"
+    ? "overflow-hidden border-white/10 bg-[linear-gradient(180deg,rgba(5,10,22,0.94),rgba(8,13,28,0.97)_22%,rgba(7,11,24,0.94)_100%)] text-white shadow-[18px_0_60px_-34px_rgba(0,0,0,0.95)]"
     : "border-[#e7dbc9] bg-[#fffdf9]/94 text-[#102033] shadow-[12px_0_48px_-34px_rgba(16,32,51,0.3)]";
   const dividerTone = isDark ? "border-white/10" : "border-[#eadfce]";
   const iconButtonTone = isDark
@@ -160,7 +160,7 @@ export function DashboardSidebar({ navItems, isOpen, onClose }: DashboardSidebar
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 w-72 flex-col border-r backdrop-blur-none transition-transform duration-300 ease-in-out sm:w-[300px] lg:static lg:flex lg:translate-x-0 lg:backdrop-blur-xl ${sidebarTone} ${
+      className={`fixed inset-y-0 left-0 z-50 h-dvh max-h-dvh min-h-0 w-72 flex-col border-r backdrop-blur-none transition-transform duration-300 ease-in-out sm:w-[300px] lg:static lg:flex lg:translate-x-0 lg:backdrop-blur-xl ${sidebarTone} ${
         isOpen ? "flex translate-x-0" : "hidden -translate-x-full"
       }`}
     >
@@ -204,7 +204,7 @@ export function DashboardSidebar({ navItems, isOpen, onClose }: DashboardSidebar
         </button>
       </div>
 
-      <nav className="custom-scrollbar relative z-10 flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6">
+      <nav className="custom-scrollbar relative z-10 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4 sm:py-6">
         {navItems.map((item) =>
           item.children && item.children.length > 0 ? (
             <NavGroup key={item.name} item={item} pathname={pathname} isDark={isDark} onClose={onClose} />

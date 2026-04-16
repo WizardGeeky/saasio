@@ -5,6 +5,18 @@ import RazorpayConfig from "@/models/Rozarpay";
 import PaymentOrder from "@/models/PaymentOrder";
 import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import {
+    fetchRazorpayPaymentDetail,
+    getPaymentModeInfo,
+    RazorpayPaymentDetail,
+} from "@/app/utils/razorpay-payment-mode";
+
+type RouteContext = { params: Record<string, string | string[] | undefined> };
+type PaymentOrderRecord = {
+    userId?: string;
+    paymentMethod?: string;
+    [key: string]: unknown;
+};
 
 /**
  * GET /api/v1/private/checkout/payment-detail?paymentId=pay_xxx
@@ -13,7 +25,7 @@ import { CustomJwtPayload } from "@/app/configs/jwt.config";
  * Used for the receipt modal.
  */
 export const GET = withAuth(
-    async (req: NextRequest, _ctx: { params: any }, _user: CustomJwtPayload): Promise<NextResponse> => {
+    async (req: NextRequest, _ctx: RouteContext, _user: CustomJwtPayload): Promise<NextResponse> => {
         try {
             await connectDB();
 
@@ -28,10 +40,11 @@ export const GET = withAuth(
             }
 
             // Fetch DB record and Razorpay config in parallel
-            const [dbOrder, config] = await Promise.all([
+            const [orderRecord, config] = await Promise.all([
                 PaymentOrder.findOne({ razorpayPaymentId: paymentId }).lean(),
                 RazorpayConfig.findOne({ isActive: true }),
             ]);
+            let dbOrder = orderRecord as PaymentOrderRecord | null;
 
             if (!dbOrder) {
                 return NextResponse.json(
@@ -41,7 +54,7 @@ export const GET = withAuth(
             }
 
             // Ownership check: user must own this payment OR have admin rozarpay privilege
-            if ((dbOrder as any).userId !== _user.sub) {
+            if (dbOrder.userId !== _user.sub) {
                 const deny = await checkPrivilege(_user, "GET", "/api/v1/private/rozarpay");
                 if (deny) return NextResponse.json(
                     { success: false, message: "Access denied. This payment does not belong to you." },
@@ -49,19 +62,19 @@ export const GET = withAuth(
                 );
             }
 
-            let razorpayDetail: Record<string, any> | null = null;
+            let razorpayDetail: RazorpayPaymentDetail | null = null;
 
             if (config) {
                 const keyId     = decrypt(config.keyId);
                 const keySecret = decrypt(config.keySecret);
                 const credentials = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
-                const rpRes = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
-                    headers: { "Authorization": `Basic ${credentials}` },
-                });
+                razorpayDetail = await fetchRazorpayPaymentDetail(paymentId, credentials);
+                const paymentModeInfo = getPaymentModeInfo(razorpayDetail);
 
-                if (rpRes.ok) {
-                    razorpayDetail = await rpRes.json();
+                if (paymentModeInfo && !dbOrder.paymentMethod) {
+                    await PaymentOrder.updateOne({ razorpayPaymentId: paymentId }, { $set: paymentModeInfo });
+                    dbOrder = { ...dbOrder, ...paymentModeInfo };
                 }
             }
 
@@ -72,8 +85,11 @@ export const GET = withAuth(
                     razorpay: razorpayDetail,
                 },
             });
-        } catch (error: any) {
-            return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        } catch (error: unknown) {
+            return NextResponse.json(
+                { success: false, message: error instanceof Error ? error.message : "Unexpected error" },
+                { status: 500 }
+            );
         }
     }
 );

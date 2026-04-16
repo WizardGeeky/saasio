@@ -1,11 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import PaymentOrder from "@/models/PaymentOrder";
+import RazorpayConfig from "@/models/Rozarpay";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { enrichMissingPaymentModes } from "@/app/utils/razorpay-payment-mode";
+
+type RouteContext = { params: Record<string, string | string[] | undefined> };
+type StatusAggregate = {
+    _id: string;
+    count: number;
+    totalAmount: number;
+};
+type RegexFilter = { $regex: string; $options: string };
+type PaymentOrderFilter = {
+    userId?: string;
+    status?: string;
+    $or?: Array<{
+        userName?: RegexFilter;
+        userEmail?: RegexFilter;
+        razorpayPaymentId?: RegexFilter;
+        razorpayOrderId?: RegexFilter;
+    }>;
+};
 
 export const GET = withAuth(
-    async (req: NextRequest, _ctx: { params: any }, _user: CustomJwtPayload): Promise<NextResponse> => {
+    async (req: NextRequest, _ctx: RouteContext, _user: CustomJwtPayload): Promise<NextResponse> => {
         try {
             await connectDB();
 
@@ -16,7 +37,7 @@ export const GET = withAuth(
             const status = searchParams.get("status") ?? "ALL";
             const sort   = searchParams.get("sort") ?? "date_desc";
 
-            const filter: Record<string, any> = { userId: _user.sub }; // Enforce user ID
+            const filter: PaymentOrderFilter = { userId: _user.sub }; // Enforce user ID
 
             if (status !== "ALL") {
                 filter.status = status;
@@ -39,16 +60,22 @@ export const GET = withAuth(
             };
             const sortObj = sortMap[sort] ?? { createdAt: -1 };
 
-            const [transactions, total] = await Promise.all([
+            const [transactions, total, config] = await Promise.all([
                 PaymentOrder.find(filter)
                     .sort(sortObj)
                     .skip((page - 1) * limit)
                     .limit(limit)
                     .lean(),
                 PaymentOrder.countDocuments(filter),
+                RazorpayConfig.findOne({ isActive: true }),
             ]);
 
-            const stats = await PaymentOrder.aggregate([
+            const credentials = config
+                ? Buffer.from(`${decrypt(config.keyId)}:${decrypt(config.keySecret)}`).toString("base64")
+                : null;
+            const transactionsWithPaymentModes = await enrichMissingPaymentModes(transactions, credentials);
+
+            const stats = await PaymentOrder.aggregate<StatusAggregate>([
                 { $match: { userId: _user.sub } },
                 {
                     $group: {
@@ -60,12 +87,12 @@ export const GET = withAuth(
             ]);
 
             const statMap: Record<string, { count: number; totalAmount: number }> = {};
-            stats.forEach((s: any) => { statMap[s._id] = { count: s.count, totalAmount: s.totalAmount }; });
+            stats.forEach((s) => { statMap[s._id] = { count: s.count, totalAmount: s.totalAmount }; });
 
             return NextResponse.json({
                 success: true,
                 data: {
-                    transactions,
+                    transactions: transactionsWithPaymentModes,
                     pagination: {
                         total,
                         page,
@@ -83,8 +110,11 @@ export const GET = withAuth(
                     },
                 },
             });
-        } catch (error: any) {
-            return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        } catch (error: unknown) {
+            return NextResponse.json(
+                { success: false, message: error instanceof Error ? error.message : "Unexpected error" },
+                { status: 500 }
+            );
         }
     }
 );
