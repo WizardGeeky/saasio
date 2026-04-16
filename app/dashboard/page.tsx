@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/chart";
 import { usePrivilege } from "@/app/utils/usePrivilege";
 import { getStoredToken } from "@/app/utils/token";
+import { RESUME_TEMPLATE_CATALOG } from "@/app/dashboard/resume-config/template-catalog";
 import {
     FiUsers, FiShield, FiKey, FiFolder,
     FiCpu, FiMessageSquare, FiCreditCard, FiZap,
@@ -101,6 +102,7 @@ type DashboardAnalyticsData = {
         };
         resumes: {
             available: number;
+            formatCount: number;
             unlimitedPlans: number;
             topTemplates: Array<{
                 templateId: string;
@@ -413,14 +415,9 @@ export default function DashboardPage() {
     const p = data?.periodStats;
     const s = data?.series;
     const periodLabel = PERIODS.find((x) => x.value === period)?.label ?? "7 Days";
-    const availableResumeCount = g?.resumes?.available ?? 0;
-    const unlimitedResumePlans = g?.resumes?.unlimitedPlans ?? 0;
-    const availableResumeValue = unlimitedResumePlans > 0
-        ? `${availableResumeCount.toLocaleString("en-IN")}+`
-        : availableResumeCount.toLocaleString("en-IN");
-    const availableResumeSub = unlimitedResumePlans > 0
-        ? `${unlimitedResumePlans} unlimited active plan${unlimitedResumePlans === 1 ? "" : "s"}`
-        : "Across active subscriptions";
+    const availableResumeCount = RESUME_TEMPLATE_CATALOG.length;
+    const availableResumeValue = availableResumeCount.toLocaleString("en-IN");
+    const availableResumeSub = "Resume formats available";
     const resumeUsageChartData = (g?.resumes?.topTemplates ?? [DEFAULT_MOST_USED_RESUME_TEMPLATE])
         .filter((template) => template.downloadCount > 0)
         .map((template) => ({
@@ -524,7 +521,7 @@ export default function DashboardPage() {
                                 sub={`Avg Score: ${g.atsRecords.avgScore}`}
                             />
                             <StatCard
-                                icon={FiTrendingUp} label="Current Available Resumes" color="green"
+                                icon={FiTrendingUp} label="Available Resume Formats" color="green"
                                 value={availableResumeValue}
                                 sub={availableResumeSub}
                             />

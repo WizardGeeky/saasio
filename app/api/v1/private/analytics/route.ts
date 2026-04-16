@@ -13,7 +13,6 @@ import PaymentOrder from "@/models/PaymentOrder";
 import Subscription from "@/models/Subscription";
 import Complaint from "@/models/Complaint";
 import ResumeDownload from "@/models/ResumeDownload";
-import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 import { RESUME_TEMPLATE_CATALOG } from "@/app/dashboard/resume-config/template-catalog";
 
 export type Period = "today" | "7d" | "30d" | "6m" | "all";
@@ -131,7 +130,6 @@ export const GET = withAuth(
                 subStats,
                 atsStats,
                 topResumeTemplates,
-                activeSubscriptions,
             ] = await Promise.all([
                 User.aggregate([{ $group: { _id: "$accountStatus", count: { $sum: 1 } } }]),
                 Role.countDocuments(),
@@ -169,29 +167,9 @@ export const GET = withAuth(
                     { $sort: { downloadCount: -1, memberCount: -1, "_id.templateName": 1 } },
                     { $limit: RESUME_TEMPLATE_CATALOG.length },
                 ]),
-                Subscription.find({ status: "ACTIVE" }).lean(),
             ]);
 
-            const activeSubscriptionQuotas = await Promise.all(
-                (activeSubscriptions as any[]).map(async (sub) => ({
-                    sub,
-                    quota: await resolveSubscriptionQuota(sub),
-                }))
-            );
-
-            let availableResumes = 0;
-            let unlimitedResumePlans = 0;
-
-            for (const { quota } of activeSubscriptionQuotas) {
-                if (quota.maxUsage === 0) {
-                    unlimitedResumePlans += 1;
-                    continue;
-                }
-
-                if (quota.hasUsage) {
-                    availableResumes += quota.remaining ?? 0;
-                }
-            }
+            const resumeFormatCount = RESUME_TEMPLATE_CATALOG.length;
 
             // Flatten user stats
             const userMap = Object.fromEntries(userStats.map((u: any) => [u._id, u.count]));
@@ -299,8 +277,9 @@ export const GET = withAuth(
                     avgScore: Math.round(atsStats[0]?.avgScore ?? 0),
                 },
                 resumes: {
-                    available: availableResumes,
-                    unlimitedPlans: unlimitedResumePlans,
+                    available: resumeFormatCount,
+                    formatCount: resumeFormatCount,
+                    unlimitedPlans: 0,
                     topTemplates: resumeTemplateUsage,
                     mostUsedTemplate,
                 },
