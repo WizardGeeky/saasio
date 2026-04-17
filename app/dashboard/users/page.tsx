@@ -67,6 +67,7 @@ export default function UsersPage() {
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<"ALL" | AccountStatus>("ALL");
+    const [roleFilter, setRoleFilter] = useState<"ALL" | string>("ALL");
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -96,7 +97,7 @@ export default function UsersPage() {
     useEffect(() => { if (!privLoading && canRead) fetchData(); else if (!privLoading) setIsLoading(false); }, [privLoading, canRead, fetchData]);
 
     // Reset page and selection when search or filter changes
-    useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, statusFilter]);
+    useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, statusFilter, roleFilter]);
 
     const openNew = () => {
         setSelected(null);
@@ -161,7 +162,8 @@ export default function UsersPage() {
         const q = search.toLowerCase();
         const matchesSearch = !q || u.fullname.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
         const matchesStatus = statusFilter === "ALL" || u.accountStatus === statusFilter;
-        return matchesSearch && matchesStatus;
+        const matchesRole   = roleFilter   === "ALL" || u.role === roleFilter;
+        return matchesSearch && matchesStatus && matchesRole;
     });
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -287,6 +289,50 @@ export default function UsersPage() {
                             </button>
                         ))}
                     </div>
+
+                    {/* Role filter pills */}
+                    {roles.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Role:</span>
+                            <button
+                                onClick={() => setRoleFilter("ALL")}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                                    roleFilter === "ALL"
+                                        ? "bg-indigo-600 text-white border-indigo-600"
+                                        : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700"
+                                }`}
+                            >
+                                All Roles
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${roleFilter === "ALL" ? "bg-white/25 text-white" : "bg-gray-100 text-gray-500"}`}>
+                                    {isLoading ? "–" : users.length}
+                                </span>
+                            </button>
+                            {roles.map((r) => {
+                                const roleCount = users.filter((u) =>
+                                    u.role === r._id &&
+                                    (statusFilter === "ALL" || u.accountStatus === statusFilter)
+                                ).length;
+                                const active = roleFilter === r._id;
+                                return (
+                                    <button
+                                        key={r._id}
+                                        onClick={() => setRoleFilter(r._id)}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                                            active
+                                                ? "bg-indigo-600 text-white border-indigo-600"
+                                                : "bg-white text-gray-500 border-gray-200 hover:border-indigo-200 hover:text-indigo-600"
+                                        }`}
+                                    >
+                                        <FiShield size={9} className={active ? "text-white" : "text-indigo-400"} />
+                                        {r._id}
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${active ? "bg-white/25 text-white" : "bg-gray-100 text-gray-500"}`}>
+                                            {isLoading ? "–" : roleCount}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Bulk action bar */}
@@ -341,10 +387,10 @@ export default function UsersPage() {
                     <div className="flex flex-col items-center justify-center py-20 px-4 gap-4">
                         <div className="p-5 bg-gray-100 rounded-2xl"><FiUsers size={32} className="text-gray-400" /></div>
                         <div className="text-center">
-                            <p className="text-gray-700 font-semibold">{search || statusFilter !== "ALL" ? "No users match your filters" : "No users found"}</p>
-                            <p className="text-gray-400 text-xs mt-1">{search || statusFilter !== "ALL" ? "Try a different search or filter." : "Create a new user to get started."}</p>
+                            <p className="text-gray-700 font-semibold">{search || statusFilter !== "ALL" || roleFilter !== "ALL" ? "No users match your filters" : "No users found"}</p>
+                            <p className="text-gray-400 text-xs mt-1">{search || statusFilter !== "ALL" || roleFilter !== "ALL" ? "Try a different search or filter." : "Create a new user to get started."}</p>
                         </div>
-                        {!search && statusFilter === "ALL" && canCreate && (
+                        {!search && statusFilter === "ALL" && roleFilter === "ALL" && canCreate && (
                             <button onClick={openNew} className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all">
                                 <FiPlus size={14} /> New User
                             </button>
