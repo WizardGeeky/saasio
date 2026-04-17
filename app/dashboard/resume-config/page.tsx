@@ -12,6 +12,7 @@ import {
 import dynamic from "next/dynamic";
 import {
     FiFileText, FiCode, FiEye, FiCheckCircle, FiAlertCircle, FiDownload, FiLayers, FiLock, FiZap, FiCpu, FiX, FiBriefcase, FiUploadCloud,
+    FiGrid, FiTarget,
 } from "react-icons/fi";
 import { getStoredToken } from "@/app/utils/token";
 import { useToast } from "@/components/ui/toast";
@@ -1947,6 +1948,79 @@ const BASE_TEMPLATES: TemplateInfo[] = [
 const TEMPLATES: TemplateInfo[] = [...BASE_TEMPLATES, ...EXTRA_TEMPLATES];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// RESUME CATEGORY FILTER
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ResumeCategory = "all" | "ats" | "tech" | "professional" | "modern" | "two-column";
+
+const RESUME_CATEGORIES: {
+    id: ResumeCategory;
+    label: string;
+    icon: React.ElementType;
+    activeClass: string;
+}[] = [
+    { id: "all",          label: "All",    icon: FiGrid,      activeClass: "bg-violet-600 text-white border-violet-600" },
+    { id: "ats",          label: "ATS",    icon: FiTarget,    activeClass: "bg-emerald-600 text-white border-emerald-600" },
+    { id: "tech",         label: "Tech",   icon: FiCpu,       activeClass: "bg-blue-600 text-white border-blue-600" },
+    { id: "professional", label: "Pro",    icon: FiBriefcase, activeClass: "bg-gray-700 text-white border-gray-700" },
+    { id: "modern",       label: "Modern", icon: FiZap,       activeClass: "bg-amber-500 text-white border-amber-500" },
+    { id: "two-column",   label: "2-Col",  icon: FiLayers,    activeClass: "bg-purple-600 text-white border-purple-600" },
+];
+
+const TEMPLATE_TAGS: Record<string, ResumeCategory[]> = {
+    "classic":             ["professional", "ats"],
+    "modern":              ["modern"],
+    "professional":        ["professional"],
+    "minimal":             ["modern", "ats"],
+    "executive":           ["professional"],
+    "tech":                ["tech", "ats"],
+    "sidebar-teal":        ["two-column", "modern"],
+    "sidebar-navy":        ["two-column", "professional"],
+    "emerald":             ["modern"],
+    "ats":                 ["ats", "tech"],
+    "faang-focus":         ["tech", "ats"],
+    "maang-slate":         ["tech", "ats"],
+    "platform-prime":      ["tech", "ats"],
+    "recruiter-scan":      ["tech", "professional"],
+    "sde-compact":         ["tech", "ats"],
+    "pulse-red":           ["modern"],
+    "skyline-blue":        ["modern"],
+    "copper-exec":         ["professional"],
+    "column-mint":         ["two-column", "modern"],
+    "midnight-rail":       ["two-column"],
+    "amber-rail":          ["two-column", "professional"],
+    "briefing-slate":      ["two-column", "professional"],
+    "signal-indigo":       ["two-column", "modern"],
+    "vector-green":        ["two-column", "modern"],
+    "atlas-grid":          ["professional"],
+    "quartz-frame":        ["modern"],
+    "summit-panels":       ["professional"],
+    "mono-ats-plus":       ["ats", "tech"],
+    "ledger-ats":          ["ats", "tech"],
+    "precision-ats":       ["ats", "tech"],
+    "harbor-profile":      ["modern", "professional"],
+    "zenith-stack":        ["ats"],
+    "cobalt-timeline":     ["ats", "modern"],
+    "sage-brief":          ["modern"],
+    "linen-column":        ["modern"],
+    "sterling-chronicle":  ["professional"],
+    "vertex-hybrid":       ["two-column", "modern"],
+    "opal-direct":         ["ats"],
+    "summit-signal":       ["two-column", "professional"],
+    "civic-outline":       ["professional"],
+    "atlas-brief":         ["modern"],
+    "northstar-ledger":    ["ats", "professional"],
+    "meridian-profile":    ["two-column", "professional"],
+    "forged-ats":          ["ats", "tech"],
+    "clarity-grid":        ["professional"],
+    "quorum-compact":      ["ats"],
+    "elevate-column":      ["two-column", "tech"],
+    "horizon-split":       ["professional"],
+    "anchor-clean":        ["modern"],
+    "pinnacle-flow":       ["professional"],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // INITIAL DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2104,8 +2178,9 @@ export default function ResumeConfigPage() {
     const [resumeData,  setResumeData]  = useState(INITIAL_DATA);
     const [jsonInput,   setJsonInput]   = useState(() => JSON.stringify(INITIAL_DATA, null, 2));
     const [jsonError,   setJsonError]   = useState<string | null>(null);
-    const [templateId,  setTemplateId]  = useState<TemplateId>("classic");
-    const [mobileTab,   setMobileTab]   = useState<ActiveTab>("templates");
+    const [templateId,     setTemplateId]     = useState<TemplateId>("classic");
+    const [resumeCategory, setResumeCategory] = useState<ResumeCategory>("all");
+    const [mobileTab,      setMobileTab]      = useState<ActiveTab>("templates");
     const [pdfReady,    setPdfReady]    = useState(false);
     const [isMobile,    setIsMobile]    = useState(false);
     const [downloading, setDownloading] = useState(false);
@@ -2423,6 +2498,9 @@ export default function ResumeConfigPage() {
     const activeTpl   = TEMPLATES.find((t) => t.id === templateId)!;
     const TemplateDoc = activeTpl.component;
     const lineCount   = jsonInput.split("\n").length;
+    const filteredTemplates = resumeCategory === "all"
+        ? TEMPLATES
+        : TEMPLATES.filter((t) => TEMPLATE_TAGS[t.id]?.includes(resumeCategory));
     const isHistoryRedownloadReady = Boolean(
         restoredResume &&
         restoredResume.templateId === templateId &&
@@ -2562,13 +2640,43 @@ export default function ResumeConfigPage() {
                         ${mobileTab === "templates" ? "flex w-full" : "hidden"} lg:flex`}
                     style={{ scrollbarWidth: "thin", scrollbarColor: "#e2e8f0 transparent" }}
                 >
-                    <div className="px-3 pt-3 pb-2 border-b border-gray-200 bg-white shrink-0">
-                        <p className="text-xs font-bold text-gray-800 uppercase tracking-wider">Resume Formats</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{TEMPLATES.length} templates available</p>
+                    <div className="px-3 pt-3 pb-2.5 border-b border-gray-200 bg-white shrink-0">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Pick a Style</p>
+                        <div className="grid grid-cols-3 gap-1">
+                            {RESUME_CATEGORIES.map((cat) => {
+                                const count = cat.id === "all"
+                                    ? TEMPLATES.length
+                                    : TEMPLATES.filter((t) => TEMPLATE_TAGS[t.id]?.includes(cat.id)).length;
+                                const Icon = cat.icon;
+                                const active = resumeCategory === cat.id;
+                                return (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setResumeCategory(cat.id)}
+                                        className={`flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg border text-center transition-all ${
+                                            active
+                                                ? cat.activeClass
+                                                : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                                        }`}
+                                    >
+                                        <Icon size={11} />
+                                        <span className="text-[10px] font-semibold leading-none">{cat.label}</span>
+                                        <span className={`text-[9px] font-bold rounded-full px-1 mt-0.5 ${
+                                            active ? "bg-white/25 text-white" : "bg-gray-200 text-gray-500"
+                                        }`}>
+                                            {count}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-2">
+                            {filteredTemplates.length} template{filteredTemplates.length !== 1 ? "s" : ""}
+                        </p>
                     </div>
 
                     <div className="flex flex-col gap-2 p-2 pb-4">
-                        {TEMPLATES.map((tpl) => {
+                        {filteredTemplates.map((tpl) => {
                             const active   = tpl.id === templateId;
                             const isLocked = tpl.premium && subStatus.loaded && (!subStatus.hasActive || !subStatus.hasUsage);
                             return (
