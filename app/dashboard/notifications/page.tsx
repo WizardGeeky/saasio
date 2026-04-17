@@ -13,8 +13,22 @@ import { usePrivilege } from "@/app/utils/usePrivilege";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Target = "ALL" | "ROLE";
+type StatusFilter = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "ALL";
 
 interface RoleOption { _id: string; }
+
+const STATUS_FILTERS: {
+    value: StatusFilter;
+    label: string;
+    dotClass: string;
+    activeClass: string;
+    emptyLabel: string;
+}[] = [
+    { value: "ACTIVE",    label: "Active",     dotClass: "bg-emerald-500", activeClass: "bg-emerald-50 text-emerald-700 border-emerald-300", emptyLabel: "active" },
+    { value: "INACTIVE",  label: "Inactive",   dotClass: "bg-gray-400",    activeClass: "bg-gray-100 text-gray-700 border-gray-400",         emptyLabel: "inactive" },
+    { value: "SUSPENDED", label: "Suspended",  dotClass: "bg-red-500",     activeClass: "bg-red-50 text-red-700 border-red-300",             emptyLabel: "suspended" },
+    { value: "ALL",       label: "All Status", dotClass: "bg-blue-500",    activeClass: "bg-blue-50 text-blue-700 border-blue-300",           emptyLabel: "" },
+];
 
 const DEFAULT_HTML = `<div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
   <h2 style="margin: 0 0 12px; color: #111827; font-size: 20px;">Hello 👋</h2>
@@ -41,6 +55,7 @@ export default function NotificationsPage() {
     const [html, setHtml] = useState(DEFAULT_HTML);
     const [target, setTarget] = useState<Target>("ALL");
     const [roleId, setRoleId] = useState("");
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("ACTIVE");
 
     const token = getStoredToken();
     const canSend = !privLoading && can("POST", "/api/v1/private/notifications");
@@ -57,20 +72,20 @@ export default function NotificationsPage() {
             .finally(() => setRolesLoading(false));
     }, []);
 
-    // Fetch recipient count when target changes
+    // Fetch recipient count when target / statusFilter changes
     const fetchCount = useCallback(async () => {
         if (!canRead) return;
         setCountLoading(true);
         try {
             const params = target === "ROLE" && roleId
                 ? `?target=ROLE&roleId=${encodeURIComponent(roleId)}`
-                : "?target=ALL";
+                : `?target=ALL&statusFilter=${encodeURIComponent(statusFilter)}`;
             const res = await fetch(`/api/v1/private/notifications${params}`, { headers: authHeader });
             const data = await res.json();
             if (res.ok) setRecipientCount(data.count);
         } catch {}
         finally { setCountLoading(false); }
-    }, [target, roleId, canRead, token]);
+    }, [target, roleId, statusFilter, canRead, token]);
 
     useEffect(() => { fetchCount(); }, [fetchCount]);
 
@@ -82,6 +97,7 @@ export default function NotificationsPage() {
         try {
             const payload: Record<string, string> = { subject, html, target };
             if (target === "ROLE") payload.roleId = roleId;
+            if (target === "ALL") payload.statusFilter = statusFilter;
             const res = await fetch("/api/v1/private/notifications", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", ...authHeader },
@@ -182,7 +198,7 @@ export default function NotificationsPage() {
                             {isSending ? (
                                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending…</>
                             ) : (
-                                <><FiSend size={15} /> Send Email to {countLoading ? "…" : (recipientCount ?? 0)} Recipient{recipientCount !== 1 ? "s" : ""}</>
+                                <><FiSend size={15} /> Send to {countLoading ? "…" : (recipientCount ?? 0)} {target === "ALL" && statusFilter !== "ALL" ? STATUS_FILTERS.find(s => s.value === statusFilter)!.label + " " : ""}Recipient{recipientCount !== 1 ? "s" : ""}</>
                             )}
                         </button>
                     </form>
@@ -206,6 +222,30 @@ export default function NotificationsPage() {
                             ))}
                         </div>
 
+                        {/* Status filter — only for All Users */}
+                        {target === "ALL" && (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Filter by Status</label>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    {STATUS_FILTERS.map((sf) => (
+                                        <button
+                                            key={sf.value}
+                                            type="button"
+                                            onClick={() => setStatusFilter(sf.value)}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                                                statusFilter === sf.value
+                                                    ? sf.activeClass
+                                                    : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                                            }`}
+                                        >
+                                            <span className={`w-2 h-2 rounded-full shrink-0 ${sf.dotClass}`} />
+                                            {sf.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Role selector */}
                         {target === "ROLE" && (
                             <div className="space-y-1.5">
@@ -225,26 +265,38 @@ export default function NotificationsPage() {
                         )}
 
                         {/* Recipient count preview */}
-                        <div className={`flex items-center gap-3 p-3.5 rounded-xl border ${countLoading ? "bg-gray-50 border-gray-200" : (recipientCount ?? 0) > 0 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
-                            <div className={`p-2 rounded-lg ${(recipientCount ?? 0) > 0 ? "bg-emerald-100" : "bg-amber-100"}`}>
-                                {(recipientCount ?? 0) > 0 ? <FiUsers size={14} className="text-emerald-600" /> : <FiAlertTriangle size={14} className="text-amber-600" />}
-                            </div>
-                            <div>
-                                {countLoading ? (
-                                    <div className="animate-pulse h-4 w-24 bg-gray-200 rounded" />
-                                ) : (
-                                    <>
-                                        <p className="text-sm font-bold text-gray-800">{recipientCount ?? 0} active user{recipientCount !== 1 ? "s" : ""}</p>
-                                        <p className="text-xs text-gray-500">will receive this email</p>
-                                    </>
-                                )}
-                            </div>
-                        </div>
+                        {(() => {
+                            const sf = STATUS_FILTERS.find((s) => s.value === statusFilter)!;
+                            const statusLabel = target === "ALL"
+                                ? (statusFilter === "ALL" ? "" : `${sf.label.toLowerCase()} `)
+                                : "active ";
+                            return (
+                                <div className={`flex items-center gap-3 p-3.5 rounded-xl border ${countLoading ? "bg-gray-50 border-gray-200" : (recipientCount ?? 0) > 0 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+                                    <div className={`p-2 rounded-lg ${(recipientCount ?? 0) > 0 ? "bg-emerald-100" : "bg-amber-100"}`}>
+                                        {(recipientCount ?? 0) > 0 ? <FiUsers size={14} className="text-emerald-600" /> : <FiAlertTriangle size={14} className="text-amber-600" />}
+                                    </div>
+                                    <div>
+                                        {countLoading ? (
+                                            <div className="animate-pulse h-4 w-24 bg-gray-200 rounded" />
+                                        ) : (
+                                            <>
+                                                <p className="text-sm font-bold text-gray-800">
+                                                    {recipientCount ?? 0} {statusLabel}user{recipientCount !== 1 ? "s" : ""}
+                                                </p>
+                                                <p className="text-xs text-gray-500">will receive this email</p>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {(recipientCount ?? 0) === 0 && !countLoading && (
                             <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                                 <FiAlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
-                                <p className="text-xs text-amber-700">No active users found for the selected target. The email will not be sent.</p>
+                                <p className="text-xs text-amber-700">
+                                    No {target === "ALL" && statusFilter !== "ALL" ? STATUS_FILTERS.find(s => s.value === statusFilter)!.label.toLowerCase() + " " : ""}users found for the selected target. The email will not be sent.
+                                </p>
                             </div>
                         )}
                     </div>
@@ -271,9 +323,9 @@ export default function NotificationsPage() {
                         <div className="absolute top-0 right-0 p-3 opacity-10"><FiBell size={60} /></div>
                         <h3 className="font-semibold text-sm relative z-10">Email Tips</h3>
                         <ul className="text-xs text-emerald-200 space-y-1.5 relative z-10 leading-relaxed">
-                            <li>• Only <strong className="text-white">ACTIVE</strong> users receive emails</li>
+                            <li>• Filter by <strong className="text-white">Active / Inactive / Suspended</strong> when targeting all users</li>
+                            <li>• <strong className="text-white">By Role</strong> always sends to active users only</li>
                             <li>• Use inline CSS for best email client compatibility</li>
-                            <li>• Test with a small role before sending to all users</li>
                             <li>• Preview your HTML before sending</li>
                         </ul>
                     </div>

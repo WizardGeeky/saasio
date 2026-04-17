@@ -27,7 +27,7 @@ export const POST = withAuth(async (
         await connectDB();
 
         const body = await req.json();
-        const { subject, html, target, roleId } = body;
+        const { subject, html, target, roleId, statusFilter = "ACTIVE" } = body;
 
         if (!subject?.trim()) {
             return NextResponse.json({ message: "Subject is required" }, { status: 400 });
@@ -41,10 +41,18 @@ export const POST = withAuth(async (
         if (target === "ROLE" && !roleId?.trim()) {
             return NextResponse.json({ message: "roleId is required when target is ROLE" }, { status: 400 });
         }
+        if (target === "ALL" && !["ACTIVE", "INACTIVE", "SUSPENDED", "ALL"].includes(statusFilter)) {
+            return NextResponse.json({ message: "statusFilter must be ACTIVE, INACTIVE, SUSPENDED, or ALL" }, { status: 400 });
+        }
 
-        // Build query — only send to ACTIVE users
-        const query: Record<string, any> = { accountStatus: AccountStatus.ACTIVE };
-        if (target === "ROLE") query.role = roleId;
+        // Build query based on target and statusFilter
+        const query: Record<string, any> = {};
+        if (target === "ROLE") {
+            query.accountStatus = AccountStatus.ACTIVE;
+            query.role = roleId;
+        } else if (statusFilter !== "ALL") {
+            query.accountStatus = statusFilter as AccountStatus;
+        }
 
         const users = await User.find(query).select("email fullname").lean();
 
@@ -97,9 +105,15 @@ export const GET = withAuth(async (
         const { searchParams } = new URL(req.url);
         const target = searchParams.get("target") ?? "ALL";
         const roleId = searchParams.get("roleId");
+        const statusFilter = searchParams.get("statusFilter") ?? "ACTIVE";
 
-        const query: Record<string, any> = { accountStatus: AccountStatus.ACTIVE };
-        if (target === "ROLE" && roleId) query.role = roleId;
+        const query: Record<string, any> = {};
+        if (target === "ROLE") {
+            query.accountStatus = AccountStatus.ACTIVE;
+            if (roleId) query.role = roleId;
+        } else if (statusFilter !== "ALL") {
+            query.accountStatus = statusFilter as AccountStatus;
+        }
 
         const count = await User.countDocuments(query);
 
