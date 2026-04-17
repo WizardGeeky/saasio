@@ -155,6 +155,17 @@ export const PUT = withAuth(async (
         await connectDB();
 
         const body = await req.json();
+
+        // Bulk update: { ids: string[], accountStatus: AccountStatus }
+        if (Array.isArray(body.ids)) {
+            const { ids, accountStatus } = body;
+            if (!ids.length || !accountStatus) {
+                return NextResponse.json({ message: "ids array and accountStatus are required" }, { status: 400 });
+            }
+            const result = await User.updateMany({ _id: { $in: ids } }, { $set: { accountStatus } });
+            return NextResponse.json({ message: `${result.modifiedCount} users updated successfully` }, { status: 200 });
+        }
+
         const { id, fullname, occupation, state, country, source, role, accountStatus } = body;
 
         if (!id) {

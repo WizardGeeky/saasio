@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
     FiUsers, FiPlus, FiEdit2, FiTrash2, FiRefreshCw,
     FiX, FiSave, FiCheck, FiLock, FiUser, FiMail,
-    FiPhone, FiShield,
+    FiPhone, FiShield, FiChevronLeft, FiChevronRight,
 } from "react-icons/fi";
 import { useToast } from "@/components/ui/toast";
 import { getStoredToken } from "@/app/utils/token";
@@ -48,6 +48,7 @@ const STATUS_DOT: Record<AccountStatus, string> = {
 };
 
 const SOURCE_OPTIONS = ["DIRECT", "GOOGLE", "LINKEDIN", "TWITTER", "REFERRAL", "OTHER"];
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ export default function UsersPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isBulkUpdating, setIsBulkUpdating] = useState(false);
     const [users, setUsers] = useState<UserData[]>([]);
     const [roles, setRoles] = useState<RoleOption[]>([]);
     const [modal, setModal] = useState<ModalType>(null);
@@ -64,6 +66,10 @@ export default function UsersPage() {
     const [form, setForm] = useState({ ...EMPTY_FORM });
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"ALL" | AccountStatus>("ALL");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const token = getStoredToken();
     const canRead   = !privLoading && can("GET",    "/api/v1/private/users");
@@ -77,8 +83,8 @@ export default function UsersPage() {
         setIsLoading(true);
         try {
             const [usersRes, rolesRes] = await Promise.all([
-                fetch("/api/v1/private/users",           { headers: authHeader }),
-                fetch("/api/v1/private/roles",           { headers: authHeader }),
+                fetch("/api/v1/private/users", { headers: authHeader }),
+                fetch("/api/v1/private/roles", { headers: authHeader }),
             ]);
             const [usersJson, rolesJson] = await Promise.all([usersRes.json(), rolesRes.json()]);
             if (usersRes.ok) setUsers(usersJson.users ?? []);
@@ -88,6 +94,9 @@ export default function UsersPage() {
     }, [token]);
 
     useEffect(() => { if (!privLoading && canRead) fetchData(); else if (!privLoading) setIsLoading(false); }, [privLoading, canRead, fetchData]);
+
+    // Reset page and selection when search or filter changes
+    useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, statusFilter]);
 
     const openNew = () => {
         setSelected(null);
@@ -106,7 +115,6 @@ export default function UsersPage() {
         setIsSaving(true);
         const isEdit = modal === "edit";
         const payload = isEdit ? { id: selected!._id, ...form } : form;
-        // Don't send email/mobile when editing (not updatable)
         if (isEdit) { delete (payload as any).email; delete (payload as any).mobile; }
         try {
             const res = await fetch("/api/v1/private/users", {
@@ -130,10 +138,55 @@ export default function UsersPage() {
         } catch { toastError("Unexpected error"); }
     };
 
+    const handleBulkUpdate = async (status: AccountStatus) => {
+        if (!selectedIds.size) return;
+        setIsBulkUpdating(true);
+        try {
+            const res = await fetch("/api/v1/private/users", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", ...authHeader },
+                body: JSON.stringify({ ids: Array.from(selectedIds), accountStatus: status }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toastSuccess(`${selectedIds.size} user${selectedIds.size > 1 ? "s" : ""} set to ${status}!`);
+                setSelectedIds(new Set());
+                fetchData();
+            } else toastError(data.message ?? "Failed to update");
+        } catch { toastError("Unexpected error"); }
+        finally { setIsBulkUpdating(false); }
+    };
+
     const filtered = users.filter((u) => {
         const q = search.toLowerCase();
-        return !q || u.fullname.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
+        const matchesSearch = !q || u.fullname.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
+        const matchesStatus = statusFilter === "ALL" || u.accountStatus === statusFilter;
+        return matchesSearch && matchesStatus;
     });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+    const allPageSelected = paginated.length > 0 && paginated.every(u => selectedIds.has(u._id));
+    const somePageSelected = paginated.some(u => selectedIds.has(u._id));
+
+    const toggleAll = () => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (allPageSelected) paginated.forEach(u => next.delete(u._id));
+            else paginated.forEach(u => next.add(u._id));
+            return next;
+        });
+    };
+
+    const toggleOne = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
 
     if (!privLoading && !canRead) return (
         <div className="flex flex-col items-center justify-center min-h-[65vh] gap-4 px-4 animate-in fade-in duration-500">
@@ -176,10 +229,10 @@ export default function UsersPage() {
             {/* ── Stats ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                    { label: "Total",     value: users.length,          color: "text-gray-500",    dot: "bg-gray-400" },
-                    { label: "Active",    value: counts.ACTIVE,         color: "text-emerald-600", dot: "bg-emerald-500" },
-                    { label: "Inactive",  value: counts.INACTIVE,       color: "text-gray-500",    dot: "bg-gray-400" },
-                    { label: "Suspended", value: counts.SUSPENDED,      color: "text-red-600",     dot: "bg-red-500" },
+                    { label: "Total",     value: users.length,     color: "text-gray-500",    dot: "bg-gray-400" },
+                    { label: "Active",    value: counts.ACTIVE,    color: "text-emerald-600", dot: "bg-emerald-500" },
+                    { label: "Inactive",  value: counts.INACTIVE,  color: "text-gray-500",    dot: "bg-gray-400" },
+                    { label: "Suspended", value: counts.SUSPENDED, color: "text-red-600",     dot: "bg-red-500" },
                 ].map((s) => (
                     <div key={s.label} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
                         <div className="flex items-center gap-2 mb-1">
@@ -193,16 +246,81 @@ export default function UsersPage() {
 
             {/* ── Table card ── */}
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <h2 className="font-semibold text-gray-800 shrink-0">All Users</h2>
-                    <input
-                        type="search"
-                        placeholder="Search by name, email or role…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full sm:max-w-xs px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-400"
-                    />
+
+                {/* Card header */}
+                <div className="px-5 py-4 border-b border-gray-100 flex flex-col gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <h2 className="font-semibold text-gray-800 shrink-0">All Users</h2>
+                        <input
+                            type="search"
+                            placeholder="Search by name, email or role…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full sm:max-w-xs px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-gray-400"
+                        />
+                    </div>
+
+                    {/* Status filter tabs */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {([
+                            { key: "ALL",       label: "All",       count: users.length },
+                            { key: "ACTIVE",    label: "Active",    count: counts.ACTIVE },
+                            { key: "INACTIVE",  label: "Inactive",  count: counts.INACTIVE },
+                            { key: "SUSPENDED", label: "Suspended", count: counts.SUSPENDED },
+                        ] as const).map(({ key, label, count }) => (
+                            <button
+                                key={key}
+                                onClick={() => setStatusFilter(key)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                                    statusFilter === key
+                                        ? key === "ACTIVE"    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                        : key === "SUSPENDED" ? "bg-red-100 text-red-700 border-red-200"
+                                        : key === "INACTIVE"  ? "bg-gray-200 text-gray-700 border-gray-300"
+                                        :                       "bg-gray-900 text-white border-gray-900"
+                                        : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700"
+                                }`}
+                            >
+                                {label}
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${statusFilter === key ? "bg-white/30" : "bg-gray-100 text-gray-500"}`}>
+                                    {isLoading ? "–" : count}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
+
+                {/* Bulk action bar */}
+                {selectedIds.size > 0 && canUpdate && (
+                    <div className="px-5 py-3 bg-emerald-50 border-b border-emerald-100 flex flex-wrap items-center gap-3">
+                        <span className="text-sm font-semibold text-emerald-800">
+                            {selectedIds.size} user{selectedIds.size > 1 ? "s" : ""} selected
+                        </span>
+                        <div className="flex items-center gap-2 ml-auto">
+                            <span className="text-xs text-emerald-600 font-medium hidden sm:inline">Set status:</span>
+                            {(["ACTIVE", "INACTIVE", "SUSPENDED"] as AccountStatus[]).map((s) => (
+                                <button
+                                    key={s}
+                                    onClick={() => handleBulkUpdate(s)}
+                                    disabled={isBulkUpdating}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all disabled:opacity-50 ${
+                                        s === "ACTIVE"    ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
+                                        : s === "SUSPENDED" ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
+                                        :                     "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"
+                                    }`}
+                                >
+                                    {isBulkUpdating ? "…" : s.charAt(0) + s.slice(1).toLowerCase()}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setSelectedIds(new Set())}
+                                className="ml-1 p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-all"
+                                title="Clear selection"
+                            >
+                                <FiX size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {isLoading ? (
                     <div className="p-5 space-y-3">
@@ -223,10 +341,10 @@ export default function UsersPage() {
                     <div className="flex flex-col items-center justify-center py-20 px-4 gap-4">
                         <div className="p-5 bg-gray-100 rounded-2xl"><FiUsers size={32} className="text-gray-400" /></div>
                         <div className="text-center">
-                            <p className="text-gray-700 font-semibold">{search ? "No users match your search" : "No users found"}</p>
-                            <p className="text-gray-400 text-xs mt-1">{search ? "Try a different keyword." : "Create a new user to get started."}</p>
+                            <p className="text-gray-700 font-semibold">{search || statusFilter !== "ALL" ? "No users match your filters" : "No users found"}</p>
+                            <p className="text-gray-400 text-xs mt-1">{search || statusFilter !== "ALL" ? "Try a different search or filter." : "Create a new user to get started."}</p>
                         </div>
-                        {!search && canCreate && (
+                        {!search && statusFilter === "ALL" && canCreate && (
                             <button onClick={openNew} className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all">
                                 <FiPlus size={14} /> New User
                             </button>
@@ -234,19 +352,39 @@ export default function UsersPage() {
                     </div>
                 ) : (
                     <>
-                        {/* Table */}
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-100">
+                                        {canUpdate && (
+                                            <th className="px-4 py-3 w-10">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={allPageSelected}
+                                                    ref={(el) => { if (el) el.indeterminate = somePageSelected && !allPageSelected; }}
+                                                    onChange={toggleAll}
+                                                    className="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                                                />
+                                            </th>
+                                        )}
                                         {["User", "Email", "Mobile", "Role", "Status", "Source", "Joined", "Actions"].map((h) => (
                                             <th key={h} className={`px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap ${h === "Actions" ? "text-right" : ""} ${["Mobile", "Source", "Joined"].includes(h) ? "hidden lg:table-cell" : ""}`}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {filtered.map((u) => (
-                                        <tr key={u._id} className="hover:bg-gray-50/70 transition-colors">
+                                    {paginated.map((u) => (
+                                        <tr key={u._id} className={`hover:bg-gray-50/70 transition-colors ${selectedIds.has(u._id) ? "bg-emerald-50/40" : ""}`}>
+                                            {canUpdate && (
+                                                <td className="px-4 py-3.5 w-10">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.has(u._id)}
+                                                        onChange={() => toggleOne(u._id)}
+                                                        className="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-2.5">
                                                     <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 text-white text-[10px] font-bold shadow-sm">
@@ -292,6 +430,60 @@ export default function UsersPage() {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="px-5 py-3.5 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <span>Rows per page:</span>
+                                <select
+                                    value={pageSize}
+                                    onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                                    className="px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                                >
+                                    {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
+                                </select>
+                                <span className="text-xs text-gray-400">
+                                    {((safePage - 1) * pageSize) + 1}–{Math.min(safePage * pageSize, filtered.length)} of {filtered.length}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={safePage <= 1}
+                                    className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <FiChevronLeft size={16} />
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+                                    .reduce<(number | "...")[]>((acc, n, i, arr) => {
+                                        if (i > 0 && n - (arr[i - 1] as number) > 1) acc.push("...");
+                                        acc.push(n);
+                                        return acc;
+                                    }, [])
+                                    .map((n, i) =>
+                                        n === "..." ? (
+                                            <span key={`ellipsis-${i}`} className="px-1 text-gray-400 text-sm">…</span>
+                                        ) : (
+                                            <button
+                                                key={n}
+                                                onClick={() => setPage(n as number)}
+                                                className={`w-8 h-8 text-sm font-semibold rounded-lg transition-all ${safePage === n ? "bg-emerald-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"}`}
+                                            >
+                                                {n}
+                                            </button>
+                                        )
+                                    )
+                                }
+                                <button
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={safePage >= totalPages}
+                                    className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <FiChevronRight size={16} />
+                                </button>
+                            </div>
                         </div>
                     </>
                 )}
