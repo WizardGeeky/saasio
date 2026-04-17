@@ -20,6 +20,8 @@ import {
     FiUploadCloud,
     FiTag,
     FiChevronDown,
+    FiChevronLeft,
+    FiChevronRight,
     FiCheck,
     FiCpu,
     FiLock,
@@ -70,11 +72,13 @@ export default function AiAtsPage() {
     const canRead   = !privLoading && can("GET",  "/api/v1/private/ai-ats");
     const canCreate = !privLoading && can("POST", "/api/v1/private/ai-ats");
 
+    const ITEMS_PER_PAGE = 10;
     const [modalOpen, setModalOpen]       = useState(false);
     const [history, setHistory]           = useState<AtsHistoryRecord[]>([]);
     const [userEmail, setUserEmail]       = useState("");
     const [historyLoading, setHistoryLoading] = useState(true);
     const [isAnalyzing, setIsAnalyzing]   = useState(false);
+    const [historyPage, setHistoryPage]   = useState(1);
     const [form, setForm] = useState<{ jobRoleName: string; jobDescription: string; resumeFile: File | null; aiModel: string }>({
         jobRoleName: "",
         jobDescription: "",
@@ -89,7 +93,7 @@ export default function AiAtsPage() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await res.json();
-            if (res.ok) { setHistory(data.records ?? []); setUserEmail(data.email ?? ""); }
+            if (res.ok) { setHistory(data.records ?? []); setUserEmail(data.email ?? ""); setHistoryPage(1); }
         } catch { /* silently ignore */ }
         finally { setHistoryLoading(false); }
     }, [token]);
@@ -136,6 +140,9 @@ export default function AiAtsPage() {
     const thisWeek  = history.filter(r => new Date(r.createdAt) >= weekAgo).length;
 
     const latestAnalysis = history[0] ?? null;
+
+    const historyPages = Math.ceil(total / ITEMS_PER_PAGE);
+    const pagedHistory = history.slice((historyPage - 1) * ITEMS_PER_PAGE, historyPage * ITEMS_PER_PAGE);
 
     const STATS = [
         { label: "Total Analyses",  value: historyLoading ? "—" : total,          icon: <FiBarChart2 size={16} />, color: "text-emerald-600", bg: "bg-emerald-50" },
@@ -314,7 +321,7 @@ export default function AiAtsPage() {
                     <>
                         {/* Mobile cards */}
                         <div className="sm:hidden divide-y divide-gray-100">
-                            {history.map((record) => {
+                            {pagedHistory.map((record) => {
                                 const s = scoreStyle(record.analysis.score);
                                 return (
                                     <div key={record._id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
@@ -363,7 +370,7 @@ export default function AiAtsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {history.map((record) => {
+                                    {pagedHistory.map((record) => {
                                         const s = scoreStyle(record.analysis.score);
                                         return (
                                             <tr key={record._id} className="hover:bg-gray-50/70 transition-colors align-top">
@@ -406,6 +413,51 @@ export default function AiAtsPage() {
                             </table>
                         </div>
                     </>
+                )}
+
+                {/* Pagination */}
+                {historyPages > 1 && (
+                    <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+                        <span className="text-xs text-gray-500">
+                            Showing {(historyPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(historyPage * ITEMS_PER_PAGE, total)} of {total}
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                                disabled={historyPage <= 1}
+                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <FiChevronLeft size={16} />
+                            </button>
+                            {Array.from({ length: Math.min(5, historyPages) }, (_, i) => {
+                                let p = i + 1;
+                                if (historyPages > 5) {
+                                    const half = 2;
+                                    p = Math.max(1, Math.min(historyPage - half + i, historyPages - 4 + i));
+                                }
+                                return (
+                                    <button
+                                        key={p}
+                                        onClick={() => setHistoryPage(p)}
+                                        className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                                            historyPage === p
+                                                ? "bg-emerald-600 text-white"
+                                                : "hover:bg-gray-100 text-gray-600"
+                                        }`}
+                                    >
+                                        {p}
+                                    </button>
+                                );
+                            })}
+                            <button
+                                onClick={() => setHistoryPage((p) => Math.min(historyPages, p + 1))}
+                                disabled={historyPage >= historyPages}
+                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <FiChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
 
