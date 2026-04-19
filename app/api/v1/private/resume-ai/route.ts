@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { decrypt } from "@/app/configs/crypto.config";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { extractPdfText } from "@/app/utils/pdf-text-extraction";
 import { withAuth } from "@/app/utils/withAuth";
 import { AiModel } from "@/models/AiModel";
 
@@ -167,7 +168,7 @@ export const POST = withAuth(async (
             return NextResponse.json({ message: "Failed to read the selected AI model key." }, { status: 500 });
         }
 
-        const extractedResumeText = await extractResumeText(resumeFile);
+        const extractedResumeText = await extractPdfText(resumeFile);
         if (!extractedResumeText) {
             return NextResponse.json(
                 { message: "No readable text was found in the uploaded PDF." },
@@ -214,32 +215,6 @@ export const POST = withAuth(async (
         return NextResponse.json({ message }, { status: 500 });
     }
 });
-
-async function extractResumeText(file: File): Promise<string> {
-    const { PDFParse } = await import("pdf-parse");
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const parser = new PDFParse({ data: new Uint8Array(buffer) });
-
-    try {
-        const result = await parser.getText({ parseHyperlinks: true });
-        return cleanExtractedText(result.text);
-    } catch (error) {
-        console.error("Failed to parse PDF:", error);
-        return "";
-    } finally {
-        await parser.destroy().catch(() => undefined);
-    }
-}
-
-function cleanExtractedText(text: string): string {
-    return text
-        .replace(/\u0000/g, " ")
-        .replace(/\r/g, "\n")
-        .replace(/[ \t]+\n/g, "\n")
-        .replace(/\n{3,}/g, "\n\n")
-        .replace(/[ \t]{2,}/g, " ")
-        .trim();
-}
 
 function buildResumeGenerationPrompt({
     targetRole,
