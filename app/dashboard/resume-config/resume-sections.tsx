@@ -233,10 +233,10 @@ export function getProfileSupplementalSections(data: unknown): ResumeSupplementa
         entriesSection("Certifications", certifications),
         bulletsSection("Achievements", achievements),
         bulletsSection("Awards", awards),
-        bulletsSection("Coursework", coursework),
         bulletsSection("Languages", languages),
         bulletsSection("Publications", publications),
         ...customSections(record),
+        bulletsSection("Relevant Coursework", coursework),
     ].filter((section): section is ResumeSupplementalSection => Boolean(section));
 }
 

@@ -91,8 +91,16 @@ function hasItems(value: unknown): value is any[] {
     return Array.isArray(value) && value.length > 0;
 }
 
+function getEduList(data: ResumeData): Array<{ college: string; degree: string; duration: string }> {
+    if (Array.isArray(data?.education)) {
+        return (data.education as any[]).filter((e: any) => e?.college || e?.degree);
+    }
+    const ed = data?.education as any;
+    return (ed?.college || ed?.degree) ? [ed] : [];
+}
+
 function hasEducation(data: ResumeData) {
-    return Boolean(data?.education?.college || data?.education?.degree);
+    return getEduList(data).length > 0;
 }
 
 function InlineLinks({ links, linkStyle, separator = " | " }: { links: HeaderLink[]; linkStyle: any; separator?: string }) {
@@ -263,17 +271,23 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                 {skill.value}
             </Text>
         ));
-        const education = hasEducation(data) && (
+        const eduList = getEduList(data);
+        const isRail = spec.mode === "left-rail" || spec.mode === "right-rail";
+        const education = eduList.length > 0 && (
             <View style={spec.mode === "boxed" ? styles.box : undefined}>
                 {spec.mode === "boxed" && <Text style={styles.tag}>Education</Text>}
-                <View style={styles.row}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={spec.mode === "left-rail" || spec.mode === "right-rail" ? styles.railLabel : styles.strong}>{data.education.college}</Text>
-                        <Text style={spec.mode === "left-rail" || spec.mode === "right-rail" ? styles.railBody : styles.body}>{data.education.degree}</Text>
+                {eduList.map((edu: any, i: number) => (
+                    <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                        <View style={styles.row}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={isRail ? styles.railLabel : styles.strong}>{edu.college}</Text>
+                                <Text style={isRail ? styles.railBody : styles.body}>{edu.degree}</Text>
+                            </View>
+                            {!isRail && <Text style={styles.meta}>{edu.duration}</Text>}
+                        </View>
+                        {isRail && <Text style={styles.railBody}>{edu.duration}</Text>}
                     </View>
-                    {spec.mode !== "left-rail" && spec.mode !== "right-rail" && <Text style={styles.meta}>{data.education.duration}</Text>}
-                </View>
-                {(spec.mode === "left-rail" || spec.mode === "right-rail") && <Text style={styles.railBody}>{data.education.duration}</Text>}
+                ))}
             </View>
         );
 
@@ -292,11 +306,15 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
             if (!hasItems(items)) return null;
             return mainSection(label, (
                 <>
-                    {items.map((item: any, index: number) => (
-                        <View key={`${label}-${index}`} style={{ marginTop: index > 0 ? 6 : 0 }}>
+                    {items.map((item: any, index: number) => {
+                        const left = item[leftKey] || "";
+                        const right = item[rightKey] || "";
+                        const title = left && right ? `${left} | ${right}` : left || right;
+                        return (
+                        <View key={`${label}-${index}`} style={{ marginTop: index > 0 ? 6 : 0 }} wrap={false}>
                             <View style={styles.row}>
-                                <Text style={styles.strong}>{item[leftKey]} | {item[rightKey]}</Text>
-                                <Text style={styles.meta}>{item.duration}</Text>
+                                <Text style={styles.strong}>{title}</Text>
+                                <Text style={styles.meta}>{item.duration || ""}</Text>
                             </View>
                             {item.points?.map((point: string, pointIndex: number) => point && (
                                 <View key={pointIndex} style={styles.bulletRow}>
@@ -306,7 +324,8 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                             ))}
                             {item.techStack && <Text style={styles.stack}>Stack: {item.techStack}</Text>}
                         </View>
-                    ))}
+                        );
+                    })}
                 </>
             ));
         };

@@ -58,11 +58,13 @@ const RESUME_JSON_SCHEMA = {
             techStack: "",
         },
     ],
-    education: {
-        college: "",
-        degree: "",
-        duration: "",
-    },
+    education: [
+        {
+            college: "",
+            degree: "",
+            duration: "",
+        },
+    ],
     certifications: [
         {
             name: "",
@@ -100,20 +102,80 @@ const RESUME_JSON_SCHEMA = {
     ],
 };
 
-const RESUME_AI_SYSTEM_PROMPT = `You are an expert resume writer and ATS optimizer.
-Transform the candidate's uploaded resume into the exact JSON schema provided by the user. The goal is to create a job-specific resume, optimizing it for Applicant Tracking Systems (ATS) while capturing all relevant information from the original resume.
+const RESUME_AI_SYSTEM_PROMPT = `You are an expert resume writer, ATS optimization specialist, and career coach. Your goal is to produce resumes that score 95+ on ATS systems by excelling in every scoring dimension.
 
-Rules:
-1. Return ONLY valid JSON. No markdown fences. No commentary.
-2. Preserve all factual candidate data from the uploaded resume. Do not drop real companies, dates, education, certifications, skills, projects, links, or achievements.
-3. Tailor wording to the target role and job description while staying truthful to the uploaded resume.
-4. Maximize ATS alignment by using relevant keywords from the job description naturally across summary, skills, experience, projects, internships, and supporting sections.
-5. Prefer quantified bullet points when the uploaded resume already contains numbers, durations, counts, percentages, scale, volumes, or measurable impact.
-6. Never invent facts, companies, dates, degrees, certifications, technologies, or exact metrics that are not supported by the uploaded resume or job description.
-7. If a section has no credible information, return an empty array or empty string for that section.
-8. Support both fresher and experienced candidates using the same schema.
-9. Keep bullets concise, strong, and recruiter-friendly.
-10. Keep header.links limited to linkedin, github, and portfolio keys.`;
+OUTPUT FORMAT RULES (non-negotiable):
+1. Return ONLY valid JSON. No markdown fences, no commentary, no text before or after.
+2. Preserve ALL factual data from the uploaded resume. Never drop real companies, dates, education, certifications, skills, projects, links, or achievements.
+3. Never invent companies, degrees, certifications, technologies, or specific metrics absent from the resume or job description.
+4. For quantification: use real numbers when present in the resume. When absent, use authentic contextual scale ("across 3 services", "for 5-member team", "in 2-week sprint") — never fabricate percentages.
+5. NEVER use placeholder text for missing fields. If a value is unknown or missing, use "" (empty string) or [] (empty array). Forbidden placeholder values include: "Not Specified", "N/A", "None", "Unknown", "TBD", "Not Available", "No Link", "Not Provided" — these will break the PDF layout. Use empty string instead.
+6. header.links must contain ONLY: linkedin, github, portfolio keys.
+7. contact field format: "phone | email | city, state" — use only data from the resume.
+8. skills.value = comma-separated skill names within that category.
+
+═══ ATS SCORING CRITERIA — TARGET 95+ ═══
+
+① KEYWORDS & TECH STACK (target 20/20):
+- Extract every technical keyword, framework, tool, methodology, and domain term from the job description.
+- Embed them naturally in: summary (3-5 JD keywords), skills section (exact JD tool names), experience/project bullets (1-2 JD keywords each), tech stack fields.
+- Use exact JD spelling: "Spring Boot" not "Spring", "RESTful API" not "REST API" if that's what JD says.
+- Skills categories should mirror JD sections (e.g., "Backend Development", "Cloud & DevOps", "Databases").
+- Add a proficiency indicator for top skills in each category: "Java (Expert), Python (Advanced), Go (Intermediate)".
+
+② QUANTIFIED ACHIEVEMENTS (target 18/20):
+- Every experience and internship bullet must include at least one of: number, percentage, team size, timeline, scale metric, or user count.
+- Use real figures from the resume. When a real figure isn't available, use honest contextual scale: "team of 4", "across 5 microservices", "3-month project".
+- Projects: mention stars/forks if open source, deployment platform, concurrent users if known, or course/semester context.
+- Do NOT leave any bullet without measurable context — vague bullets like "Worked on backend" score 0.
+
+③ CONTACT & FORMATTING (target 15/15):
+- LinkedIn, GitHub, and Portfolio URLs must be in header.links with full resolvable https:// URLs.
+- The contact string should include phone | email | city — the links object handles profile URLs separately.
+- Use consistent date format throughout: "Jan 2023 – Jun 2023" or "2021 – 2023".
+- Section titles must be clear and standard (EXPERIENCE, PROJECTS, EDUCATION, CERTIFICATIONS).
+
+④ WORK EXPERIENCE DEPTH (target 17/20):
+- Each role (full-time or internship): minimum 4 bullets, maximum 6 bullets.
+- Bullet structure: [Action verb] + [specific technology/tool used] + [what was built/improved] + [scale/impact].
+- For candidates with 1 employer: compensate depth by making internship entries as rich as full-time roles (4-5 bullets each). Treat academic capstone projects as professional work entries when they have real deployment, users, or complexity.
+- Separate "Professional Experience" projects from personal side projects in the PROJECTS section using the role field: "Full-Stack Developer (Production)" vs "Personal Project".
+- Every tech stack field should be populated with 4-8 specific technologies used in that role/project.
+
+⑤ EDUCATION & CERTIFICATIONS (target 14/15):
+- Education field is an ARRAY. List ALL education in order from most recent to oldest: degree → junior college/intermediate → high school.
+- Each entry: college = institution name + city, degree = qualification name + CGPA if ≥ 7.0/10, duration = year range.
+- For high school and junior college: omit CGPA, just show marks percentage if available (e.g., "Marks: 961/1000").
+- NEVER create a "Academic Background" custom section — put all education in the education array.
+- Certifications: include ALL structured learning — professional certs, Coursera/edX/Udemy completions, AWS Skill Builder, Google Cloud Skills Boost, Microsoft Learn, bootcamp certificates, vendor training. Format: "Certification Name — Issuer, Year".
+- If no certifications exist in the resume, leave certifications as [] — do not invent.
+
+⑥ SUMMARY & ROLE TARGETING (target 9/10):
+- The summary MUST name the specific role title from the job posting (or very close variant) in the first or second sentence.
+- Must contain ≥ 4 keywords or exact phrases from the job description requirements.
+- Structure for freshers: "[Degree] graduate with strong foundation in [JD domain]. Seeking [exact role title] to apply expertise in [JD keyword 1], [JD keyword 2], and [JD keyword 3]. [Value proposition tied to JD]."
+- Structure for experienced: "[X] years of [domain] experience specializing in [JD tech stack]. Proven track record of [achievement type relevant to JD role]. Currently seeking [exact role title] at [company type from JD]."
+- Never write a generic summary — every word must connect to the specific JD.
+
+═══ PROFILE-SPECIFIC RULES ═══
+
+FRESHER (0–2 years, students, recent graduates):
+- Priority order: Skills → Projects → Internships → Education → Certifications → Achievements → Positions.
+- Projects section is the strongest differentiator: 3-5 projects, 3-4 bullets each, full tech stack.
+- Coursework: include ONLY if 5+ courses are directly relevant to the JD — max 6 items. Omit if courses are generic.
+- Experience: empty [] unless genuine full-time employment (internships go in internships section).
+- Education: include degree + junior college + high school in the education array (most recent first).
+
+EXPERIENCED (3+ years full-time):
+- Priority order: Summary → Experience → Skills → Projects → Certifications → Education → Achievements.
+- Experience is the core: 4-6 bullets per role with business impact, scale, and technology specifics.
+- Drop internships if 3+ years of full-time experience exists.
+- Drop coursework [] entirely — senior profiles do not list coursework.
+- Education: include degree only (skip high school/junior college unless specifically relevant).
+- Senior profiles (6+ years): add leadership, mentoring, architectural decisions, cross-team impact.
+
+Return empty arrays [] or empty strings "" for sections irrelevant to the candidate — never pad with invented content.`;
+
 
 export const POST = withAuth(async (
     req: NextRequest,
@@ -129,6 +191,7 @@ export const POST = withAuth(async (
         const jobDescription = asText(formData.get("jobDescription"));
         const templateId = asText(formData.get("templateId"));
         const templateName = asText(formData.get("templateName"));
+        const experienceLevel = asText(formData.get("experienceLevel")); // "fresher" | "experienced" | ""
         const resumeFile = formData.get("resumeFile");
 
         if (!modelId || !targetRole || !jobDescription) {
@@ -183,6 +246,7 @@ export const POST = withAuth(async (
             templateId,
             templateName,
             fileName: resumeFile.name,
+            experienceLevel,
         });
 
         const rawResponse = await generateResumeWithModel({
@@ -233,6 +297,7 @@ function buildResumeGenerationPrompt({
     templateId,
     templateName,
     fileName,
+    experienceLevel,
 }: {
     targetRole: string;
     jobDescription: string;
@@ -240,29 +305,68 @@ function buildResumeGenerationPrompt({
     templateId: string;
     templateName: string;
     fileName: string;
+    experienceLevel: string;
 }) {
+    const profileHint =
+        experienceLevel === "fresher"
+            ? "CANDIDATE PROFILE: Fresher / Recent Graduate (0–2 years). Apply the FRESHER PROFILE rules from the system prompt — prioritize projects, internships, education, certifications, coursework, and achievements."
+            : experienceLevel === "experienced"
+                ? "CANDIDATE PROFILE: Experienced Professional (3+ years). Apply the EXPERIENCED PROFILE rules from the system prompt — prioritize experience, summary, skills, and notable projects."
+                : "CANDIDATE PROFILE: Auto-detect from the resume. If the candidate has < 2 years of full-time work, apply FRESHER rules. If ≥ 3 years of full-time work, apply EXPERIENCED rules.";
+
     return [
+        profileHint,
         `Target role: ${targetRole}`,
-        `Selected resume format: ${templateName || templateId || "resume-builder"}`,
-        `Uploaded file name: ${fileName}`,
+        `Resume format: ${templateName || templateId || "resume-builder"}`,
+        `Source file: ${fileName}`,
         "",
-        "Job description:",
+        "=== JOB DESCRIPTION (read carefully — extract all keywords) ===",
         jobDescription,
         "",
-        "Extracted resume text:",
+        "=== CANDIDATE RESUME TEXT (source of all factual data) ===",
         extractedResumeText,
         "",
-        "Return data in this exact JSON schema shape:",
+        "=== REQUIRED JSON SCHEMA ===",
         JSON.stringify(RESUME_JSON_SCHEMA, null, 2),
         "",
-        "Extra instructions:",
-        "- Use role-aligned ATS keywords from the job description across summary, skills, and relevant bullets.",
-        "- Keep all valid user resume information from the uploaded PDF.",
-        "- Reword bullets for stronger impact, but remain truthful to the candidate's actual experience.",
-        "- IMPORTANT: Include numbers or percentages in bullet points to quantify impact and significantly increase ATS score.",
-        "- If exact metrics are missing from the source, infer reasonable and plausible numbers or percentage improvements based on context.",
-        "- Put fresher content into internships, projects, coursework, positions, volunteering, achievements, and certifications when appropriate.",
-        "- Keep unsupported sections empty instead of inventing unrelated content.",
+        "=== GENERATION CHECKLIST (complete every item) ===",
+        "",
+        "SUMMARY — must score 9/10:",
+        "  • Name the exact target role ('" + targetRole + "') in the first or second sentence.",
+        "  • Use ≥ 4 keywords extracted directly from the job description above.",
+        "  • End with a value proposition that matches the JD's stated needs.",
+        "  • Do NOT write a generic profile — every sentence must connect to this specific JD.",
+        "",
+        "KEYWORDS:",
+        "  • Identify the top 15 technical keywords from the JD and distribute them across summary, skills, bullets, and tech stacks.",
+        "  • Match exact spelling from the JD (e.g., 'Spring Boot' not 'Spring', 'Node.js' not 'NodeJS').",
+        "  • Include proficiency hints in skills: 'Java (Expert), Python (Advanced), Go (Intermediate)'.",
+        "",
+        "BULLETS (experience, internships, projects):",
+        "  • Every bullet: [Action verb] + [technology/tool] + [what was done] + [measurable context or outcome].",
+        "  • Minimum 4 bullets per experience or internship entry. Minimum 3 bullets per project.",
+        "  • Include scale even if estimated from context: team size, service count, sprint length, user base.",
+        "  • Start each bullet with a different action verb — do not repeat the same verb in one entry.",
+        "",
+        "CERTIFICATIONS:",
+        "  • Include ALL structured learning: professional certs, Coursera/edX/Udemy, cloud training (AWS, Google, Azure), bootcamps.",
+        "  • Format: 'Certification Name — Issuer, Year'.",
+        "  • Leave [] only if the resume has zero certifications or courses mentioned.",
+        "",
+        "EDUCATION:",
+        "  • education is an ARRAY — list ALL institutions: degree (most recent) → junior college → high school.",
+        "  • Include CGPA/GPA in degree string if ≥ 7.0/10 or ≥ 3.0/4.0: 'B.Tech Computer Science | CGPA: 8.4/10'.",
+        "  • For high school / junior college: show qualification + marks if available, no CGPA format.",
+        "  • NEVER put educational history in customSections — always use the education array.",
+        "  • Coursework: only include if courses directly match JD (max 6). Experienced candidates: leave [] empty.",
+        "",
+        "LINKS:",
+        "  • Populate header.links.linkedin, github, portfolio with full https:// URLs from the resume.",
+        "  • If the resume has profile URLs as plain text (e.g., 'linkedin.com/in/user'), convert to https://linkedin.com/in/user.",
+        "",
+        "GENERAL:",
+        "  • Preserve all factual data — do not drop real companies, projects, certifications, or skills.",
+        "  • Empty sections: use [] or '' — never invent content.",
     ].join("\n");
 }
 
@@ -637,14 +741,19 @@ function normalizePositionEntries(value: unknown) {
         } => Boolean(item));
 }
 
-function normalizeEducation(value: unknown) {
-    const record = asRecord(value) ?? asRecord(Array.isArray(value) ? value[0] : null);
+function normalizeEducation(value: unknown): Array<{ college: string; degree: string; duration: string }> {
+    const items = Array.isArray(value) ? value : (value && typeof value === "object" ? [value] : []);
 
-    return {
-        college: firstText(record, ["college", "school", "university", "institution"]),
-        degree: firstText(record, ["degree", "qualification", "program"]),
-        duration: buildDuration(record),
-    };
+    return items
+        .map((item) => {
+            const record = asRecord(item);
+            if (!record) return null;
+            const college = firstText(record, ["college", "school", "university", "institution"]);
+            const degree = firstText(record, ["degree", "qualification", "program"]);
+            const duration = buildDuration(record);
+            return (college || degree) ? { college, degree, duration } : null;
+        })
+        .filter((e): e is { college: string; degree: string; duration: string } => Boolean(e));
 }
 
 function normalizeCertifications(value: unknown) {
@@ -747,8 +856,20 @@ function asRecord(value: unknown): LooseRecord | null {
     return value as LooseRecord;
 }
 
+// Placeholder values the AI sometimes generates for unknown/missing fields.
+// These must be stripped — the PDF should show nothing, not a label.
+const AI_PLACEHOLDER_VALUES = new Set([
+    "not specified", "n/a", "na", "none", "unknown", "tbd", "to be determined",
+    "not available", "not applicable", "unspecified", "no link", "no url",
+    "no portfolio", "not provided", "not listed", "not mentioned", "not stated",
+]);
+
 function asText(value: unknown): string {
-    if (typeof value === "string") return value.trim();
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (AI_PLACEHOLDER_VALUES.has(trimmed.toLowerCase())) return "";
+        return trimmed;
+    }
     if (typeof value === "number" && Number.isFinite(value)) return String(value);
     return "";
 }

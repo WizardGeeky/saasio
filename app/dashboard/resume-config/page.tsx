@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -113,6 +113,37 @@ function PDFLoader() {
 // TEMPLATE 1 — CLASSIC  (Times, centered header, all-caps sections)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Strips protocol/www so "https://linkedin.com/in/user" renders as "linkedin.com/in/user" in PDF.
+// ATS crawlers look for visible URL text, not just link annotations.
+function shortUrl(url: string): string {
+    if (!url) return "";
+    return url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
+}
+
+// Placeholder values that AIs sometimes output for missing fields — strip them so PDFs look clean.
+const PLACEHOLDER_RE = /^(not specified|n\/a|na|none|unknown|tbd|to be determined|not available|not applicable|unspecified|no link|no url|no portfolio|not provided|not listed|not mentioned|not stated)$/i;
+
+function getEduList(data: any): Array<{ college: string; degree: string; duration: string }> {
+    if (Array.isArray(data.education)) {
+        return data.education.filter((e: any) => e?.college || e?.degree);
+    }
+    return (data.education?.college || data.education?.degree) ? [data.education] : [];
+}
+
+function sanitizeResumeData(data: unknown): unknown {
+    if (typeof data === "string") {
+        const t = data.trim();
+        return PLACEHOLDER_RE.test(t) ? "" : t;
+    }
+    if (Array.isArray(data)) return data.map(sanitizeResumeData);
+    if (data !== null && typeof data === "object") {
+        return Object.fromEntries(
+            Object.entries(data as Record<string, unknown>).map(([k, v]) => [k, sanitizeResumeData(v)])
+        );
+    }
+    return data;
+}
+
 function getOptionalSections(data: unknown): {
     careerSections: ResumeSupplementalSection[];
     profileSections: ResumeSupplementalSection[];
@@ -210,9 +241,9 @@ function T1({ data }: { data: any }) {
                     <Text style={s1.ht}>{data.header?.title}</Text>
                     <Text style={s1.hc}>
                         {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s1.lnk}>LinkedIn</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s1.lnk}>GitHub</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s1.lnk}>Portfolio</Link></Text>}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s1.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s1.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s1.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     </Text>
                 </View>
                 {!!data.summary?.trim() && (<View style={{ marginTop: 4 }}><S v="SUMMARY" /><Text style={s1.body}>{data.summary}</Text></View>)}
@@ -224,7 +255,7 @@ function T1({ data }: { data: any }) {
                 {Array.isArray(data.experience) && data.experience.length > 0 && (
                     <View style={{ marginTop: 4 }}><S v="EXPERIENCE" />
                         {data.experience.map((e: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
                                 <View style={s1.row}><Text style={s1.bold}>{e.role} | {e.company}</Text><Text style={s1.body}>{e.duration}</Text></View>
                                 {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                 {e.techStack && <Text style={s1.bold}>Tech Stack: <Text style={s1.ital}>{e.techStack}</Text></Text>}
@@ -236,20 +267,30 @@ function T1({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <View style={{ marginTop: 4 }}><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
-                                <View style={s1.row}><Text style={s1.bold}>{p.name} | {p.role}</Text><Text style={s1.body}>{p.duration}</Text></View>
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s1.row}>
+                                    <Text style={s1.bold}>
+                                        {p.link ? <Link src={p.link} style={s1.lnk}>{p.name}</Link> : p.name}
+                                        {p.role ? <Text> | {p.role}</Text> : null}
+                                    </Text>
+                                    <Text style={s1.body}>{p.duration}</Text>
+                                </View>
                                 {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                 {p.techStack && <Text style={s1.bold}>Tech Stack: <Text style={s1.ital}>{p.techStack}</Text></Text>}
                             </View>
                         ))}
                     </View>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <View style={{ marginTop: 4 }}><S v="EDUCATION" />
-                        <View style={s1.row}>
-                            <View style={{ flex: 1 }}><Text style={s1.bold}>{data.education.college}</Text><Text style={s1.body}>{data.education.degree}</Text></View>
-                            <Text style={s1.body}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s1.row}>
+                                    <View style={{ flex: 1 }}><Text style={s1.bold}>{edu.college}</Text><Text style={s1.body}>{edu.degree}</Text></View>
+                                    <Text style={s1.body}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </View>
                 )}
                 {supplementalSections(profileSections)}
@@ -305,9 +346,9 @@ function T2({ data }: { data: any }) {
                     <Text style={s2.ht}>{data.header?.title}</Text>
                     <Text style={s2.hc}>
                         {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{"  ·  "}<Link src={data.header.links.linkedin} style={s2.lnk}>LinkedIn</Link></Text>}
-                        {data.header?.links?.github && <Text>{"  ·  "}<Link src={data.header.links.github} style={s2.lnk}>GitHub</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{"  ·  "}<Link src={data.header.links.portfolio} style={s2.lnk}>Portfolio</Link></Text>}
+                        {data.header?.links?.linkedin && <Text>{"  ·  "}<Link src={data.header.links.linkedin} style={s2.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                        {data.header?.links?.github && <Text>{"  ·  "}<Link src={data.header.links.github} style={s2.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{"  ·  "}<Link src={data.header.links.portfolio} style={s2.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     </Text>
                     {!!data.summary?.trim() && (<><S v="PROFILE" /><Text style={s2.body}>{data.summary}</Text></>)}
                     {Array.isArray(data.skills) && data.skills.length > 0 && (
@@ -320,7 +361,7 @@ function T2({ data }: { data: any }) {
                     {Array.isArray(data.experience) && data.experience.length > 0 && (
                         <><S v="EXPERIENCE" />
                             {data.experience.map((e: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                                <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
                                     <View style={s2.row}><Text style={s2.bold}>{e.role} — {e.company}</Text><Text style={s2.meta}>{e.duration}</Text></View>
                                     {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                     {e.techStack && <Text style={[s2.meta, { marginTop: 3 }]}>Stack: {e.techStack}</Text>}
@@ -332,20 +373,30 @@ function T2({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><S v="PROJECTS" />
                             {data.projects.map((p: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
-                                    <View style={s2.row}><Text style={s2.bold}>{p.name} <Text style={s2.meta}>({p.role})</Text></Text><Text style={s2.meta}>{p.duration}</Text></View>
+                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                    <View style={s2.row}>
+                                        <Text style={s2.bold}>
+                                            {p.link ? <Link src={p.link} style={s2.lnk}>{p.name}</Link> : p.name}
+                                            {p.role ? <Text style={s2.meta}> ({p.role})</Text> : null}
+                                        </Text>
+                                        <Text style={s2.meta}>{p.duration}</Text>
+                                    </View>
                                     {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                     {p.techStack && <Text style={[s2.meta, { marginTop: 3 }]}>Stack: {p.techStack}</Text>}
                                 </View>
                             ))}
                         </>
                     )}
-                    {data.education && (data.education.college || data.education.degree) && (
+                    {getEduList(data).length > 0 && (
                         <><S v="EDUCATION" />
-                            <View style={s2.row}>
-                                <View style={{ flex: 1 }}><Text style={s2.bold}>{data.education.college}</Text><Text style={s2.body}>{data.education.degree}</Text></View>
-                                <Text style={s2.meta}>{data.education.duration}</Text>
-                            </View>
+                            {getEduList(data).map((edu: any, i: number) => (
+                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                    <View style={s2.row}>
+                                        <View style={{ flex: 1 }}><Text style={s2.bold}>{edu.college}</Text><Text style={s2.body}>{edu.degree}</Text></View>
+                                        <Text style={s2.meta}>{edu.duration}</Text>
+                                    </View>
+                                </View>
+                            ))}
                         </>
                     )}
                 {supplementalSections(profileSections)}
@@ -400,9 +451,9 @@ function T3({ data }: { data: any }) {
                     <Text style={s3.ht}>{data.header?.title}</Text>
                     <Text style={s3.hc}>
                         {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s3.lnk}>LinkedIn</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s3.lnk}>GitHub</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s3.lnk}>Portfolio</Link></Text>}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s3.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s3.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s3.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     </Text>
                 </View>
                 <View style={s3.body}>
@@ -415,7 +466,7 @@ function T3({ data }: { data: any }) {
                     {Array.isArray(data.experience) && data.experience.length > 0 && (
                         <><Text style={s3.sh}>PROFESSIONAL EXPERIENCE</Text>
                             {data.experience.map((e: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 7 : 4 }}>
+                                <View key={i} style={{ marginTop: i > 0 ? 7 : 4 }} wrap={false}>
                                     <View style={s3.row}><Text style={s3.bold}>{e.role} | {e.company}</Text><Text style={s3.meta}>{e.duration}</Text></View>
                                     {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                     {e.techStack && <Text style={[s3.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
@@ -427,20 +478,30 @@ function T3({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><Text style={s3.sh}>KEY PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }}>
-                                    <View style={s3.row}><Text style={s3.bold}>{p.name} | {p.role}</Text><Text style={s3.meta}>{p.duration}</Text></View>
+                                <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }} wrap={false}>
+                                    <View style={s3.row}>
+                                        <Text style={s3.bold}>
+                                            {p.link ? <Link src={p.link} style={s3.lnk}>{p.name}</Link> : p.name}
+                                            {p.role ? <Text> | {p.role}</Text> : null}
+                                        </Text>
+                                        <Text style={s3.meta}>{p.duration}</Text>
+                                    </View>
                                     {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                     {p.techStack && <Text style={[s3.meta, { marginTop: 2 }]}>Technologies: {p.techStack}</Text>}
                                 </View>
                             ))}
                         </>
                     )}
-                    {data.education && (data.education.college || data.education.degree) && (
+                    {getEduList(data).length > 0 && (
                         <><Text style={s3.sh}>EDUCATION</Text>
-                            <View style={[s3.row, { marginTop: 4 }]}>
-                                <View style={{ flex: 1 }}><Text style={s3.bold}>{data.education.college}</Text><Text style={s3.btext}>{data.education.degree}</Text></View>
-                                <Text style={s3.meta}>{data.education.duration}</Text>
-                            </View>
+                            {getEduList(data).map((edu: any, i: number) => (
+                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                    <View style={[s3.row, { marginTop: 4 }]}>
+                                        <View style={{ flex: 1 }}><Text style={s3.bold}>{edu.college}</Text><Text style={s3.btext}>{edu.degree}</Text></View>
+                                        <Text style={s3.meta}>{edu.duration}</Text>
+                                    </View>
+                                </View>
+                            ))}
                         </>
                     )}
                 {supplementalSections(profileSections)}
@@ -493,9 +554,9 @@ function T4({ data }: { data: any }) {
                 <Text style={s4.ht}>{data.header?.title}</Text>
                 <Text style={s4.hc}>
                     {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" · "}<Link src={data.header.links.linkedin} style={s4.lnk}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text>{" · "}<Link src={data.header.links.github} style={s4.lnk}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" · "}<Link src={data.header.links.portfolio} style={s4.lnk}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text>{" · "}<Link src={data.header.links.linkedin} style={s4.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text>{" · "}<Link src={data.header.links.github} style={s4.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" · "}<Link src={data.header.links.portfolio} style={s4.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                 </Text>
                 <View style={s4.sep} />
                 {!!data.summary?.trim() && (<><Text style={s4.sh}>ABOUT</Text><Text style={s4.body}>{data.summary}</Text></>)}
@@ -507,7 +568,7 @@ function T4({ data }: { data: any }) {
                 {Array.isArray(data.experience) && data.experience.length > 0 && (
                     <><Text style={s4.sh}>EXPERIENCE</Text>
                         {data.experience.map((e: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 8 : 0 }}>
+                            <View key={i} style={{ marginTop: i > 0 ? 8 : 0 }} wrap={false}>
                                 <View style={s4.row}><Text style={s4.bold}>{e.role}, {e.company}</Text><Text style={s4.meta}>{e.duration}</Text></View>
                                 {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                 {e.techStack && <Text style={[s4.meta, { marginTop: 4 }]}>{e.techStack}</Text>}
@@ -519,21 +580,30 @@ function T4({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><Text style={s4.sh}>PROJECTS</Text>
                         {data.projects.map((p: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }}>
-                                <View style={s4.row}><Text style={s4.bold}>{p.name}</Text><Text style={s4.meta}>{p.duration}</Text></View>
-                                <Text style={[s4.meta, { marginTop: 1 }]}>{p.role}</Text>
+                            <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }} wrap={false}>
+                                <View style={s4.row}>
+                                    <Text style={s4.bold}>
+                                        {p.link ? <Link src={p.link} style={s4.lnk}>{p.name}</Link> : p.name}
+                                    </Text>
+                                    <Text style={s4.meta}>{p.duration}</Text>
+                                </View>
+                                {p.role ? <Text style={[s4.meta, { marginTop: 1 }]}>{p.role}</Text> : null}
                                 {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                 {p.techStack && <Text style={[s4.meta, { marginTop: 4 }]}>{p.techStack}</Text>}
                             </View>
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><Text style={s4.sh}>EDUCATION</Text>
-                        <View style={s4.row}>
-                            <View style={{ flex: 1 }}><Text style={s4.bold}>{data.education.college}</Text><Text style={s4.body}>{data.education.degree}</Text></View>
-                            <Text style={s4.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s4.row}>
+                                    <View style={{ flex: 1 }}><Text style={s4.bold}>{edu.college}</Text><Text style={s4.body}>{edu.degree}</Text></View>
+                                    <Text style={s4.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -588,9 +658,9 @@ function T5({ data }: { data: any }) {
                     <Text style={s5.ht}>{data.header?.title}</Text>
                     <Text style={s5.hc}>
                         {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s5.lnk}>LinkedIn</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s5.lnk}>GitHub</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s5.lnk}>Portfolio</Link></Text>}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s5.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s5.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s5.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     </Text>
                 </View>
                 {!!data.summary?.trim() && (<><Text style={s5.sh}>EXECUTIVE SUMMARY</Text><Text style={[s5.body, { marginTop: 4 }]}>{data.summary}</Text></>)}
@@ -602,7 +672,7 @@ function T5({ data }: { data: any }) {
                 {Array.isArray(data.experience) && data.experience.length > 0 && (
                     <><Text style={s5.sh}>PROFESSIONAL EXPERIENCE</Text>
                         {data.experience.map((e: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 7 : 4 }}>
+                            <View key={i} style={{ marginTop: i > 0 ? 7 : 4 }} wrap={false}>
                                 <View style={s5.row}><Text style={s5.bold}>{e.role} | {e.company}</Text><Text style={s5.meta}>{e.duration}</Text></View>
                                 {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                 {e.techStack && <Text style={[s5.meta, { marginTop: 3 }]}>Technologies: {e.techStack}</Text>}
@@ -614,20 +684,30 @@ function T5({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><Text style={s5.sh}>SELECTED PROJECTS</Text>
                         {data.projects.map((p: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }}>
-                                <View style={s5.row}><Text style={s5.bold}>{p.name} | {p.role}</Text><Text style={s5.meta}>{p.duration}</Text></View>
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }} wrap={false}>
+                                <View style={s5.row}>
+                                    <Text style={s5.bold}>
+                                        {p.link ? <Link src={p.link} style={s5.lnk}>{p.name}</Link> : p.name}
+                                        {p.role ? <Text> | {p.role}</Text> : null}
+                                    </Text>
+                                    <Text style={s5.meta}>{p.duration}</Text>
+                                </View>
                                 {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                 {p.techStack && <Text style={[s5.meta, { marginTop: 3 }]}>Technologies: {p.techStack}</Text>}
                             </View>
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><Text style={s5.sh}>EDUCATION</Text>
-                        <View style={[s5.row, { marginTop: 4 }]}>
-                            <View style={{ flex: 1 }}><Text style={s5.bold}>{data.education.college}</Text><Text style={s5.body}>{data.education.degree}</Text></View>
-                            <Text style={s5.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={[s5.row, { marginTop: 4 }]}>
+                                    <View style={{ flex: 1 }}><Text style={s5.bold}>{edu.college}</Text><Text style={s5.body}>{edu.degree}</Text></View>
+                                    <Text style={s5.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -685,9 +765,9 @@ function T6({ data }: { data: any }) {
                 </View>
                 <Text style={s6.hc}>
                     {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s6.lnk}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s6.lnk}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s6.lnk}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s6.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s6.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s6.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                 </Text>
                 <View style={s6.div} />
                 {!!data.summary?.trim() && (<><S v="SUMMARY" /><Text style={s6.body}>{data.summary}</Text></>)}
@@ -699,7 +779,7 @@ function T6({ data }: { data: any }) {
                 {Array.isArray(data.experience) && data.experience.length > 0 && (
                     <><S v="EXPERIENCE" />
                         {data.experience.map((e: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }}>
+                            <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }} wrap={false}>
                                 <View style={s6.row}><Text style={s6.bold}>{e.role} @ {e.company}</Text><Text style={s6.meta}>{e.duration}</Text></View>
                                 {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                 {e.techStack && <Text style={[s6.meta, { marginTop: 2 }]}>Stack: {e.techStack}</Text>}
@@ -711,20 +791,30 @@ function T6({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
-                                <View style={s6.row}><Text style={s6.bold}>{p.name} <Text style={s6.meta}>— {p.role}</Text></Text><Text style={s6.meta}>{p.duration}</Text></View>
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s6.row}>
+                                    <Text style={s6.bold}>
+                                        {p.link ? <Link src={p.link} style={s6.lnk}>{p.name}</Link> : p.name}
+                                        {p.role ? <Text style={s6.meta}> — {p.role}</Text> : null}
+                                    </Text>
+                                    <Text style={s6.meta}>{p.duration}</Text>
+                                </View>
                                 {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                 {p.techStack && <Text style={[s6.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                             </View>
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="EDUCATION" />
-                        <View style={s6.row}>
-                            <View style={{ flex: 1 }}><Text style={s6.bold}>{data.education.college}</Text><Text style={s6.body}>{data.education.degree}</Text></View>
-                            <Text style={s6.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s6.row}>
+                                    <View style={{ flex: 1 }}><Text style={s6.bold}>{edu.college}</Text><Text style={s6.body}>{edu.degree}</Text></View>
+                                    <Text style={s6.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -784,9 +874,9 @@ function T7({ data }: { data: any }) {
                     <Text style={s7.sht}>{data.header?.title}</Text>
                     <Text style={s7.shr}>CONTACT</Text>
                     <Text style={s7.sbody}>{contact}</Text>
-                    {data.header?.links?.linkedin && <Text style={[s7.sbody, { marginTop: 3 }]}><Link src={data.header.links.linkedin} style={s7.slink}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text style={s7.sbody}><Link src={data.header.links.github} style={s7.slink}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text style={s7.sbody}><Link src={data.header.links.portfolio} style={s7.slink}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text style={[s7.sbody, { marginTop: 3 }]}><Link src={data.header.links.linkedin} style={s7.slink}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text style={s7.sbody}><Link src={data.header.links.github} style={s7.slink}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text style={s7.sbody}><Link src={data.header.links.portfolio} style={s7.slink}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     {Array.isArray(data.skills) && data.skills.length > 0 && (<>
                         <Text style={s7.shr}>SKILLS</Text>
                         {data.skills.map((sk: any, i: number) => (
@@ -796,11 +886,15 @@ function T7({ data }: { data: any }) {
                             </Text>
                         ))}
                     </>)}
-                    {data.education && (data.education.college || data.education.degree) && (<>
+                    {getEduList(data).length > 0 && (<>
                         <Text style={s7.shr}>EDUCATION</Text>
-                        <Text style={s7.slabel}>{data.education.college}</Text>
-                        <Text style={s7.sbody}>{data.education.degree}</Text>
-                        <Text style={s7.sbody}>{data.education.duration}</Text>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <Text style={s7.slabel}>{edu.college}</Text>
+                                <Text style={s7.sbody}>{edu.degree}</Text>
+                                <Text style={s7.sbody}>{edu.duration}</Text>
+                            </View>
+                        ))}
                     </>)}
                 </View>
                 {/* Main */}
@@ -809,7 +903,7 @@ function T7({ data }: { data: any }) {
                     {Array.isArray(data.experience) && data.experience.length > 0 && (
                         <><Text style={s7.msh}>EXPERIENCE</Text>
                             {data.experience.map((e: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
+                                <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
                                     <View style={s7.mrow}><Text style={s7.mbold}>{e.role}</Text><Text style={s7.mmeta}>{e.duration}</Text></View>
                                     <Text style={s7.mmeta}>{e.company}</Text>
                                     {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
@@ -822,9 +916,14 @@ function T7({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><Text style={s7.msh}>PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
-                                    <View style={s7.mrow}><Text style={s7.mbold}>{p.name}</Text><Text style={s7.mmeta}>{p.duration}</Text></View>
-                                    <Text style={s7.mmeta}>{p.role}</Text>
+                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                    <View style={s7.mrow}>
+                                        <Text style={s7.mbold}>
+                                            {p.link ? <Link src={p.link} style={{ color: "#0f766e", textDecoration: "underline" }}>{p.name}</Link> : p.name}
+                                        </Text>
+                                        <Text style={s7.mmeta}>{p.duration}</Text>
+                                    </View>
+                                    {p.role ? <Text style={s7.mmeta}>{p.role}</Text> : null}
                                     {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                     {p.techStack && <Text style={[s7.mmeta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                                 </View>
@@ -891,9 +990,9 @@ function T8({ data }: { data: any }) {
                     <Text style={s8.shr}>CONTACT</Text>
                     <View style={s8.sdiv} />
                     <Text style={s8.sbody}>{contact}</Text>
-                    {data.header?.links?.linkedin && <Text style={[s8.sbody, { marginTop: 3 }]}><Link src={data.header.links.linkedin} style={s8.slink}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text style={s8.sbody}><Link src={data.header.links.github} style={s8.slink}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text style={s8.sbody}><Link src={data.header.links.portfolio} style={s8.slink}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text style={[s8.sbody, { marginTop: 3 }]}><Link src={data.header.links.linkedin} style={s8.slink}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text style={s8.sbody}><Link src={data.header.links.github} style={s8.slink}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text style={s8.sbody}><Link src={data.header.links.portfolio} style={s8.slink}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     {Array.isArray(data.skills) && data.skills.length > 0 && (<>
                         <Text style={s8.shr}>SKILLS</Text>
                         <View style={s8.sdiv} />
@@ -904,12 +1003,16 @@ function T8({ data }: { data: any }) {
                             </View>
                         ))}
                     </>)}
-                    {data.education && (data.education.college || data.education.degree) && (<>
+                    {getEduList(data).length > 0 && (<>
                         <Text style={s8.shr}>EDUCATION</Text>
                         <View style={s8.sdiv} />
-                        <Text style={s8.slabel}>{data.education.college}</Text>
-                        <Text style={s8.sbody}>{data.education.degree}</Text>
-                        <Text style={s8.sbody}>{data.education.duration}</Text>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <Text style={s8.slabel}>{edu.college}</Text>
+                                <Text style={s8.sbody}>{edu.degree}</Text>
+                                <Text style={s8.sbody}>{edu.duration}</Text>
+                            </View>
+                        ))}
                     </>)}
                 </View>
                 {/* Main */}
@@ -918,7 +1021,7 @@ function T8({ data }: { data: any }) {
                     {Array.isArray(data.experience) && data.experience.length > 0 && (
                         <><Text style={s8.msh}>WORK EXPERIENCE</Text>
                             {data.experience.map((e: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }}>
+                                <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }} wrap={false}>
                                     <View style={s8.mrow}><Text style={s8.mbold}>{e.role}</Text><Text style={s8.mmeta}>{e.duration}</Text></View>
                                     <Text style={s8.mmeta}>{e.company}</Text>
                                     {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
@@ -931,8 +1034,14 @@ function T8({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                         <><Text style={s8.msh}>PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
-                                    <View style={s8.mrow}><Text style={s8.mbold}>{p.name} <Text style={s8.mmeta}>({p.role})</Text></Text><Text style={s8.mmeta}>{p.duration}</Text></View>
+                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                    <View style={s8.mrow}>
+                                        <Text style={s8.mbold}>
+                                            {p.link ? <Link src={p.link} style={{ color: "#6366f1", textDecoration: "underline" }}>{p.name}</Link> : p.name}
+                                            {p.role ? <Text style={s8.mmeta}> ({p.role})</Text> : null}
+                                        </Text>
+                                        <Text style={s8.mmeta}>{p.duration}</Text>
+                                    </View>
                                     {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                     {p.techStack && <Text style={[s8.mmeta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                                 </View>
@@ -990,9 +1099,9 @@ function T9({ data }: { data: any }) {
                 <Text style={s9.ht}>{data.header?.title}</Text>
                 <Text style={s9.hc}>
                     {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s9.lnk}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s9.lnk}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s9.lnk}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s9.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s9.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s9.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                 </Text>
                 <View style={s9.dbar} />
                 {!!data.summary?.trim() && (<><S v="PROFILE" /><Text style={s9.body}>{data.summary}</Text></>)}
@@ -1004,7 +1113,7 @@ function T9({ data }: { data: any }) {
                 {Array.isArray(data.experience) && data.experience.length > 0 && (
                     <><S v="EXPERIENCE" />
                         {data.experience.map((e: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }}>
+                            <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }} wrap={false}>
                                 <View style={s9.row}><Text style={s9.bold}>{e.role} | {e.company}</Text><Text style={s9.meta}>{e.duration}</Text></View>
                                 {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                 {e.techStack && <Text style={[s9.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
@@ -1016,20 +1125,30 @@ function T9({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
-                                <View style={s9.row}><Text style={s9.bold}>{p.name} <Text style={s9.meta}>({p.role})</Text></Text><Text style={s9.meta}>{p.duration}</Text></View>
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
+                                <View style={s9.row}>
+                                    <Text style={s9.bold}>
+                                        {p.link ? <Link src={p.link} style={s9.lnk}>{p.name}</Link> : p.name}
+                                        {p.role ? <Text style={s9.meta}> ({p.role})</Text> : null}
+                                    </Text>
+                                    <Text style={s9.meta}>{p.duration}</Text>
+                                </View>
                                 {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                 {p.techStack && <Text style={[s9.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                             </View>
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="EDUCATION" />
-                        <View style={s9.row}>
-                            <View style={{ flex: 1 }}><Text style={s9.bold}>{data.education.college}</Text><Text style={s9.body}>{data.education.degree}</Text></View>
-                            <Text style={s9.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s9.row}>
+                                    <View style={{ flex: 1 }}><Text style={s9.bold}>{edu.college}</Text><Text style={s9.body}>{edu.degree}</Text></View>
+                                    <Text style={s9.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -1082,9 +1201,9 @@ function T10({ data }: { data: any }) {
                 <Text style={s10.ht}>{data.header?.title}</Text>
                 <Text style={s10.hc}>
                     {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s10.lnk}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s10.lnk}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s10.lnk}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s10.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s10.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s10.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                 </Text>
                 <View style={s10.hbar} />
                 {!!data.summary?.trim() && (<><S v="SUMMARY" /><Text style={s10.body}>{data.summary}</Text></>)}
@@ -1096,7 +1215,7 @@ function T10({ data }: { data: any }) {
                 {Array.isArray(data.experience) && data.experience.length > 0 && (
                     <><S v="EXPERIENCE" />
                         {data.experience.map((e: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
                                 <View style={s10.row}><Text style={s10.bold}>{e.role}, {e.company}</Text><Text style={s10.meta}>{e.duration}</Text></View>
                                 {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
                                 {e.techStack && <Text style={[s10.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
@@ -1108,20 +1227,30 @@ function T10({ data }: { data: any }) {
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <><S v="PROJECTS" />
                         {data.projects.map((p: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 4 : 0 }}>
-                                <View style={s10.row}><Text style={s10.bold}>{p.name} ({p.role})</Text><Text style={s10.meta}>{p.duration}</Text></View>
+                            <View key={i} style={{ marginTop: i > 0 ? 4 : 0 }} wrap={false}>
+                                <View style={s10.row}>
+                                    <Text style={s10.bold}>
+                                        {p.link ? <Link src={p.link} style={s10.lnk}>{p.name}</Link> : p.name}
+                                        {p.role ? <Text> ({p.role})</Text> : null}
+                                    </Text>
+                                    <Text style={s10.meta}>{p.duration}</Text>
+                                </View>
                                 {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
                                 {p.techStack && <Text style={[s10.meta, { marginTop: 2 }]}>Technologies: {p.techStack}</Text>}
                             </View>
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="EDUCATION" />
-                        <View style={s10.row}>
-                            <View style={{ flex: 1 }}><Text style={s10.bold}>{data.education.college}</Text><Text style={s10.body}>{data.education.degree}</Text></View>
-                            <Text style={s10.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s10.row}>
+                                    <View style={{ flex: 1 }}><Text style={s10.bold}>{edu.college}</Text><Text style={s10.body}>{edu.degree}</Text></View>
+                                    <Text style={s10.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -1179,9 +1308,9 @@ function T11({ data }: { data: any }) {
                     </View>
                     <Text style={s11.hc}>
                         {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s11.lnk}>LinkedIn</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s11.lnk}>GitHub</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s11.lnk}>Portfolio</Link></Text>}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s11.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s11.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s11.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     </Text>
                 </View>
                 <View style={s11.bar} />
@@ -1219,12 +1348,16 @@ function T11({ data }: { data: any }) {
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="Education" />
-                        <View style={s11.row}>
-                            <View style={{ flex: 1 }}><Text style={s11.bold}>{data.education.college}</Text><Text style={s11.body}>{data.education.degree}</Text></View>
-                            <Text style={s11.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s11.row}>
+                                    <View style={{ flex: 1 }}><Text style={s11.bold}>{edu.college}</Text><Text style={s11.body}>{edu.degree}</Text></View>
+                                    <Text style={s11.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -1277,9 +1410,9 @@ function T12({ data }: { data: any }) {
                     <Text style={s12.ht}>{data.header?.title}</Text>
                     <Text style={s12.hc}>
                         {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s12.lnk}>LinkedIn</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s12.lnk}>GitHub</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s12.lnk}>Portfolio</Link></Text>}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s12.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s12.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s12.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     </Text>
                     <View style={s12.accent} />
                 </View>
@@ -1314,12 +1447,16 @@ function T12({ data }: { data: any }) {
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="Education" />
-                        <View style={s12.row}>
-                            <View style={{ flex: 1 }}><Text style={s12.bold}>{data.education.college}</Text><Text style={s12.body}>{data.education.degree}</Text></View>
-                            <Text style={s12.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s12.row}>
+                                    <View style={{ flex: 1 }}><Text style={s12.bold}>{edu.college}</Text><Text style={s12.body}>{edu.degree}</Text></View>
+                                    <Text style={s12.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -1370,9 +1507,9 @@ function T13({ data }: { data: any }) {
                 <Text style={s13.ht}>{data.header?.title}</Text>
                 <Text style={s13.hc}>
                     {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s13.lnk}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s13.lnk}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s13.lnk}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s13.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s13.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s13.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                 </Text>
                 <View style={s13.top} />
                 {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s13.body}>{data.summary}</Text></>)}
@@ -1408,12 +1545,16 @@ function T13({ data }: { data: any }) {
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="Education" />
-                        <View style={s13.row}>
-                            <View style={{ flex: 1 }}><Text style={s13.bold}>{data.education.college}</Text><Text style={s13.body}>{data.education.degree}</Text></View>
-                            <Text style={s13.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s13.row}>
+                                    <View style={{ flex: 1 }}><Text style={s13.bold}>{edu.college}</Text><Text style={s13.body}>{edu.degree}</Text></View>
+                                    <Text style={s13.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -1465,9 +1606,9 @@ function T14({ data }: { data: any }) {
                     <Text style={s14.ht}>{data.header?.title}</Text>
                     <Text style={s14.hc}>
                         {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s14.lnk}>LinkedIn</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s14.lnk}>GitHub</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s14.lnk}>Portfolio</Link></Text>}
+                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s14.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s14.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s14.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                     </Text>
                 </View>
                 {!!data.summary?.trim() && (
@@ -1507,12 +1648,16 @@ function T14({ data }: { data: any }) {
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="Education" />
-                        <View style={s14.row}>
-                            <View style={{ flex: 1 }}><Text style={s14.bold}>{data.education.college}</Text><Text style={s14.body}>{data.education.degree}</Text></View>
-                            <Text style={s14.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s14.row}>
+                                    <View style={{ flex: 1 }}><Text style={s14.bold}>{edu.college}</Text><Text style={s14.body}>{edu.degree}</Text></View>
+                                    <Text style={s14.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -1562,9 +1707,9 @@ function T15({ data }: { data: any }) {
                 <Text style={s15.ht}>{data.header?.title}</Text>
                 <Text style={s15.hc}>
                     {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s15.lnk}>LinkedIn</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s15.lnk}>GitHub</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s15.lnk}>Portfolio</Link></Text>}
+                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s15.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
+                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s15.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
+                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s15.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
                 </Text>
                 <View style={s15.bar} />
                 {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s15.body}>{data.summary}</Text></>)}
@@ -1598,12 +1743,16 @@ function T15({ data }: { data: any }) {
                         ))}
                     </>
                 )}
-                {data.education && (data.education.college || data.education.degree) && (
+                {getEduList(data).length > 0 && (
                     <><S v="Education" />
-                        <View style={s15.row}>
-                            <View style={{ flex: 1 }}><Text style={s15.bold}>{data.education.college}</Text><Text style={s15.body}>{data.education.degree}</Text></View>
-                            <Text style={s15.meta}>{data.education.duration}</Text>
-                        </View>
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s15.row}>
+                                    <View style={{ flex: 1 }}><Text style={s15.bold}>{edu.college}</Text><Text style={s15.body}>{edu.degree}</Text></View>
+                                    <Text style={s15.meta}>{edu.duration}</Text>
+                                </View>
+                            </View>
+                        ))}
                     </>
                 )}
                 {supplementalSections(profileSections)}
@@ -2207,6 +2356,7 @@ export default function ResumeConfigPage() {
         targetRole: "",
         existingResumeFile: null,
         jobDescription: "",
+        experienceLevel: "",
     });
     const [isAiGenerating, setIsAiGenerating] = useState(false);
 
@@ -2267,8 +2417,8 @@ export default function ResumeConfigPage() {
                     throw new Error("Saved resume format is unavailable.");
                 }
 
-                setResumeData(snapshot);
-                setJsonInput(JSON.stringify(snapshot, null, 2));
+                setResumeData(sanitizeResumeData(snapshot) as any);
+                setJsonInput(JSON.stringify(sanitizeResumeData(snapshot), null, 2));
                 setJsonError(null);
                 setTemplateId(matchedTemplate.id);
                 setMobileTab("preview");
@@ -2341,6 +2491,7 @@ export default function ResumeConfigPage() {
             targetRole: "",
             existingResumeFile: null,
             jobDescription: "",
+            experienceLevel: "",
         });
         setAiResumeModalOpen(true);
     }, [aiModels]);
@@ -2359,6 +2510,7 @@ export default function ResumeConfigPage() {
             formData.append("modelId", aiResumeForm.aiModel);
             formData.append("targetRole", aiResumeForm.targetRole);
             formData.append("jobDescription", aiResumeForm.jobDescription);
+            formData.append("experienceLevel", aiResumeForm.experienceLevel);
             formData.append("templateId", templateId);
             const templateName = TEMPLATES.find((t) => t.id === templateId)?.name || "";
             formData.append("templateName", templateName);
@@ -2375,8 +2527,8 @@ export default function ResumeConfigPage() {
                 throw new Error(responseData.message || "Failed to generate AI resume.");
             }
 
-            const newResumeData = responseData.resumeJson;
-            setResumeData(newResumeData);
+            const newResumeData = sanitizeResumeData(responseData.resumeJson);
+            setResumeData(newResumeData as any);
             setJsonInput(JSON.stringify(newResumeData, null, 2));
             setJsonError(null);
 
@@ -2491,7 +2643,7 @@ export default function ResumeConfigPage() {
     const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
         setJsonInput(val);
-        try { setResumeData(JSON.parse(val)); setJsonError(null); }
+        try { setResumeData(sanitizeResumeData(JSON.parse(val)) as any); setJsonError(null); }
         catch (err) { setJsonError((err as Error).message); }
     };
 
@@ -2930,6 +3082,7 @@ type AiResumeFormState = {
     targetRole: string;
     existingResumeFile: File | null;
     jobDescription: string;
+    experienceLevel: "fresher" | "experienced" | "";
 };
 
 const AI_MODEL_PROVIDER_STYLES: Record<string, { bg: string; text: string; border: string }> = {
@@ -2998,7 +3151,7 @@ function ResumeWithAIModal({
                             Resume With AI
                         </h3>
                         <p className="text-xs text-gray-500 mt-1">
-                            UI only: choose a stored AI model, target role, existing resume, and job description.
+                            Upload your existing resume + job description. AI rewrites it for the target role.
                         </p>
                     </div>
                     <button
@@ -3066,9 +3219,42 @@ function ResumeWithAIModal({
                             type="text"
                             value={form.targetRole}
                             onChange={(e) => setForm((prev) => ({ ...prev, targetRole: e.target.value }))}
-                            placeholder="e.g. Senior Frontend Engineer"
+                            placeholder="e.g. Senior Frontend Engineer, Software Engineer Intern"
                             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm text-gray-800 transition-all placeholder:text-gray-400"
                         />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <FiZap size={12} className="text-amber-500" />
+                            Experience Level
+                            <span className="ml-1 text-gray-400 normal-case font-normal">(optional — helps AI tailor the resume)</span>
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {(["", "fresher", "experienced"] as const).map((level) => {
+                                const labels: Record<string, { title: string; sub: string }> = {
+                                    "":           { title: "Auto-detect", sub: "AI decides" },
+                                    "fresher":    { title: "Fresher",     sub: "0–2 years" },
+                                    "experienced":{ title: "Experienced", sub: "3+ years"  },
+                                };
+                                const isActive = form.experienceLevel === level;
+                                return (
+                                    <button
+                                        key={level}
+                                        type="button"
+                                        onClick={() => setForm((prev) => ({ ...prev, experienceLevel: level }))}
+                                        className={`flex flex-col items-center py-2.5 px-2 rounded-xl border text-center transition-all ${
+                                            isActive
+                                                ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm"
+                                                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <span className="text-xs font-semibold leading-tight">{labels[level].title}</span>
+                                        <span className="text-[10px] mt-0.5 opacity-70">{labels[level].sub}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -3140,7 +3326,7 @@ function ResumeWithAIModal({
                             <textarea
                                 value={form.jobDescription}
                                 onChange={(e) => setForm((prev) => ({ ...prev, jobDescription: e.target.value }))}
-                                placeholder="Paste the job description here..."
+                                placeholder="Paste the full job description here (responsibilities, requirements, preferred skills)…"
                                 rows={8}
                                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm text-gray-800 resize-none transition-all placeholder:text-gray-400 leading-relaxed"
                             />
@@ -3155,7 +3341,7 @@ function ResumeWithAIModal({
 
                 <div className="px-5 sm:px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0 bg-white rounded-b-2xl">
                     <p className="text-[11px] text-gray-400 hidden sm:block">
-                        AI will replace your editor content. You can preview or adjust it before downloading.
+                        AI will rewrite your editor content for the target role. Preview and adjust before downloading.
                     </p>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button
