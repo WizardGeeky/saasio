@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { decrypt } from "@/app/configs/crypto.config";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
-import { extractPdfText } from "@/app/utils/pdf-text-extraction";
+import { extractPdfText, PdfTextExtractionError } from "@/app/utils/pdf-text-extraction";
 import { withAuth } from "@/app/utils/withAuth";
 import { AiModel } from "@/models/AiModel";
 
@@ -171,7 +171,7 @@ export const POST = withAuth(async (
         const extractedResumeText = await extractPdfText(resumeFile);
         if (!extractedResumeText) {
             return NextResponse.json(
-                { message: "No readable text was found in the uploaded PDF." },
+                { message: "No readable text was found in the uploaded PDF. Please upload a text-based PDF, not a scanned image PDF." },
                 { status: 400 },
             );
         }
@@ -211,6 +211,16 @@ export const POST = withAuth(async (
             { status: 200 },
         );
     } catch (error: unknown) {
+        if (error instanceof PdfTextExtractionError) {
+            return NextResponse.json(
+                {
+                    message: "Failed to read text from the uploaded PDF on the server.",
+                    details: error.details,
+                },
+                { status: 500 },
+            );
+        }
+
         const message = error instanceof Error ? error.message : "Failed to generate resume.";
         return NextResponse.json({ message }, { status: 500 });
     }

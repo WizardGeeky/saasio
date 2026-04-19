@@ -7,7 +7,7 @@ import { AiModel } from "@/models/AiModel";
 import { AtsRecord } from "@/models/AtsRecord";
 import Subscription from "@/models/Subscription";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
-import { extractPdfText } from "@/app/utils/pdf-text-extraction";
+import { extractPdfText, PdfTextExtractionError } from "@/app/utils/pdf-text-extraction";
 import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
 export const runtime = "nodejs";
@@ -253,7 +253,7 @@ export const POST = withAuth(async (
         const extractedResumeText = await extractPdfText(resumeFile);
         if (!extractedResumeText) {
             return NextResponse.json(
-                { message: "No readable text was found in the uploaded PDF." },
+                { message: "No readable text was found in the uploaded PDF. Please upload a text-based PDF, not a scanned image PDF." },
                 { status: 400 },
             );
         }
@@ -314,6 +314,16 @@ export const POST = withAuth(async (
             { status: 201 },
         );
     } catch (error: unknown) {
+        if (error instanceof PdfTextExtractionError) {
+            return NextResponse.json(
+                {
+                    message: "Failed to read text from the uploaded PDF on the server.",
+                    details: error.details,
+                },
+                { status: 500 },
+            );
+        }
+
         const message = error instanceof Error ? error.message : "Failed to analyze resume.";
         return NextResponse.json({ message }, { status: 500 });
     }
