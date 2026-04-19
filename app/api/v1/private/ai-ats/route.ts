@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
-import { decrypt, encrypt } from "@/app/configs/crypto.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import { AiModel } from "@/models/AiModel";
 import { AtsRecord } from "@/models/AtsRecord";
 import Subscription from "@/models/Subscription";
@@ -131,7 +131,7 @@ export const GET = withAuth(async (
     try {
         await connectDB();
 
-        const encryptedEmail = encrypt(user.email);
+        const encryptedEmail = user.email; // JWT email is already encrypted
 
         const [rawRecords, latestRecord] = await Promise.all([
             AtsRecord.find({ userEmail: encryptedEmail })
@@ -148,7 +148,7 @@ export const GET = withAuth(async (
 
         return NextResponse.json(
             {
-                email: user.email,
+                email: decrypt(user.email),
                 records: rawRecords.map(serializeHistoryRecord),
                 latestResult: latestRecord ? buildLiveResult(latestRecord) : null,
             },
@@ -169,7 +169,7 @@ export const POST = withAuth(async (
         await connectDB();
 
         const activeSub = await Subscription.findOne({
-            userEmail: user.email,
+            userEmail: decrypt(user.email),
             status: "ACTIVE",
         }).sort({ createdAt: -1 });
 
@@ -278,7 +278,7 @@ export const POST = withAuth(async (
 
         const record = await AtsRecord.create({
             userId: new mongoose.Types.ObjectId(user.sub),
-            userEmail: encrypt(user.email),
+            userEmail: user.email, // already encrypted in JWT
             jobRoleName: jobRoleName.trim(),
             jobDescription: jobDescription.trim(),
             resumeText: extractedResumeText,

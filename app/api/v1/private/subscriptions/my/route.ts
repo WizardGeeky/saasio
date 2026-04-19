@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import Subscription from "@/models/Subscription";
 import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
@@ -21,7 +22,8 @@ export const GET = withAuth(
             const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "20", 10)));
             const status = url.searchParams.get("status") || "";
 
-            const query: Record<string, any> = { userEmail: user.email };
+            const plainEmail = decrypt(user.email);
+            const query: Record<string, any> = { userEmail: plainEmail };
             if (status && ["ACTIVE", "CANCELLED", "EXPIRED"].includes(status)) {
                 query.status = status;
             }
@@ -49,7 +51,7 @@ export const GET = withAuth(
 
             // Aggregate stats
             const stats = await Subscription.aggregate([
-                { $match: { userEmail: user.email } },
+                { $match: { userEmail: plainEmail } },
                 {
                     $group: {
                         _id: "$status",

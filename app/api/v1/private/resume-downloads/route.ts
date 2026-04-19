@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import ResumeDownload from "@/models/ResumeDownload";
 import Subscription from "@/models/Subscription";
 
@@ -63,17 +64,19 @@ export const POST = withAuth(
             const subscriptionMaxUsage = asNullableNumber(body.subscriptionMaxUsage);
             const subscriptionRemaining = asNullableNumber(body.subscriptionRemaining);
 
+            const plainEmail = decrypt(user.email);
+
             let subscriptionSnapshot: any = null;
             if (subscriptionId && mongoose.Types.ObjectId.isValid(subscriptionId)) {
                 subscriptionSnapshot = await Subscription.findOne({
                     _id: subscriptionId,
-                    userEmail: user.email,
+                    userEmail: plainEmail,
                 }).lean();
             }
 
             const record = await ResumeDownload.create({
                 userId: user.sub,
-                userEmail: user.email,
+                userEmail: plainEmail,
                 userName: user.name || "",
                 fileName,
                 templateId,

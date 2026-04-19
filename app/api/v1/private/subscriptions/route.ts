@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import Subscription from "@/models/Subscription";
 import { sendSubscriptionConfirmationEmail } from "@/app/notifications/subscription.notification";
 import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
@@ -71,8 +72,10 @@ export const POST = withAuth(
                 );
             }
 
+            const plainEmail = decrypt(user.email);
+
             const activeSubscription = await Subscription.findOne({
-                userEmail: user.email,
+                userEmail: plainEmail,
                 status: "ACTIVE",
             }).sort({ createdAt: -1 });
 
@@ -105,7 +108,7 @@ export const POST = withAuth(
 
             const subscription = await Subscription.create({
                 userId: user.sub,
-                userEmail: user.email,
+                userEmail: plainEmail,
                 userName: user.name,
                 projectId,
                 projectName,
@@ -121,7 +124,7 @@ export const POST = withAuth(
 
             // Send confirmation email (non-blocking — don't fail the request if email fails)
             sendSubscriptionConfirmationEmail({
-                userEmail: user.email,
+                userEmail: plainEmail,
                 userName: user.name,
                 projectName,
                 planName,

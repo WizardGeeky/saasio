@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import Subscription from "@/models/Subscription";
 import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
@@ -25,7 +26,7 @@ export const POST = withAuth(
             await connectDB();
 
             const sub = await Subscription.findOne({
-                userEmail: user.email,
+                userEmail: decrypt(user.email),
                 status: "ACTIVE",
             }).sort({ createdAt: -1 });
 

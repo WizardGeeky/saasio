@@ -6,6 +6,7 @@ import jwt, {
 } from "jsonwebtoken";
 
 import { AccountStatus } from "../constants/AccountStatus";
+import { decrypt } from "./crypto.config";
 
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
@@ -128,7 +129,11 @@ export const getClaim = <K extends keyof CustomJwtPayload>(
     return decoded ? decoded[key] : null;
 };
 
-export const getEmail = (token: string) => getClaim(token, "email");
+export const getEmail = (token: string): string | null => {
+    const enc = getClaim(token, "email");
+    if (!enc) return null;
+    try { return decrypt(enc); } catch { return null; }
+};
 export const getUserId = (token: string) => getClaim(token, "sub");
 export const getStatus = (token: string) => getClaim(token, "status");
 export const getRole = (token: string) => getClaim(token, "role");

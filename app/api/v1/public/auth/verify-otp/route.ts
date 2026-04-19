@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
-import { encrypt, decrypt } from "@/app/configs/crypto.config";
+import { encrypt } from "@/app/configs/crypto.config";
 import { generateToken } from "@/app/configs/jwt.config";
 import { Otp } from "@/models/Otp";
 import { User } from "@/models/User";
@@ -47,10 +47,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
 
-        // Generate JWT — store the decrypted (plain) email so the client can display it
+        // Generate JWT — store the encrypted email (same format as DB) for privacy
         const token = generateToken({
             sub: user._id.toString(),
-            email: decrypt(user.email),
+            email: user.email,
             name: user.fullname,
             status: user.accountStatus,
             role: user.role,

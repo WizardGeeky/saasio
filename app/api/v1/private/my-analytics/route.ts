@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
-import { encrypt } from "@/app/configs/crypto.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import { AtsRecord } from "@/models/AtsRecord";
 import Subscription from "@/models/Subscription";
 import Complaint from "@/models/Complaint";
@@ -96,11 +96,12 @@ export const GET = withAuth(
             const fmt    = getGroupFormat(period);
             const buckets = buildBuckets(period, start);
 
-            const encEmail = encrypt(user.email);
+            const encEmail = user.email; // JWT email is already encrypted (matches AtsRecord.userEmail)
+            const decEmail = decrypt(user.email); // plain email for Subscription queries
             const atsAllTimeMatch  = { userEmail: encEmail };
             const atsPeriodMatch   = start ? { userEmail: encEmail, createdAt: { $gte: start } } : { userEmail: encEmail };
-            const subAllTimeMatch  = { userEmail: user.email };
-            const subPeriodMatch   = start ? { userEmail: user.email, createdAt: { $gte: start } } : { userEmail: user.email };
+            const subAllTimeMatch  = { userEmail: decEmail };
+            const subPeriodMatch   = start ? { userEmail: decEmail, createdAt: { $gte: start } } : { userEmail: decEmail };
             const compAllTimeMatch = { userId: user.sub };
             const compPeriodMatch  = start ? { userId: user.sub, createdAt: { $gte: start } } : { userId: user.sub };
             const resumeAllTimeMatch = { userId: user.sub };
@@ -168,7 +169,7 @@ export const GET = withAuth(
                     .limit(15)
                     .lean(),
                 Subscription.find({
-                    userEmail: user.email,
+                    userEmail: decEmail,
                     status: "ACTIVE",
                 })
                     .sort({ createdAt: -1 })
@@ -230,7 +231,7 @@ export const GET = withAuth(
             const global = {
                 profile: {
                     name:        (userDoc as any)?.fullname  ?? user.name,
-                    email:       user.email,
+                    email:       decEmail,
                     role:        (userDoc as any)?.role      ?? user.role,
                     status:      (userDoc as any)?.accountStatus ?? user.status,
                     memberSince: (userDoc as any)?.createdAt ?? null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { FiMenu, FiBell, FiSun, FiMoon } from "react-icons/fi";
+import { FiMenu, FiBell, FiSun, FiMoon, FiMap } from "react-icons/fi";
 import Link from "next/link";
 import { useDashTheme } from "@/app/contexts/DashThemeContext";
 
@@ -8,12 +8,14 @@ interface DashboardTopbarProps {
   onMobileMenuToggle: () => void;
   userName?: string;
   userRole?: string;
+  showTour?: boolean;
 }
 
 export function DashboardTopbar({
   onMobileMenuToggle,
   userName = "Admin",
   userRole = "",
+  showTour = false,
 }: DashboardTopbarProps) {
   const { isDark, toggle } = useDashTheme();
   const headerTone = isDark
@@ -48,7 +50,7 @@ export function DashboardTopbar({
         <>
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+            className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-white/25 to-transparent"
           />
           <div
             aria-hidden="true"
@@ -83,6 +85,18 @@ export function DashboardTopbar({
           {isDark ? <FiSun size={13} /> : <FiMoon size={13} />}
           <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
         </button>
+
+        {showTour && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("saasio:show-tour"))}
+            aria-label="Take app tour"
+            title="Take a tour"
+            className={`flex h-10 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold transition-all ${toggleTone}`}
+          >
+            <FiMap size={13} />
+            <span className="hidden sm:inline">Tour</span>
+          </button>
+        )}
 
         <Link
           href="/dashboard/notifications"

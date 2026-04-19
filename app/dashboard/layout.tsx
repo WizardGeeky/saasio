@@ -10,6 +10,7 @@ import { DashThemeProvider, useDashTheme } from "@/app/contexts/DashThemeContext
 import { NAV_CONFIG, NavConfig } from "@/app/configs/nav.config";
 import { NavItem } from "@/components/dashboard-sidebar";
 import { getStoredToken, decodeToken } from "@/app/utils/token";
+import { UserOnboardingTour } from "@/components/user-onboarding-tour";
 
 type DashboardIdentity = {
   name: string;
@@ -187,6 +188,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           onMobileMenuToggle={() => setMobileMenuState({ open: true, path: pathname })}
           userName={dashboardIdentity.name}
           userRole={dashboardIdentity.role}
+          showTour={dashboardIdentity.role.toUpperCase() === "USER"}
         />
 
         <main
@@ -196,6 +198,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      <UserOnboardingTour userRole={dashboardIdentity.role} />
 
       {/* Scrollbar styles */}
       <style dangerouslySetInnerHTML={{

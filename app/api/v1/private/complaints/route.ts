@@ -3,6 +3,7 @@ import { connectDB } from "@/app/configs/database.config";
 import Complaint from "@/models/Complaint";
 import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { decrypt } from "@/app/configs/crypto.config";
 
 /**
  * GET /api/v1/private/complaints
@@ -67,7 +68,7 @@ export const POST = withAuth(
             const newComplaint = await Complaint.create({
                 userId: _user.sub,
                 userName: _user.name,
-                userEmail: _user.email,
+                userEmail: decrypt(_user.email),
                 reason,
                 description,
                 status: "PENDING",

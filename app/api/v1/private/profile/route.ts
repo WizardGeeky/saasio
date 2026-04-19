@@ -55,17 +55,10 @@ export const GET = withAuth(async (
         let profile = await User.findById(user.sub).lean();
 
         if (!profile && user.email) {
-            // 2. New-token fallback: jwt.email = plain email → encrypt to match stored value
+            // Fallback: jwt.email is encrypted (same format as DB)
             try {
-                profile = await User.findOne({ email: encrypt(user.email) }).lean();
+                profile = await User.findOne({ email: user.email }).lean();
             } catch { /* ignore */ }
-        }
-
-        if (!profile && user.email) {
-            // 3. Old-token fallback: jwt.email = encrypt(storedEmail) → decrypt once to get stored value
-            try {
-                profile = await User.findOne({ email: decrypt(user.email) }).lean();
-            } catch { /* ignore – decrypt throws when value is not an encrypted string */ }
         }
 
         if (!profile) {
@@ -97,11 +90,7 @@ export const PUT = withAuth(async (
         let existing = await User.findById(user.sub);
 
         if (!existing && user.email) {
-            try { existing = await User.findOne({ email: encrypt(user.email) }); } catch { /* ignore */ }
-        }
-
-        if (!existing && user.email) {
-            try { existing = await User.findOne({ email: decrypt(user.email) }); } catch { /* ignore */ }
+            try { existing = await User.findOne({ email: user.email }); } catch { /* ignore */ }
         }
 
         if (!existing) {

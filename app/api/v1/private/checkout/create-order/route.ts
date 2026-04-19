@@ -53,9 +53,11 @@ export const POST = withAuth(
                 typeof notes.projectName === "string" &&
                 typeof notes.planName === "string";
 
+            const plainEmail = decrypt(user.email);
+
             if (isSubscriptionCheckout) {
                 const activeSubscription = await Subscription.findOne({
-                    userEmail: user.email,
+                    userEmail: plainEmail,
                     status: "ACTIVE",
                 }).sort({ createdAt: -1 });
 
@@ -130,7 +132,7 @@ export const POST = withAuth(
             await PaymentOrder.create({
                 razorpayOrderId: razorpayOrder.id,
                 userId: user.sub,
-                userEmail: user.email,
+                userEmail: plainEmail,
                 userName: user.name,
                 amount: amountInPaise,
                 currency,
@@ -148,7 +150,7 @@ export const POST = withAuth(
                     currency,
                     description,
                     userName: user.name,
-                    userEmail: user.email,
+                    userEmail: plainEmail,
                 },
             });
         } catch (error: unknown) {
