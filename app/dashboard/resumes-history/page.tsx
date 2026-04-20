@@ -20,6 +20,8 @@ import {
   FiTag,
   FiZap,
   FiFilter,
+  FiChevronDown,
+  FiChevronUp,
 } from "react-icons/fi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -174,36 +176,41 @@ function DetailModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between p-6 border-b border-gray-100">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+        {/* Drag handle for mobile */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
+
+        <div className="flex items-start justify-between p-5 sm:p-6 border-b border-gray-100">
+          <div className="min-w-0 flex-1 pr-3">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">
               {record.resumeName || record.resumeTitle || record.fileName || "Untitled"}
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">{record.fileName}</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{record.fileName}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors shrink-0"
           >
             <FiX size={18} />
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-5 sm:p-6 space-y-5">
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">User</h3>
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
               <FiUser size={14} className="text-gray-400 shrink-0" />
-              <div>
+              <div className="min-w-0">
                 <div className="text-sm font-medium text-gray-800">{record.userName}</div>
-                <div className="text-xs text-gray-500">{record.userEmail}</div>
+                <div className="text-xs text-gray-500 truncate">{record.userEmail}</div>
               </div>
             </div>
           </div>
@@ -219,16 +226,16 @@ function DetailModal({
               ].map(([label, value]) => (
                 <div key={label} className="bg-gray-50 border border-gray-100 rounded-lg p-2.5">
                   <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                  <div className="text-gray-800 text-xs font-medium truncate" title={value}>{value}</div>
+                  <div className="text-gray-800 text-xs font-medium break-words" title={value}>{value}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 text-sm">
+          <div className="flex flex-wrap gap-2 text-sm">
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
               <FiCalendar size={13} className="text-gray-400" />
-              <span className="text-gray-700">{formatDateTime(record.createdAt)}</span>
+              <span className="text-gray-700 text-xs">{formatDateTime(record.createdAt)}</span>
             </div>
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
               <SourceBadge source={record.source} />
@@ -252,7 +259,7 @@ function DetailModal({
                 ].map(([label, value]) => (
                   <div key={label} className="bg-gray-50 border border-gray-100 rounded-lg p-2.5">
                     <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                    <div className="text-gray-800 text-xs font-medium truncate" title={value}>{value}</div>
+                    <div className="text-gray-800 text-xs font-medium break-words" title={value}>{value}</div>
                   </div>
                 ))}
               </div>
@@ -343,6 +350,39 @@ function PaginationBar({
   );
 }
 
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  color,
+  bg,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 shadow-sm flex items-center gap-3 sm:block">
+      <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg ${bg} flex items-center justify-center shrink-0 sm:mb-3`}>
+        <Icon size={16} className={color} />
+      </div>
+      <div className="min-w-0">
+        <div
+          className="text-sm sm:text-xl font-bold text-gray-900 leading-tight sm:leading-normal line-clamp-2 sm:truncate"
+          title={String(value)}
+        >
+          {value}
+        </div>
+        <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const SUBSCRIPTION_OPTIONS: { value: SubscriptionFilter; label: string; activeClass: string }[] = [
@@ -382,6 +422,7 @@ export default function ResumesHistoryPage() {
   const [dateRange, setDateRange]                   = useState<DateRange>("all");
   const [limit, setLimit]               = useState(20);
   const [detailRecord, setDetailRecord] = useState<ResumeHistoryRecord | null>(null);
+  const [showFilters, setShowFilters]   = useState(false);
 
   const fetchData = useCallback(
     async (
@@ -467,6 +508,12 @@ export default function ResumesHistoryPage() {
   const hasActiveFilters =
     search || subscriptionFilter !== "all" || sourceFilter !== "all" || dateRange !== "all";
 
+  const activeFilterCount = [
+    subscriptionFilter !== "all",
+    sourceFilter !== "all",
+    dateRange !== "all",
+  ].filter(Boolean).length;
+
   // ── Permission guard ──
   if (!privLoading && !canRead) {
     return (
@@ -484,10 +531,10 @@ export default function ResumesHistoryPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
         {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-lg sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
               <FiDownload size={20} className="text-indigo-500" />
@@ -500,26 +547,29 @@ export default function ResumesHistoryPage() {
           <button
             onClick={() => fetchData(pagination.page, search, subscriptionFilter, sourceFilter, dateRange, limit)}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-50 shrink-0"
           >
             <FiRefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
 
         {/* ── Stats Cards ─────────────────────────────────────────────── */}
         {loading && !stats ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
-                <div className="h-3 w-16 bg-gray-200 rounded mb-3" />
-                <div className="h-6 w-10 bg-gray-200 rounded" />
+              <div key={i} className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 animate-pulse flex items-center gap-3 sm:block">
+                <div className="w-9 h-9 sm:w-8 sm:h-8 bg-gray-200 rounded-lg shrink-0 sm:mb-3" />
+                <div className="flex-1">
+                  <div className="h-4 w-10 bg-gray-200 rounded mb-1.5" />
+                  <div className="h-3 w-16 bg-gray-200 rounded" />
+                </div>
               </div>
             ))}
           </div>
         ) : (
           stats && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
                 { icon: FiDownload,  label: "Total Downloads",   value: stats.totalDownloads,        color: "text-indigo-600",  bg: "bg-indigo-50" },
                 { icon: FiUsers,     label: "Unique Users",       value: stats.uniqueUsers,           color: "text-violet-600",  bg: "bg-violet-50" },
@@ -527,23 +577,15 @@ export default function ResumesHistoryPage() {
                 { icon: FiFileText,  label: "Free Downloads",     value: stats.freeDownloads,         color: "text-sky-600",     bg: "bg-sky-50" },
                 { icon: FiCalendar,  label: "This Week",          value: stats.thisWeek,              color: "text-amber-600",   bg: "bg-amber-50" },
                 { icon: FiTag,       label: "Top Template",       value: stats.topTemplate,           color: "text-rose-600",    bg: "bg-rose-50" },
-              ].map(({ icon: Icon, label, value, color, bg }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                  <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center mb-3`}>
-                    <Icon size={16} className={color} />
-                  </div>
-                  <div className="text-xl font-bold text-gray-900 truncate" title={String(value)}>
-                    {value}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">{label}</div>
-                </div>
+              ].map((card) => (
+                <StatCard key={card.label} {...card} />
               ))}
             </div>
           )
         )}
 
         {/* ── Filters ─────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-3">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-4 space-y-3">
           {/* Search row */}
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1 min-w-0">
@@ -562,19 +604,38 @@ export default function ResumesHistoryPage() {
             >
               Search
             </button>
+            {/* Filter toggle — mobile */}
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className={`sm:hidden shrink-0 flex items-center gap-1 px-3 py-2 text-sm border rounded-lg transition-colors relative ${
+                activeFilterCount > 0
+                  ? "bg-indigo-50 border-indigo-200 text-indigo-700"
+                  : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+              }`}
+            >
+              <FiFilter size={14} />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
+              {showFilters ? <FiChevronUp size={12} /> : <FiChevronDown size={12} />}
+            </button>
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={clearAll}
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 transition-colors"
               >
-                <FiX size={14} /> <span className="hidden sm:inline">Clear all</span>
+                <FiX size={14} />
+                <span className="hidden sm:inline">Clear all</span>
               </button>
             )}
           </form>
 
-          {/* Filter pills row */}
-          <div className="flex flex-col gap-2.5">
+          {/* Filter pills — always visible on sm+, toggle on mobile */}
+          <div className={`flex-col gap-2.5 ${showFilters ? "flex" : "hidden sm:flex"}`}>
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1 min-w-[80px]">
                 <FiFilter size={11} /> Subscription
@@ -698,31 +759,40 @@ export default function ResumesHistoryPage() {
               records.map((rec) => (
                 <div
                   key={rec._id}
-                  className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className={`p-4 hover:bg-gray-50/60 active:bg-gray-100 cursor-pointer transition-colors border-l-[3px] ${
+                    rec.subscriptionId ? "border-emerald-400" : "border-gray-200"
+                  }`}
                   onClick={() => setDetailRecord(rec)}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-gray-900 text-sm truncate">
-                        {rec.resumeName || rec.resumeTitle || rec.fileName || "Untitled"}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                        <FiUser size={11} /> {rec.userName}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-0.5 truncate" title={rec.userEmail}>
-                        {rec.userEmail}
-                      </div>
-                      <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                        <SourceBadge source={rec.source} />
-                        <span className="text-xs text-gray-400 flex items-center gap-1">
-                          <FiCalendar size={10} /> {formatDate(rec.createdAt)}
-                        </span>
-                      </div>
+                  {/* Row 1: resume name + subscription badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-semibold text-gray-900 text-sm leading-tight truncate flex-1">
+                      {rec.resumeName || rec.resumeTitle || rec.fileName || "Untitled"}
                     </div>
                     <SubscriptionBadge record={rec} />
                   </div>
-                  <div className="mt-2 text-xs text-gray-400 truncate">
-                    {rec.templateName} · {rec.fileName}
+
+                  {/* Row 2: user info */}
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-500">
+                    <FiUser size={11} className="shrink-0 text-gray-400" />
+                    <span className="font-medium text-gray-700">{rec.userName}</span>
+                    <span className="text-gray-300">·</span>
+                    <span className="truncate text-gray-400">{rec.userEmail}</span>
+                  </div>
+
+                  {/* Row 3: template name */}
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-400">
+                    <FiTag size={10} className="shrink-0" />
+                    <span className="truncate">{rec.templateName}</span>
+                  </div>
+
+                  {/* Row 4: source + date */}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <SourceBadge source={rec.source} />
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <FiCalendar size={10} />
+                      {formatDate(rec.createdAt)}
+                    </span>
                   </div>
                 </div>
               ))
