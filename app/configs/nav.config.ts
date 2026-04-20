@@ -116,6 +116,14 @@ export const NAV_CONFIG: NavConfig[] = [
         privileges: [],
     },
     {
+        name: "Resumes History",
+        href: "/dashboard/resumes-history",
+        icon: FiDownload,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/resumes-history" },
+        ],
+    },
+    {
         name: "Subscriptions",
         href: "/dashboard/subscriptions",
         icon: FiPackage,
