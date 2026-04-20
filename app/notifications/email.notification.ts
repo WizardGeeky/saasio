@@ -10,10 +10,18 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+export interface EmailAttachment {
+    filename: string;
+    content: Buffer | string;
+    encoding?: string;
+    contentType?: string;
+}
+
 export interface EmailOptions {
     to: string;
     subject: string;
     html: string;
+    attachments?: EmailAttachment[];
 }
 
 export async function sendEmail(options: EmailOptions): Promise<void> {
@@ -22,5 +30,6 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
         to: options.to,
         subject: options.subject,
         html: options.html,
+        ...(options.attachments?.length ? { attachments: options.attachments } : {}),
     });
 }

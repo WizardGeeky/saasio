@@ -2608,6 +2608,15 @@ export default function ResumeConfigPage() {
             const fileName = `${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`;
 
             try {
+                const pdfBase64 = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const result = reader.result as string;
+                        resolve(result.split(",")[1] ?? "");
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
                 await fetch("/api/v1/private/resume-downloads", {
                     method: "POST",
                     headers: {
@@ -2626,6 +2635,7 @@ export default function ResumeConfigPage() {
                         subscriptionUsageCount: data.data?.usageCount ?? null,
                         subscriptionMaxUsage: data.data?.maxUsage ?? null,
                         subscriptionRemaining: data.data?.remaining ?? null,
+                        pdfBase64,
                     }),
                 });
             } catch {

@@ -7,6 +7,7 @@ import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import { decrypt } from "@/app/configs/crypto.config";
 import ResumeDownload from "@/models/ResumeDownload";
 import Subscription from "@/models/Subscription";
+import { sendResumeDownloadEmail } from "@/app/notifications/resume-download.notification";
 
 type ResumeDownloadPayload = {
     fileName?: unknown;
@@ -20,6 +21,7 @@ type ResumeDownloadPayload = {
     subscriptionUsageCount?: unknown;
     subscriptionMaxUsage?: unknown;
     subscriptionRemaining?: unknown;
+    pdfBase64?: unknown;
 };
 
 function asTrimmedString(value: unknown, fallback = ""): string {
@@ -63,6 +65,9 @@ export const POST = withAuth(
             const subscriptionUsageCount = asNullableNumber(body.subscriptionUsageCount);
             const subscriptionMaxUsage = asNullableNumber(body.subscriptionMaxUsage);
             const subscriptionRemaining = asNullableNumber(body.subscriptionRemaining);
+            const pdfBase64 = typeof body.pdfBase64 === "string" && body.pdfBase64.length > 0
+                ? body.pdfBase64
+                : null;
 
             const plainEmail = decrypt(user.email);
 
@@ -100,6 +105,20 @@ export const POST = withAuth(
                     }
                     : {}),
             });
+
+            if (pdfBase64) {
+                sendResumeDownloadEmail({
+                    userEmail: plainEmail,
+                    userName: user.name || "",
+                    resumeName: asTrimmedString(body.resumeName),
+                    resumeTitle: asTrimmedString(body.resumeTitle),
+                    templateName: templateName,
+                    fileName,
+                    pdfBuffer: Buffer.from(pdfBase64, "base64"),
+                }).catch(() => {
+                    // Email delivery failure must not affect the download response.
+                });
+            }
 
             return NextResponse.json({
                 success: true,
