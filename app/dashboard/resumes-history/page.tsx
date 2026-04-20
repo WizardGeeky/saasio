@@ -484,16 +484,16 @@ export default function ResumesHistoryPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className="w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <FiDownload size={22} className="text-indigo-500" />
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <FiDownload size={20} className="text-indigo-500" />
               Resumes History
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
               All resume downloads across all users
             </p>
           </div>
@@ -546,11 +546,11 @@ export default function ResumesHistoryPage() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-3">
           {/* Search row */}
           <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <FiSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by user, resume name, file, template, plan..."
+                placeholder="Search by user, resume, template..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50"
@@ -558,7 +558,7 @@ export default function ResumesHistoryPage() {
             </div>
             <button
               type="submit"
-              className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="shrink-0 px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               Search
             </button>
@@ -566,17 +566,17 @@ export default function ResumesHistoryPage() {
               <button
                 type="button"
                 onClick={clearAll}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 transition-colors"
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 transition-colors"
               >
-                <FiX size={14} /> Clear all
+                <FiX size={14} /> <span className="hidden sm:inline">Clear all</span>
               </button>
             )}
           </form>
 
           {/* Filter pills row */}
-          <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1 min-w-[80px]">
                 <FiFilter size={11} /> Subscription
               </span>
               <FilterPills
@@ -585,8 +585,8 @@ export default function ResumesHistoryPage() {
                 onChange={handleSubscriptionFilter}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1 min-w-[80px]">
                 <FiFilter size={11} /> Source
               </span>
               <FilterPills
@@ -595,8 +595,8 @@ export default function ResumesHistoryPage() {
                 onChange={handleSourceFilter}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1 min-w-[80px]">
                 <FiCalendar size={11} /> Date
               </span>
               <FilterPills
