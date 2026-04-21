@@ -225,43 +225,42 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
     const styles = StyleSheet.create({
         page: { backgroundColor: spec.pageBg, padding: 0 },
         topBar: { height: 10, backgroundColor: spec.accent },
-        wrap: { padding: "18 22 18 22" },
+        wrap: { padding: "20 24 20 24" },
         headerCard: { backgroundColor: spec.mode === "band" ? soft : "transparent", borderRadius: 6, padding: spec.mode === "band" ? "12 14 10 14" : 0 },
-        name: { fontSize: spec.mode === "compact" ? 18 : 20, fontFamily: titleFont, color: spec.text },
-        title: { fontSize: 9.5, fontFamily: bodyFont, color: spec.accent, marginTop: 3 },
-        contact: { fontSize: 8.8, fontFamily: bodyFont, color: spec.muted, marginTop: 4, lineHeight: 1.45 },
+        name: { fontSize: spec.mode === "compact" ? 20 : 22, fontFamily: titleFont, color: spec.text },
+        title: { fontSize: 10.5, fontFamily: bodyFont, color: spec.accent, marginTop: 3 },
+        contact: { fontSize: 9.0, fontFamily: bodyFont, color: spec.muted, marginTop: 4, lineHeight: 1.5 },
         link: { color: spec.accent, textDecoration: "underline" },
-        sectionTitle: { fontSize: 9.6, fontFamily: titleFont, color: spec.accent, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 8 },
-        sectionLine: { height: 1, backgroundColor: soft, marginTop: 2, marginBottom: 4 },
-        body: { fontSize: spec.mode === "compact" ? 8.7 : 9.2, fontFamily: bodyFont, color: spec.text, lineHeight: 1.45 },
-        strong: { fontSize: spec.mode === "compact" ? 8.8 : 9.4, fontFamily: titleFont, color: spec.text },
-        meta: { fontSize: 8.2, fontFamily: metaFont, color: spec.muted },
-        row: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-        bulletRow: { flexDirection: "row", marginTop: spec.mode === "compact" ? 1.5 : 2 },
-        bullet: { width: 10, fontSize: spec.mode === "compact" ? 8.8 : 9, fontFamily: titleFont, color: spec.accent },
-        bulletText: { flex: 1, fontSize: spec.mode === "compact" ? 8.7 : 9.1, fontFamily: bodyFont, color: spec.text, lineHeight: 1.4 },
-        stack: { fontSize: 8.2, fontFamily: metaFont, color: spec.muted, marginTop: 2 },
-        summary: { backgroundColor: spec.summaryCard ? soft : "transparent", borderLeftWidth: spec.summaryCard ? 3 : 0, borderLeftColor: spec.accent, borderRadius: 4, padding: spec.summaryCard ? "8 10 8 10" : 0, marginTop: 4 },
+        sectionTitle: { fontSize: 10, fontFamily: titleFont, color: spec.accent, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 10 },
+        sectionLine: { height: 0.75, backgroundColor: spec.accent, marginTop: 2, marginBottom: 5 },
+        body: { fontSize: spec.mode === "compact" ? 9.0 : 9.5, fontFamily: bodyFont, color: spec.text, lineHeight: 1.5 },
+        strong: { fontSize: spec.mode === "compact" ? 9.2 : 9.7, fontFamily: titleFont, color: spec.text },
+        meta: { fontSize: 8.5, fontFamily: metaFont, color: spec.muted },
+        row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginTop: 4 },
+        bulletRow: { flexDirection: "row", marginTop: spec.mode === "compact" ? 2 : 2.5 },
+        bullet: { width: 10, fontSize: spec.mode === "compact" ? 9.0 : 9.2, fontFamily: titleFont, color: spec.accent },
+        bulletText: { flex: 1, fontSize: spec.mode === "compact" ? 9.0 : 9.4, fontFamily: bodyFont, color: spec.text, lineHeight: 1.45 },
+        stack: { fontSize: 8.5, fontFamily: metaFont, color: spec.muted, marginTop: 2 },
+        summary: { backgroundColor: spec.summaryCard ? soft : "transparent", borderLeftWidth: spec.summaryCard ? 3 : 0, borderLeftColor: spec.accent, borderRadius: 4, padding: spec.summaryCard ? "8 10 8 10" : "2 0 2 0", marginTop: 2 },
         shell: { flexDirection: "row" },
-        rail: { width: "33%", backgroundColor: sideBg, padding: "18 14 18 16" },
-        railTitle: { fontSize: 9, fontFamily: titleFont, color: sideText, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 8 },
-        railLine: { height: 1, backgroundColor: "rgba(255,255,255,0.22)", marginTop: 2, marginBottom: 4 },
-        railName: { fontSize: 18, fontFamily: titleFont, color: sideText },
-        railRole: { fontSize: 9, fontFamily: bodyFont, color: sideMuted, marginTop: 3, lineHeight: 1.35 },
-        railBody: { fontSize: 8.6, fontFamily: bodyFont, color: sideText, lineHeight: 1.42 },
-        railLabel: { fontSize: 8.7, fontFamily: titleFont, color: sideText },
-        railLinkText: { fontSize: 8.1, fontFamily: bodyFont, color: sideMuted, lineHeight: 1.35, marginTop: 2 },
+        rail: { width: "33%", backgroundColor: sideBg, padding: "20 14 20 16" },
+        railTitle: { fontSize: 9.3, fontFamily: titleFont, color: sideText, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 10 },
+        railLine: { height: 0.75, backgroundColor: "rgba(255,255,255,0.45)", marginTop: 2, marginBottom: 5 },
+        railName: { fontSize: 19, fontFamily: titleFont, color: sideText },
+        railRole: { fontSize: 9.5, fontFamily: bodyFont, color: sideMuted, marginTop: 3, lineHeight: 1.4 },
+        railBody: { fontSize: 9.0, fontFamily: bodyFont, color: sideText, lineHeight: 1.45 },
+        railLabel: { fontSize: 9.1, fontFamily: titleFont, color: sideText },
+        railLinkText: { fontSize: 8.4, fontFamily: bodyFont, color: sideMuted, lineHeight: 1.4, marginTop: 2 },
         railLink: { color: sideText, textDecoration: "underline" },
-        main: { flex: 1, padding: spec.mode === "left-rail" ? "18 20 18 18" : "18 20 18 20", backgroundColor: spec.pageBg },
-        box: { marginTop: 8, borderWidth: 1, borderColor: soft, borderRadius: 6, backgroundColor: "#fff", padding: "10 12 10 12" },
-        tag: { alignSelf: "flex-start", backgroundColor: soft, color: spec.accent, fontSize: 8.4, fontFamily: titleFont, textTransform: "uppercase", letterSpacing: 0.7, padding: "3 7 3 7", borderRadius: 999, marginBottom: 6 },
+        main: { flex: 1, padding: spec.mode === "left-rail" ? "20 20 20 18" : "20 20 20 20", backgroundColor: spec.pageBg },
+        box: { marginTop: 9, borderWidth: 1, borderColor: `${spec.accent}55`, borderRadius: 6, backgroundColor: "#fff", padding: "10 12 10 12" },
+        tag: { alignSelf: "flex-start", backgroundColor: `${spec.accent}25`, color: spec.accent, fontSize: 9.0, fontFamily: titleFont, textTransform: "uppercase", letterSpacing: 0.7, padding: "3 8 3 8", borderRadius: 999, marginBottom: 7 },
         compactHeader: { flexDirection: "column" },
-        compactRule: { height: 1.1, backgroundColor: spec.accent, marginTop: 6, marginBottom: 5 },
+        compactRule: { height: 1.1, backgroundColor: spec.accent, marginTop: 7, marginBottom: 6 },
     });
 
     return function Template({ data }: { data: any }) {
         const links = getHeaderLinks(data);
-        const summary = !!data.summary?.trim() && <View style={styles.summary}><Text style={styles.body}>{data.summary}</Text></View>;
         const railSummary = !!data.summary?.trim() && <Text style={styles.railBody}>{data.summary}</Text>;
         const careerSections: ResumeSupplementalSection[] = getCareerSupplementalSections(data);
         const profileSections: ResumeSupplementalSection[] = getProfileSupplementalSections(data);
@@ -274,16 +273,15 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
         const eduList = getEduList(data);
         const isRail = spec.mode === "left-rail" || spec.mode === "right-rail";
         const education = eduList.length > 0 && (
-            <View style={spec.mode === "boxed" ? styles.box : undefined}>
-                {spec.mode === "boxed" && <Text style={styles.tag}>Education</Text>}
+            <View>
                 {eduList.map((edu: any, i: number) => (
-                    <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                    <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
                         <View style={styles.row}>
                             <View style={{ flex: 1 }}>
                                 <Text style={isRail ? styles.railLabel : styles.strong}>{edu.college}</Text>
                                 <Text style={isRail ? styles.railBody : styles.body}>{edu.degree}</Text>
                             </View>
-                            {!isRail && <Text style={styles.meta}>{edu.duration}</Text>}
+                            {!isRail && <Text style={[styles.meta, { flexShrink: 0, marginLeft: 8 }]}>{edu.duration}</Text>}
                         </View>
                         {isRail && <Text style={styles.railBody}>{edu.duration}</Text>}
                     </View>
@@ -302,6 +300,11 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
             return <><Text style={styles.railTitle}>{label}</Text><View style={styles.railLine} />{content}</>;
         };
 
+        // Summary with proper section heading for ATS — defined after mainSection
+        const summarySection = data.summary?.trim()
+            ? mainSection("Summary", <View style={styles.summary}><Text style={styles.body}>{data.summary}</Text></View>)
+            : null;
+
         const renderItems = (label: string, items: any[], leftKey: "role" | "name", rightKey: "company" | "role") => {
             if (!hasItems(items)) return null;
             return mainSection(label, (
@@ -311,18 +314,18 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                         const right = item[rightKey] || "";
                         const title = left && right ? `${left} | ${right}` : left || right;
                         return (
-                        <View key={`${label}-${index}`} style={{ marginTop: index > 0 ? 6 : 0 }} wrap={false}>
+                        <View key={`${label}-${index}`} style={{ marginTop: index > 0 ? 8 : 0 }} wrap={false}>
                             <View style={styles.row}>
-                                <Text style={styles.strong}>{title}</Text>
-                                <Text style={styles.meta}>{item.duration || ""}</Text>
+                                <Text style={[styles.strong, { flex: 1 }]}>{title}</Text>
+                                <Text style={[styles.meta, { flexShrink: 0, marginLeft: 8 }]}>{item.duration || ""}</Text>
                             </View>
-                            {item.points?.map((point: string, pointIndex: number) => point && (
+                            {item.points?.map((point: string, pointIndex: number) => point ? (
                                 <View key={pointIndex} style={styles.bulletRow}>
-                                    <Text style={styles.bullet}>-</Text>
+                                    <Text style={styles.bullet}>•</Text>
                                     <Text style={styles.bulletText}>{point}</Text>
                                 </View>
-                            ))}
-                            {item.techStack && <Text style={styles.stack}>Stack: {item.techStack}</Text>}
+                            ) : null)}
+                            {item.techStack ? <Text style={styles.stack}>{item.techStack}</Text> : null}
                         </View>
                         );
                     })}
@@ -332,14 +335,14 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
 
         const renderSupplementalMainSections = (sections: ResumeSupplementalSection[]) => renderSupplementalSections({
             sections,
-            heading: (title) => (
+            heading: (title, _key) => (
                 spec.mode === "boxed"
                     ? <Text style={styles.tag}>{title}</Text>
                     : <><Text style={styles.sectionTitle}>{title}</Text><View style={styles.sectionLine} /></>
             ),
             bullet: (item, key) => (
                 <View key={key} style={styles.bulletRow}>
-                    <Text style={styles.bullet}>-</Text>
+                    <Text style={styles.bullet}>•</Text>
                     <Text style={styles.bulletText}>{item}</Text>
                 </View>
             ),
@@ -349,7 +352,7 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
             durationStyle: styles.meta,
             detailStyle: styles.stack,
             sectionStyle: spec.mode === "boxed" ? styles.box : undefined,
-            getEntryStyle: (index) => ({ marginTop: index > 0 ? 6 : 0 }),
+            getEntryStyle: (index) => ({ marginTop: index > 0 ? 8 : 0 }),
             subtitlePlacement: spec.mode === "left-rail" || spec.mode === "right-rail" ? "below" : "inline",
         });
 
@@ -367,7 +370,7 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                                     {links.length > 0 && <Text>{" | "}<InlineLinks links={links} linkStyle={styles.link} /></Text>}
                                 </Text>
                             </View>
-                            {summary}
+                            {summarySection}
                             {mainSection("Skills", skills)}
                             {renderItems("Experience", data.experience, "role", "company")}
                             {renderSupplementalMainSections(careerSections)}
@@ -395,7 +398,7 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                                 {sideSection("Education", education)}
                             </View>
                             <View style={styles.main}>
-                                {!spec.summarySide && summary}
+                                {!spec.summarySide && summarySection}
                                 {renderItems("Experience", data.experience, "role", "company")}
                                 {renderSupplementalMainSections(careerSections)}
                                 {renderItems("Projects", data.projects, "name", "role")}
@@ -416,7 +419,7 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                                 <Text style={styles.name}>{data.header?.name}</Text>
                                 <Text style={styles.title}>{data.header?.title}</Text>
                                 <Text style={styles.contact}>{data.header?.contact}</Text>
-                                {summary}
+                                {summarySection}
                                 {renderItems("Experience", data.experience, "role", "company")}
                                 {renderSupplementalMainSections(careerSections)}
                                 {renderItems("Projects", data.projects, "name", "role")}
@@ -444,12 +447,12 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                                 {data.header?.contact}
                                 {links.length > 0 && <Text>{" | "}<InlineLinks links={links} linkStyle={styles.link} /></Text>}
                             </Text>
-                            {summary}
+                            {summarySection}
                             {mainSection("Skills", skills)}
                             {renderItems("Experience", data.experience, "role", "company")}
                             {renderSupplementalMainSections(careerSections)}
                             {renderItems("Projects", data.projects, "name", "role")}
-                            {education}
+                            {mainSection("Education", education)}
                             {renderSupplementalMainSections(profileSections)}
                         </View>
                     </Page>
@@ -468,7 +471,7 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                             {links.length > 0 && <Text style={styles.contact}><InlineLinks links={links} linkStyle={styles.link} /></Text>}
                         </View>
                         <View style={styles.compactRule} />
-                        {summary}
+                        {summarySection}
                         {mainSection("Skills", skills)}
                         {renderItems("Experience", data.experience, "role", "company")}
                         {renderSupplementalMainSections(careerSections)}
