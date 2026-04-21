@@ -39,6 +39,7 @@ import {
     FiPieChart,
     FiFileText,
     FiDownload,
+    FiStar,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -231,6 +232,20 @@ export const NAV_CONFIG: NavConfig[] = [
         href: "/dashboard/profile",
         icon: FiUser,
         privileges: [],
+    },
+    {
+        name: "My Reviews",
+        href: "/dashboard/reviews/my",
+        icon: FiStar,
+        privileges: [],
+    },
+    {
+        name: "Reviews",
+        href: "/dashboard/reviews",
+        icon: FiStar,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/reviews" },
+        ],
     },
     {
         name: "My Complaints",

@@ -12,7 +12,7 @@ import {
 import dynamic from "next/dynamic";
 import {
     FiFileText, FiCode, FiEye, FiCheckCircle, FiAlertCircle, FiDownload, FiLayers, FiLock, FiZap, FiCpu, FiX, FiBriefcase, FiUploadCloud,
-    FiGrid, FiTarget,
+    FiGrid, FiTarget, FiStar,
 } from "react-icons/fi";
 import { getStoredToken } from "@/app/utils/token";
 import { useToast } from "@/components/ui/toast";
@@ -2316,6 +2316,175 @@ const INITIAL_DATA = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// REVIEW MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ReviewContext {
+    resumeDownloadId: string;
+    resumeName: string;
+    templateName: string;
+}
+
+function ReviewModal({
+    context,
+    onClose,
+    onSubmitted,
+}: {
+    context: ReviewContext;
+    onClose: () => void;
+    onSubmitted: () => void;
+}) {
+    const [rating, setRating] = useState(0);
+    const [hovered, setHovered] = useState(0);
+    const [title, setTitle] = useState("");
+    const [body, setBody] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (rating === 0) { setError("Please select a star rating."); return; }
+        setSubmitting(true);
+        setError("");
+        try {
+            const token = getStoredToken();
+            const res = await fetch("/api/v1/private/reviews", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    rating,
+                    title: title.trim(),
+                    body: body.trim(),
+                    resumeDownloadId: context.resumeDownloadId,
+                    resumeName: context.resumeName,
+                    templateName: context.templateName,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || "Failed to submit review.");
+            onSubmitted();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to submit review.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="sm:hidden flex justify-center pt-3 pb-1">
+                    <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                </div>
+
+                <div className="flex items-start justify-between px-5 pt-5 pb-0 sm:px-6 sm:pt-6">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-900">How was your experience?</h2>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                            Your resume <span className="font-medium text-gray-700">{context.resumeName || "was downloaded"}</span> successfully.
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors shrink-0 mt-0.5"
+                    >
+                        <FiX size={18} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
+                    {/* Star picker */}
+                    <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Rating <span className="text-red-400">*</span></p>
+                        <div className="flex items-center gap-1.5">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                                <button
+                                    key={n}
+                                    type="button"
+                                    onMouseEnter={() => setHovered(n)}
+                                    onMouseLeave={() => setHovered(0)}
+                                    onClick={() => { setRating(n); setError(""); }}
+                                    className="p-1 rounded transition-transform hover:scale-110 active:scale-95"
+                                >
+                                    <FiStar
+                                        size={32}
+                                        className={`transition-colors ${
+                                            n <= (hovered || rating)
+                                                ? "fill-amber-400 text-amber-400"
+                                                : "text-gray-300"
+                                        }`}
+                                    />
+                                </button>
+                            ))}
+                            {(hovered || rating) > 0 && (
+                                <span className="ml-1 text-sm font-medium text-amber-600">
+                                    {["", "Poor", "Fair", "Good", "Great", "Excellent"][hovered || rating]}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Title */}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            Title <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="e.g. Great resume builder!"
+                            maxLength={120}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent bg-gray-50"
+                        />
+                    </div>
+
+                    {/* Body */}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            Your feedback <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <textarea
+                            value={body}
+                            onChange={(e) => setBody(e.target.value)}
+                            placeholder="Tell us what you liked or what could be improved..."
+                            rows={3}
+                            maxLength={1000}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent bg-gray-50 resize-none"
+                        />
+                    </div>
+
+                    {error && <p className="text-xs text-red-500">{error}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+                        >
+                            {submitting ? "Submitting…" : "Submit Review"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                        >
+                            Skip
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2359,6 +2528,7 @@ export default function ResumeConfigPage() {
         experienceLevel: "",
     });
     const [isAiGenerating, setIsAiGenerating] = useState(false);
+    const [reviewContext, setReviewContext] = useState<ReviewContext | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => setPdfReady(true), 300);
@@ -2607,6 +2777,7 @@ export default function ResumeConfigPage() {
             const selectedTemplate = TEMPLATES.find((t) => t.id === templateId);
             const fileName = `${(resumeData.header?.name || "resume").replace(/\s+/g, "_")}_${templateId}.pdf`;
 
+            let downloadRecordId = "";
             try {
                 const pdfBase64 = await new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
@@ -2617,7 +2788,7 @@ export default function ResumeConfigPage() {
                     reader.onerror = reject;
                     reader.readAsDataURL(blob);
                 });
-                await fetch("/api/v1/private/resume-downloads", {
+                const dlRes = await fetch("/api/v1/private/resume-downloads", {
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -2638,16 +2809,25 @@ export default function ResumeConfigPage() {
                         pdfBase64,
                     }),
                 });
+                const dlData = await dlRes.json();
+                if (dlData.success && dlData.data?._id) {
+                    downloadRecordId = String(dlData.data._id);
+                }
             } catch {
                 // Analytics tracking should never block the download itself.
             }
 
             triggerBrowserDownload(blob, fileName);
+            setReviewContext({
+                resumeDownloadId: downloadRecordId,
+                resumeName: resumeData.header?.name || "",
+                templateName: selectedTemplate?.name || templateId,
+            });
         } catch {
             toastError("Download failed. Please try again.");
         }
         setDownloading(false);
-    }, [downloading, generatePdfBlob, resumeData, restoredResume, templateId, toastError, toastSuccess, triggerBrowserDownload]);
+    }, [downloading, generatePdfBlob, resumeData, restoredResume, templateId, toastError, toastSuccess, triggerBrowserDownload, setReviewContext]);
 
     // Free template download — no subscription needed
     const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -3067,6 +3247,14 @@ export default function ResumeConfigPage() {
                     onSubmit={handleAiResumeSubmit}
                     setForm={setAiResumeForm}
                     isGenerating={isAiGenerating}
+                />
+            )}
+
+            {reviewContext && (
+                <ReviewModal
+                    context={reviewContext}
+                    onClose={() => setReviewContext(null)}
+                    onSubmitted={() => setReviewContext(null)}
                 />
             )}
 

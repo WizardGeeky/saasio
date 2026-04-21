@@ -63,8 +63,8 @@ interface Pagination {
 }
 
 type SubscriptionFilter = "all" | "subscribed" | "free";
-type SourceFilter       = "all" | "ai" | "manual";
-type DateRange          = "all" | "today" | "week" | "month";
+type SourceFilter = "all" | "ai" | "manual";
+type DateRange = "all" | "today" | "week" | "month";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -191,9 +191,14 @@ function DetailModal({
         <div className="flex items-start justify-between p-5 sm:p-6 border-b border-gray-100">
           <div className="min-w-0 flex-1 pr-3">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">
-              {record.resumeName || record.resumeTitle || record.fileName || "Untitled"}
+              {record.resumeName ||
+                record.resumeTitle ||
+                record.fileName ||
+                "Untitled"}
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{record.fileName}</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
+              {record.fileName}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -205,28 +210,44 @@ function DetailModal({
 
         <div className="p-5 sm:p-6 space-y-5">
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">User</h3>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              User
+            </h3>
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
               <FiUser size={14} className="text-gray-400 shrink-0" />
               <div className="min-w-0">
-                <div className="text-sm font-medium text-gray-800">{record.userName}</div>
-                <div className="text-xs text-gray-500 truncate">{record.userEmail}</div>
+                <div className="text-sm font-medium text-gray-800">
+                  {record.userName}
+                </div>
+                <div className="text-xs text-gray-500 truncate">
+                  {record.userEmail}
+                </div>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Resume Details</h3>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Resume Details
+            </h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {[
-                ["Resume Name",  record.resumeName  || "—"],
+                ["Resume Name", record.resumeName || "—"],
                 ["Resume Title", record.resumeTitle || "—"],
-                ["File Name",    record.fileName],
-                ["Template",     record.templateName],
+                ["File Name", record.fileName],
+                ["Template", record.templateName],
               ].map(([label, value]) => (
-                <div key={label} className="bg-gray-50 border border-gray-100 rounded-lg p-2.5">
+                <div
+                  key={label}
+                  className="bg-gray-50 border border-gray-100 rounded-lg p-2.5"
+                >
                   <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                  <div className="text-gray-800 text-xs font-medium break-words" title={value}>{value}</div>
+                  <div
+                    className="text-gray-800 text-xs font-medium wrap-break-word"
+                    title={value}
+                  >
+                    {value}
+                  </div>
                 </div>
               ))}
             </div>
@@ -235,7 +256,9 @@ function DetailModal({
           <div className="flex flex-wrap gap-2 text-sm">
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
               <FiCalendar size={13} className="text-gray-400" />
-              <span className="text-gray-700 text-xs">{formatDateTime(record.createdAt)}</span>
+              <span className="text-gray-700 text-xs">
+                {formatDateTime(record.createdAt)}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
               <SourceBadge source={record.source} />
@@ -243,13 +266,15 @@ function DetailModal({
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Subscription</h3>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Subscription
+            </h3>
             {record.subscriptionId ? (
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {[
-                  ["Plan",    record.subscriptionPlanName    || "—"],
+                  ["Plan", record.subscriptionPlanName || "—"],
                   ["Project", record.subscriptionProjectName || "—"],
-                  ["Status",  record.subscriptionStatus      || "—"],
+                  ["Status", record.subscriptionStatus || "—"],
                   [
                     "Price",
                     record.subscriptionPlanPrice != null
@@ -257,14 +282,24 @@ function DetailModal({
                       : "—",
                   ],
                 ].map(([label, value]) => (
-                  <div key={label} className="bg-gray-50 border border-gray-100 rounded-lg p-2.5">
+                  <div
+                    key={label}
+                    className="bg-gray-50 border border-gray-100 rounded-lg p-2.5"
+                  >
                     <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                    <div className="text-gray-800 text-xs font-medium break-words" title={value}>{value}</div>
+                    <div
+                      className="text-gray-800 text-xs font-medium wrap-break-word"
+                      title={value}
+                    >
+                      {value}
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">Free download — no subscription used.</p>
+              <p className="text-sm text-gray-400">
+                Free download — no subscription used.
+              </p>
             )}
           </div>
         </div>
@@ -288,7 +323,7 @@ function PaginationBar({
 }) {
   const { page, pages, total } = pagination;
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
-  const to   = Math.min(page * limit, total);
+  const to = Math.min(page * limit, total);
 
   const pageNums: number[] = [];
   if (pages <= 5) {
@@ -313,7 +348,9 @@ function PaginationBar({
           className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-300"
         >
           {[10, 20, 50].map((n) => (
-            <option key={n} value={n}>{n} / page</option>
+            <option key={n} value={n}>
+              {n} / page
+            </option>
           ))}
         </select>
       </div>
@@ -367,7 +404,9 @@ function StatCard({
 }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 shadow-sm flex items-center gap-3 sm:block">
-      <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg ${bg} flex items-center justify-center shrink-0 sm:mb-3`}>
+      <div
+        className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg ${bg} flex items-center justify-center shrink-0 sm:mb-3`}
+      >
         <Icon size={16} className={color} />
       </div>
       <div className="min-w-0">
@@ -385,24 +424,73 @@ function StatCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const SUBSCRIPTION_OPTIONS: { value: SubscriptionFilter; label: string; activeClass: string }[] = [
-  { value: "all",        label: "All",        activeClass: "bg-gray-100 text-gray-700 border-gray-200" },
-  { value: "subscribed", label: "Subscribed", activeClass: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  { value: "free",       label: "Free",       activeClass: "bg-sky-100 text-sky-700 border-sky-200" },
+const SUBSCRIPTION_OPTIONS: {
+  value: SubscriptionFilter;
+  label: string;
+  activeClass: string;
+}[] = [
+  {
+    value: "all",
+    label: "All",
+    activeClass: "bg-gray-100 text-gray-700 border-gray-200",
+  },
+  {
+    value: "subscribed",
+    label: "Subscribed",
+    activeClass: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  },
+  {
+    value: "free",
+    label: "Free",
+    activeClass: "bg-sky-100 text-sky-700 border-sky-200",
+  },
 ];
 
-const SOURCE_OPTIONS: { value: SourceFilter; label: string; activeClass: string }[] = [
-  { value: "all",    label: "All Sources", activeClass: "bg-gray-100 text-gray-700 border-gray-200" },
-  { value: "ai",     label: "AI",          activeClass: "bg-violet-100 text-violet-700 border-violet-200" },
-  { value: "manual", label: "Manual",      activeClass: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+const SOURCE_OPTIONS: {
+  value: SourceFilter;
+  label: string;
+  activeClass: string;
+}[] = [
+  {
+    value: "all",
+    label: "All Sources",
+    activeClass: "bg-gray-100 text-gray-700 border-gray-200",
+  },
+  {
+    value: "ai",
+    label: "AI",
+    activeClass: "bg-violet-100 text-violet-700 border-violet-200",
+  },
+  {
+    value: "manual",
+    label: "Manual",
+    activeClass: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  },
 ];
 
-const DATE_OPTIONS: { value: DateRange; label: string; activeClass: string }[] = [
-  { value: "all",   label: "All Time",   activeClass: "bg-gray-100 text-gray-700 border-gray-200" },
-  { value: "today", label: "Today",      activeClass: "bg-rose-100 text-rose-700 border-rose-200" },
-  { value: "week",  label: "This Week",  activeClass: "bg-amber-100 text-amber-700 border-amber-200" },
-  { value: "month", label: "This Month", activeClass: "bg-teal-100 text-teal-700 border-teal-200" },
-];
+const DATE_OPTIONS: { value: DateRange; label: string; activeClass: string }[] =
+  [
+    {
+      value: "all",
+      label: "All Time",
+      activeClass: "bg-gray-100 text-gray-700 border-gray-200",
+    },
+    {
+      value: "today",
+      label: "Today",
+      activeClass: "bg-rose-100 text-rose-700 border-rose-200",
+    },
+    {
+      value: "week",
+      label: "This Week",
+      activeClass: "bg-amber-100 text-amber-700 border-amber-200",
+    },
+    {
+      value: "month",
+      label: "This Month",
+      activeClass: "bg-teal-100 text-teal-700 border-teal-200",
+    },
+  ];
 
 export default function ResumesHistoryPage() {
   const { error: toastError } = useToast();
@@ -411,39 +499,47 @@ export default function ResumesHistoryPage() {
 
   const canRead = !privLoading && can("GET", "/api/v1/private/resumes-history");
 
-  const [records, setRecords]           = useState<ResumeHistoryRecord[]>([]);
-  const [stats, setStats]               = useState<Stats | null>(null);
-  const [pagination, setPagination]     = useState<Pagination>({ total: 0, page: 1, pages: 1, limit: 20 });
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState("");
-  const [searchInput, setSearchInput]   = useState("");
-  const [subscriptionFilter, setSubscriptionFilter] = useState<SubscriptionFilter>("all");
-  const [sourceFilter, setSourceFilter]             = useState<SourceFilter>("all");
-  const [dateRange, setDateRange]                   = useState<DateRange>("all");
-  const [limit, setLimit]               = useState(20);
-  const [detailRecord, setDetailRecord] = useState<ResumeHistoryRecord | null>(null);
-  const [showFilters, setShowFilters]   = useState(false);
+  const [records, setRecords] = useState<ResumeHistoryRecord[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({
+    total: 0,
+    page: 1,
+    pages: 1,
+    limit: 20,
+  });
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [subscriptionFilter, setSubscriptionFilter] =
+    useState<SubscriptionFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [dateRange, setDateRange] = useState<DateRange>("all");
+  const [limit, setLimit] = useState(20);
+  const [detailRecord, setDetailRecord] = useState<ResumeHistoryRecord | null>(
+    null,
+  );
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchData = useCallback(
     async (
       page = 1,
-      q               = search,
-      sf              = subscriptionFilter,
-      src             = sourceFilter,
-      dr              = dateRange,
-      lim             = limit,
+      q = search,
+      sf = subscriptionFilter,
+      src = sourceFilter,
+      dr = dateRange,
+      lim = limit,
     ) => {
       setLoading(true);
       try {
         const params = new URLSearchParams({
-          page:               String(page),
-          limit:              String(lim),
-          search:             q,
+          page: String(page),
+          limit: String(lim),
+          search: q,
           subscriptionFilter: sf,
-          sourceFilter:       src,
-          dateRange:          dr,
+          sourceFilter: src,
+          dateRange: dr,
         });
-        const res  = await fetch(`/api/v1/private/resumes-history?${params}`, {
+        const res = await fetch(`/api/v1/private/resumes-history?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -453,7 +549,9 @@ export default function ResumesHistoryPage() {
         }
         setRecords(data.records ?? []);
         setStats(data.stats ?? null);
-        setPagination(data.pagination ?? { total: 0, page: 1, pages: 1, limit: lim });
+        setPagination(
+          data.pagination ?? { total: 0, page: 1, pages: 1, limit: lim },
+        );
       } catch {
         toastError("Network error");
       } finally {
@@ -464,13 +562,21 @@ export default function ResumesHistoryPage() {
   );
 
   useEffect(() => {
-    if (canRead) fetchData(1, search, subscriptionFilter, sourceFilter, dateRange, limit);
+    if (canRead)
+      fetchData(1, search, subscriptionFilter, sourceFilter, dateRange, limit);
   }, [canRead]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInput);
-    fetchData(1, searchInput, subscriptionFilter, sourceFilter, dateRange, limit);
+    fetchData(
+      1,
+      searchInput,
+      subscriptionFilter,
+      sourceFilter,
+      dateRange,
+      limit,
+    );
   };
 
   const handleSubscriptionFilter = (sf: SubscriptionFilter) => {
@@ -506,7 +612,10 @@ export default function ResumesHistoryPage() {
   };
 
   const hasActiveFilters =
-    search || subscriptionFilter !== "all" || sourceFilter !== "all" || dateRange !== "all";
+    search ||
+    subscriptionFilter !== "all" ||
+    sourceFilter !== "all" ||
+    dateRange !== "all";
 
   const activeFilterCount = [
     subscriptionFilter !== "all",
@@ -532,7 +641,6 @@ export default function ResumesHistoryPage() {
   return (
     <div className="min-h-screen">
       <div className="w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -545,7 +653,16 @@ export default function ResumesHistoryPage() {
             </p>
           </div>
           <button
-            onClick={() => fetchData(pagination.page, search, subscriptionFilter, sourceFilter, dateRange, limit)}
+            onClick={() =>
+              fetchData(
+                pagination.page,
+                search,
+                subscriptionFilter,
+                sourceFilter,
+                dateRange,
+                limit,
+              )
+            }
             disabled={loading}
             className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-50 shrink-0"
           >
@@ -558,7 +675,10 @@ export default function ResumesHistoryPage() {
         {loading && !stats ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 animate-pulse flex items-center gap-3 sm:block">
+              <div
+                key={i}
+                className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 animate-pulse flex items-center gap-3 sm:block"
+              >
                 <div className="w-9 h-9 sm:w-8 sm:h-8 bg-gray-200 rounded-lg shrink-0 sm:mb-3" />
                 <div className="flex-1">
                   <div className="h-4 w-10 bg-gray-200 rounded mb-1.5" />
@@ -571,12 +691,48 @@ export default function ResumesHistoryPage() {
           stats && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
-                { icon: FiDownload,  label: "Total Downloads",   value: stats.totalDownloads,        color: "text-indigo-600",  bg: "bg-indigo-50" },
-                { icon: FiUsers,     label: "Unique Users",       value: stats.uniqueUsers,           color: "text-violet-600",  bg: "bg-violet-50" },
-                { icon: FiPackage,   label: "Subscription",       value: stats.subscriptionDownloads, color: "text-emerald-600", bg: "bg-emerald-50" },
-                { icon: FiFileText,  label: "Free Downloads",     value: stats.freeDownloads,         color: "text-sky-600",     bg: "bg-sky-50" },
-                { icon: FiCalendar,  label: "This Week",          value: stats.thisWeek,              color: "text-amber-600",   bg: "bg-amber-50" },
-                { icon: FiTag,       label: "Top Template",       value: stats.topTemplate,           color: "text-rose-600",    bg: "bg-rose-50" },
+                {
+                  icon: FiDownload,
+                  label: "Total Downloads",
+                  value: stats.totalDownloads,
+                  color: "text-indigo-600",
+                  bg: "bg-indigo-50",
+                },
+                {
+                  icon: FiUsers,
+                  label: "Unique Users",
+                  value: stats.uniqueUsers,
+                  color: "text-violet-600",
+                  bg: "bg-violet-50",
+                },
+                {
+                  icon: FiPackage,
+                  label: "Subscription",
+                  value: stats.subscriptionDownloads,
+                  color: "text-emerald-600",
+                  bg: "bg-emerald-50",
+                },
+                {
+                  icon: FiFileText,
+                  label: "Free Downloads",
+                  value: stats.freeDownloads,
+                  color: "text-sky-600",
+                  bg: "bg-sky-50",
+                },
+                {
+                  icon: FiCalendar,
+                  label: "This Week",
+                  value: stats.thisWeek,
+                  color: "text-amber-600",
+                  bg: "bg-amber-50",
+                },
+                {
+                  icon: FiTag,
+                  label: "Top Template",
+                  value: stats.topTemplate,
+                  color: "text-rose-600",
+                  bg: "bg-rose-50",
+                },
               ].map((card) => (
                 <StatCard key={card.label} {...card} />
               ))}
@@ -589,7 +745,10 @@ export default function ResumesHistoryPage() {
           {/* Search row */}
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1 min-w-0">
-              <FiSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <FiSearch
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <input
                 type="text"
                 placeholder="Search by user, resume, template..."
@@ -620,7 +779,11 @@ export default function ResumesHistoryPage() {
                   {activeFilterCount}
                 </span>
               )}
-              {showFilters ? <FiChevronUp size={12} /> : <FiChevronDown size={12} />}
+              {showFilters ? (
+                <FiChevronUp size={12} />
+              ) : (
+                <FiChevronDown size={12} />
+              )}
             </button>
             {hasActiveFilters && (
               <button
@@ -635,7 +798,9 @@ export default function ResumesHistoryPage() {
           </form>
 
           {/* Filter pills — always visible on sm+, toggle on mobile */}
-          <div className={`flex-col gap-2.5 ${showFilters ? "flex" : "hidden sm:flex"}`}>
+          <div
+            className={`flex-col gap-2.5 ${showFilters ? "flex" : "hidden sm:flex"}`}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1 min-w-[80px]">
                 <FiFilter size={11} /> Subscription
@@ -676,8 +841,19 @@ export default function ResumesHistoryPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  {["#", "User", "Resume", "Template", "Source", "Subscription", "Date"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  {[
+                    "#",
+                    "User",
+                    "Resume",
+                    "Template",
+                    "Source",
+                    "Subscription",
+                    "Date",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                    >
                       {h}
                     </th>
                   ))}
@@ -696,23 +872,34 @@ export default function ResumesHistoryPage() {
                   ))
                 ) : records.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-400 text-sm">
+                    <td
+                      colSpan={7}
+                      className="px-4 py-12 text-center text-gray-400 text-sm"
+                    >
                       No records found
                     </td>
                   </tr>
                 ) : (
                   records.map((rec, idx) => {
-                    const rowNum = (pagination.page - 1) * pagination.limit + idx + 1;
+                    const rowNum =
+                      (pagination.page - 1) * pagination.limit + idx + 1;
                     return (
                       <tr
                         key={rec._id}
                         className="hover:bg-gray-50/70 cursor-pointer transition-colors"
                         onClick={() => setDetailRecord(rec)}
                       >
-                        <td className="px-4 py-3 text-gray-400 text-xs">{rowNum}</td>
+                        <td className="px-4 py-3 text-gray-400 text-xs">
+                          {rowNum}
+                        </td>
                         <td className="px-4 py-3">
-                          <div className="font-medium text-gray-800 text-xs">{rec.userName}</div>
-                          <div className="text-gray-400 text-xs truncate max-w-[180px]" title={rec.userEmail}>
+                          <div className="font-medium text-gray-800 text-xs">
+                            {rec.userName}
+                          </div>
+                          <div
+                            className="text-gray-400 text-xs truncate max-w-[180px]"
+                            title={rec.userEmail}
+                          >
                             {rec.userEmail}
                           </div>
                         </td>
@@ -720,11 +907,17 @@ export default function ResumesHistoryPage() {
                           <div className="font-medium text-gray-800 max-w-[160px] truncate">
                             {rec.resumeName || rec.resumeTitle || "—"}
                           </div>
-                          <div className="text-xs text-gray-400 truncate max-w-[160px]">{rec.fileName}</div>
+                          <div className="text-xs text-gray-400 truncate max-w-[160px]">
+                            {rec.fileName}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-xs text-gray-700 max-w-[120px] truncate">{rec.templateName}</div>
-                          <div className="text-xs text-gray-400 truncate max-w-[120px]">{rec.templateId}</div>
+                          <div className="text-xs text-gray-700 max-w-[120px] truncate">
+                            {rec.templateName}
+                          </div>
+                          <div className="text-xs text-gray-400 truncate max-w-[120px]">
+                            {rec.templateId}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <SourceBadge source={rec.source} />
@@ -754,20 +947,27 @@ export default function ResumesHistoryPage() {
                 </div>
               ))
             ) : records.length === 0 ? (
-              <div className="py-12 text-center text-gray-400 text-sm">No records found</div>
+              <div className="py-12 text-center text-gray-400 text-sm">
+                No records found
+              </div>
             ) : (
               records.map((rec) => (
                 <div
                   key={rec._id}
                   className={`p-4 hover:bg-gray-50/60 active:bg-gray-100 cursor-pointer transition-colors border-l-[3px] ${
-                    rec.subscriptionId ? "border-emerald-400" : "border-gray-200"
+                    rec.subscriptionId
+                      ? "border-emerald-400"
+                      : "border-gray-200"
                   }`}
                   onClick={() => setDetailRecord(rec)}
                 >
                   {/* Row 1: resume name + subscription badge */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-semibold text-gray-900 text-sm leading-tight truncate flex-1">
-                      {rec.resumeName || rec.resumeTitle || rec.fileName || "Untitled"}
+                      {rec.resumeName ||
+                        rec.resumeTitle ||
+                        rec.fileName ||
+                        "Untitled"}
                     </div>
                     <SubscriptionBadge record={rec} />
                   </div>
@@ -775,9 +975,13 @@ export default function ResumesHistoryPage() {
                   {/* Row 2: user info */}
                   <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-500">
                     <FiUser size={11} className="shrink-0 text-gray-400" />
-                    <span className="font-medium text-gray-700">{rec.userName}</span>
+                    <span className="font-medium text-gray-700">
+                      {rec.userName}
+                    </span>
                     <span className="text-gray-300">·</span>
-                    <span className="truncate text-gray-400">{rec.userEmail}</span>
+                    <span className="truncate text-gray-400">
+                      {rec.userEmail}
+                    </span>
                   </div>
 
                   {/* Row 3: template name */}
@@ -811,7 +1015,10 @@ export default function ResumesHistoryPage() {
 
       {/* ── Detail Modal ─────────────────────────────────────────────── */}
       {detailRecord && (
-        <DetailModal record={detailRecord} onClose={() => setDetailRecord(null)} />
+        <DetailModal
+          record={detailRecord}
+          onClose={() => setDetailRecord(null)}
+        />
       )}
     </div>
   );
