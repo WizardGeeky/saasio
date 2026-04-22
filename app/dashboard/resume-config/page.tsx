@@ -123,7 +123,7 @@ function shortUrl(url: string): string {
 // Placeholder values that AIs sometimes output for missing fields — strip them so PDFs look clean.
 const PLACEHOLDER_RE = /^(not specified|n\/a|na|none|unknown|tbd|to be determined|not available|not applicable|unspecified|no link|no url|no portfolio|not provided|not listed|not mentioned|not stated)$/i;
 
-function getEduList(data: any): Array<{ college: string; degree: string; duration: string }> {
+function getEduList(data: any): Array<{ college: string; degree: string; duration: string; score?: string }> {
     if (Array.isArray(data.education)) {
         return data.education.filter((e: any) => e?.college || e?.degree);
     }
@@ -199,11 +199,26 @@ function renderOptionalSections({
     });
 }
 
+function renderContactLinks(links: any, contactStyle: any, lnkStyle: any): React.ReactNode {
+    if (!links) return null;
+    const { linkedin, github, portfolio } = links;
+    if (!linkedin && !github && !portfolio) return null;
+    return (
+        <Text style={contactStyle}>
+            {linkedin ? <Link src={linkedin} style={lnkStyle}>{shortUrl(linkedin)}</Link> : null}
+            {linkedin && github ? <Text> | </Text> : null}
+            {github ? <Link src={github} style={lnkStyle}>{shortUrl(github)}</Link> : null}
+            {(linkedin || github) && portfolio ? <Text> | </Text> : null}
+            {portfolio ? <Link src={portfolio} style={lnkStyle}>{shortUrl(portfolio)}</Link> : null}
+        </Text>
+    );
+}
+
 const s1 = StyleSheet.create({
     page:  { padding: "20 26", backgroundColor: "#fff" },
     hdr:   { alignItems: "center" },
-    name:  { fontSize: 18, fontFamily: "Times-Bold", textAlign: "center", textTransform: "uppercase", letterSpacing: 1.5 },
-    sep:   { height: 0.6, backgroundColor: "#b0b0b0", marginTop: 5, marginBottom: 2 },
+    name:  { fontSize: 22, fontFamily: "Times-Bold", textAlign: "center", textTransform: "uppercase", letterSpacing: 1.5 },
+    sep:   { height: 1, backgroundColor: "#555555", marginTop: 5, marginBottom: 2 },
     ht:    { fontSize: 11, fontFamily: "Times-Roman", textAlign: "center", color: "#444", marginTop: 3 },
     hc:    { fontSize: 10, fontFamily: "Times-Roman", textAlign: "center", color: "#555", marginTop: 2 },
     sh:    { fontSize: 11, fontFamily: "Times-Bold", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 8, marginBottom: 1 },
@@ -239,12 +254,8 @@ function T1({ data }: { data: any }) {
                     <Text style={s1.name}>{data.header?.name}</Text>
                     <View style={s1.sep} />
                     <Text style={s1.ht}>{data.header?.title}</Text>
-                    <Text style={s1.hc}>
-                        {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s1.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s1.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s1.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    </Text>
+                    <Text style={s1.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s1.hc, s1.lnk)}
                 </View>
                 {!!data.summary?.trim() && (<View style={{ marginTop: 4 }}><S v="SUMMARY" /><Text style={s1.body}>{data.summary}</Text></View>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
@@ -257,7 +268,7 @@ function T1({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
                                 <View style={s1.row}><Text style={s1.bold}>{e.role} | {e.company}</Text><Text style={s1.body}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={s1.bold}>Tech Stack: <Text style={s1.ital}>{e.techStack}</Text></Text>}
                             </View>
                         ))}
@@ -275,7 +286,7 @@ function T1({ data }: { data: any }) {
                                     </Text>
                                     <Text style={s1.body}>{p.duration}</Text>
                                 </View>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={s1.bold}>Tech Stack: <Text style={s1.ital}>{p.techStack}</Text></Text>}
                             </View>
                         ))}
@@ -289,6 +300,7 @@ function T1({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s1.bold}>{edu.college}</Text><Text style={s1.body}>{edu.degree}</Text></View>
                                     <Text style={s1.body}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s1.ital}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </View>
@@ -309,16 +321,16 @@ const s2 = StyleSheet.create({
     wrap:  { padding: "14 26" },
     name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0d9488", letterSpacing: 0.3 },
     ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#374151", marginTop: 2 },
-    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, lineHeight: 1.5 },
-    sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0d9488", textTransform: "uppercase", letterSpacing: 1, marginTop: 10 },
-    sl:    { height: 1, backgroundColor: "#ccfbf1", marginTop: 2, marginBottom: 3 },
+    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, lineHeight: 1.5 },
+    sh:    { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#0d9488", textTransform: "uppercase", letterSpacing: 1, marginTop: 10 },
+    sl:    { height: 1.5, backgroundColor: "#0d9488", marginTop: 2, marginBottom: 3 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
-    meta:  { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827" },
+    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
+    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
     br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.5, color: "#0d9488" },
-    bt:    { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
+    bd:    { width: 10, fontSize: 10, color: "#0d9488" },
+    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
     lnk:   { color: "#0d9488", textDecoration: "underline" },
 });
 
@@ -344,13 +356,9 @@ function T2({ data }: { data: any }) {
                 <View style={s2.wrap}>
                     <Text style={s2.name}>{data.header?.name}</Text>
                     <Text style={s2.ht}>{data.header?.title}</Text>
-                    <Text style={s2.hc}>
-                        {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{"  ·  "}<Link src={data.header.links.linkedin} style={s2.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                        {data.header?.links?.github && <Text>{"  ·  "}<Link src={data.header.links.github} style={s2.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{"  ·  "}<Link src={data.header.links.portfolio} style={s2.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    </Text>
-                    {!!data.summary?.trim() && (<><S v="PROFILE" /><Text style={s2.body}>{data.summary}</Text></>)}
+                    <Text style={s2.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s2.hc, s2.lnk)}
+                    {!!data.summary?.trim() && (<><S v="SUMMARY" /><Text style={s2.body}>{data.summary}</Text></>)}
                     {Array.isArray(data.skills) && data.skills.length > 0 && (
                         <><S v="SKILLS" />
                             {data.skills.map((sk: any, i: number) => (
@@ -363,7 +371,7 @@ function T2({ data }: { data: any }) {
                             {data.experience.map((e: any, i: number) => (
                                 <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
                                     <View style={s2.row}><Text style={s2.bold}>{e.role} — {e.company}</Text><Text style={s2.meta}>{e.duration}</Text></View>
-                                    {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                    {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                     {e.techStack && <Text style={[s2.meta, { marginTop: 3 }]}>Stack: {e.techStack}</Text>}
                                 </View>
                             ))}
@@ -381,7 +389,7 @@ function T2({ data }: { data: any }) {
                                         </Text>
                                         <Text style={s2.meta}>{p.duration}</Text>
                                     </View>
-                                    {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                    {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                     {p.techStack && <Text style={[s2.meta, { marginTop: 3 }]}>Stack: {p.techStack}</Text>}
                                 </View>
                             ))}
@@ -395,6 +403,7 @@ function T2({ data }: { data: any }) {
                                         <View style={{ flex: 1 }}><Text style={s2.bold}>{edu.college}</Text><Text style={s2.body}>{edu.degree}</Text></View>
                                         <Text style={s2.meta}>{edu.duration}</Text>
                                     </View>
+                                    {edu.score ? <Text style={s2.meta}>{edu.score}</Text> : null}
                                 </View>
                             ))}
                         </>
@@ -415,16 +424,16 @@ const s3 = StyleSheet.create({
     band:  { backgroundColor: "#1e3a5f", padding: "20 26 14 26" },
     name:  { fontSize: 20, fontFamily: "Helvetica-Bold", color: "#fff", letterSpacing: 0.8 },
     ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#93c5fd", marginTop: 3 },
-    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#bfdbfe", marginTop: 4 },
+    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#bfdbfe", marginTop: 4 },
     body:  { padding: "10 26" },
     sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#1e3a5f", textTransform: "uppercase", letterSpacing: 1, marginTop: 8, borderBottomWidth: 1, borderBottomColor: "#1e3a5f", paddingBottom: 2 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-    bold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#1e3a5f" },
-    btext: { fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.4 },
-    meta:  { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#1e3a5f" },
+    btext: { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.4 },
+    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
     br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 12, fontSize: 9.5, color: "#1e3a5f", fontFamily: "Helvetica-Bold" },
-    bt:    { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.4 },
+    bd:    { width: 12, fontSize: 10, color: "#1e3a5f", fontFamily: "Helvetica-Bold" },
+    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.4 },
     lnk:   { color: "#93c5fd", textDecoration: "underline" },
 });
 
@@ -449,26 +458,22 @@ function T3({ data }: { data: any }) {
                 <View style={s3.band}>
                     <Text style={s3.name}>{data.header?.name}</Text>
                     <Text style={s3.ht}>{data.header?.title}</Text>
-                    <Text style={s3.hc}>
-                        {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s3.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s3.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s3.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    </Text>
+                    <Text style={s3.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s3.hc, s3.lnk)}
                 </View>
                 <View style={s3.body}>
-                    {!!data.summary?.trim() && (<><Text style={s3.sh}>PROFESSIONAL SUMMARY</Text><Text style={[s3.btext, { marginTop: 4 }]}>{data.summary}</Text></>)}
+                    {!!data.summary?.trim() && (<><Text style={s3.sh}>SUMMARY</Text><Text style={[s3.btext, { marginTop: 4 }]}>{data.summary}</Text></>)}
                     {Array.isArray(data.skills) && data.skills.length > 0 && (
-                        <><Text style={s3.sh}>TECHNICAL SKILLS</Text>
+                        <><Text style={s3.sh}>SKILLS</Text>
                             <View style={{ marginTop: 4 }}>{data.skills.map((sk: any, i: number) => <Text key={i} style={s3.bold}>{sk.label}: <Text style={s3.btext}>{sk.value}</Text></Text>)}</View>
                         </>
                     )}
                     {Array.isArray(data.experience) && data.experience.length > 0 && (
-                        <><Text style={s3.sh}>PROFESSIONAL EXPERIENCE</Text>
+                        <><Text style={s3.sh}>EXPERIENCE</Text>
                             {data.experience.map((e: any, i: number) => (
                                 <View key={i} style={{ marginTop: i > 0 ? 7 : 4 }} wrap={false}>
                                     <View style={s3.row}><Text style={s3.bold}>{e.role} | {e.company}</Text><Text style={s3.meta}>{e.duration}</Text></View>
-                                    {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                    {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                     {e.techStack && <Text style={[s3.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
                                 </View>
                             ))}
@@ -476,7 +481,7 @@ function T3({ data }: { data: any }) {
                     )}
                     {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
-                        <><Text style={s3.sh}>KEY PROJECTS</Text>
+                        <><Text style={s3.sh}>PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
                                 <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }} wrap={false}>
                                     <View style={s3.row}>
@@ -486,7 +491,7 @@ function T3({ data }: { data: any }) {
                                         </Text>
                                         <Text style={s3.meta}>{p.duration}</Text>
                                     </View>
-                                    {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                    {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                     {p.techStack && <Text style={[s3.meta, { marginTop: 2 }]}>Technologies: {p.techStack}</Text>}
                                 </View>
                             ))}
@@ -500,6 +505,7 @@ function T3({ data }: { data: any }) {
                                         <View style={{ flex: 1 }}><Text style={s3.bold}>{edu.college}</Text><Text style={s3.btext}>{edu.degree}</Text></View>
                                         <Text style={s3.meta}>{edu.duration}</Text>
                                     </View>
+                                    {edu.score ? <Text style={s3.meta}>{edu.score}</Text> : null}
                                 </View>
                             ))}
                         </>
@@ -519,16 +525,16 @@ const s4 = StyleSheet.create({
     page:  { padding: "22 30", backgroundColor: "#fff" },
     name:  { fontSize: 24, fontFamily: "Helvetica-Bold", color: "#0a0a0a", letterSpacing: 0 },
     ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#6b7280", marginTop: 3 },
-    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#9ca3af", marginTop: 4 },
-    sep:   { height: 0.5, backgroundColor: "#e5e7eb", marginTop: 10, marginBottom: 4 },
-    sh:    { fontSize: 9, fontFamily: "Helvetica-Bold", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 12, marginBottom: 3 },
+    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#9ca3af", marginTop: 4 },
+    sep:   { height: 0.75, backgroundColor: "#d1d5db", marginTop: 10, marginBottom: 4 },
+    sh:    { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#374151", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 12, marginBottom: 3 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.55 },
-    meta:  { fontSize: 9, fontFamily: "Helvetica", color: "#9ca3af" },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111827" },
+    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.55 },
+    meta:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#9ca3af" },
     br:    { flexDirection: "row", marginTop: 3 },
-    bd:    { width: 12, fontSize: 9.5, color: "#d1d5db" },
-    bt:    { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.55 },
+    bd:    { width: 12, fontSize: 10, color: "#d1d5db" },
+    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.55 },
     lnk:   { color: "#6b7280", textDecoration: "underline" },
 });
 
@@ -552,16 +558,12 @@ function T4({ data }: { data: any }) {
             <Page size="A4" style={s4.page}>
                 <Text style={s4.name}>{data.header?.name}</Text>
                 <Text style={s4.ht}>{data.header?.title}</Text>
-                <Text style={s4.hc}>
-                    {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" · "}<Link src={data.header.links.linkedin} style={s4.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text>{" · "}<Link src={data.header.links.github} style={s4.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" · "}<Link src={data.header.links.portfolio} style={s4.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                </Text>
+                <Text style={s4.hc}>{data.header?.contact}</Text>
+                {renderContactLinks(data.header?.links, s4.hc, s4.lnk)}
                 <View style={s4.sep} />
-                {!!data.summary?.trim() && (<><Text style={s4.sh}>ABOUT</Text><Text style={s4.body}>{data.summary}</Text></>)}
+                {!!data.summary?.trim() && (<><Text style={s4.sh}>SUMMARY</Text><Text style={s4.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
-                    <><Text style={s4.sh}>EXPERTISE</Text>
+                    <><Text style={s4.sh}>SKILLS</Text>
                         {data.skills.map((sk: any, i: number) => <Text key={i} style={s4.body}><Text style={s4.bold}>{sk.label}: </Text>{sk.value}</Text>)}
                     </>
                 )}
@@ -570,7 +572,7 @@ function T4({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 8 : 0 }} wrap={false}>
                                 <View style={s4.row}><Text style={s4.bold}>{e.role}, {e.company}</Text><Text style={s4.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s4.meta, { marginTop: 4 }]}>{e.techStack}</Text>}
                             </View>
                         ))}
@@ -588,7 +590,7 @@ function T4({ data }: { data: any }) {
                                     <Text style={s4.meta}>{p.duration}</Text>
                                 </View>
                                 {p.role ? <Text style={[s4.meta, { marginTop: 1 }]}>{p.role}</Text> : null}
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s4.meta, { marginTop: 4 }]}>{p.techStack}</Text>}
                             </View>
                         ))}
@@ -602,6 +604,7 @@ function T4({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s4.bold}>{edu.college}</Text><Text style={s4.body}>{edu.degree}</Text></View>
                                     <Text style={s4.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s4.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -622,7 +625,7 @@ const s5 = StyleSheet.create({
     name:   { fontSize: 26, fontFamily: "Times-Bold", color: "#1c1917", letterSpacing: 0.5, textAlign: "center" },
     accent: { height: 2, backgroundColor: "#b45309", width: 60, marginTop: 5 },
     ht:     { fontSize: 11, fontFamily: "Times-Italic", color: "#78350f", textAlign: "center", marginTop: 5 },
-    hc:     { fontSize: 9.5, fontFamily: "Times-Roman", color: "#57534e", textAlign: "center", marginTop: 3 },
+    hc:     { fontSize: 10, fontFamily: "Times-Roman", color: "#57534e", textAlign: "center", marginTop: 3 },
     sh:     { fontSize: 12, fontFamily: "Times-Bold", color: "#1c1917", marginTop: 10, marginBottom: 1, borderBottomWidth: 0.5, borderBottomColor: "#d6d3d1", paddingBottom: 2 },
     row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
     bold:   { fontSize: 10, fontFamily: "Times-Bold", color: "#1c1917" },
@@ -656,16 +659,12 @@ function T5({ data }: { data: any }) {
                     <Text style={s5.name}>{data.header?.name}</Text>
                     <View style={s5.accent} />
                     <Text style={s5.ht}>{data.header?.title}</Text>
-                    <Text style={s5.hc}>
-                        {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s5.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s5.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s5.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    </Text>
+                    <Text style={s5.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s5.hc, s5.lnk)}
                 </View>
-                {!!data.summary?.trim() && (<><Text style={s5.sh}>EXECUTIVE SUMMARY</Text><Text style={[s5.body, { marginTop: 4 }]}>{data.summary}</Text></>)}
+                {!!data.summary?.trim() && (<><Text style={s5.sh}>SUMMARY</Text><Text style={[s5.body, { marginTop: 4 }]}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
-                    <><Text style={s5.sh}>CORE COMPETENCIES</Text>
+                    <><Text style={s5.sh}>SKILLS</Text>
                         <View style={{ marginTop: 4 }}>{data.skills.map((sk: any, i: number) => <Text key={i} style={s5.bold}>{sk.label}: <Text style={s5.body}>{sk.value}</Text></Text>)}</View>
                     </>
                 )}
@@ -674,7 +673,7 @@ function T5({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 7 : 4 }} wrap={false}>
                                 <View style={s5.row}><Text style={s5.bold}>{e.role} | {e.company}</Text><Text style={s5.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s5.meta, { marginTop: 3 }]}>Technologies: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -682,7 +681,7 @@ function T5({ data }: { data: any }) {
                 )}
                 {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
-                    <><Text style={s5.sh}>SELECTED PROJECTS</Text>
+                    <><Text style={s5.sh}>PROJECTS</Text>
                         {data.projects.map((p: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }} wrap={false}>
                                 <View style={s5.row}>
@@ -692,7 +691,7 @@ function T5({ data }: { data: any }) {
                                     </Text>
                                     <Text style={s5.meta}>{p.duration}</Text>
                                 </View>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s5.meta, { marginTop: 3 }]}>Technologies: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -706,6 +705,7 @@ function T5({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s5.bold}>{edu.college}</Text><Text style={s5.body}>{edu.degree}</Text></View>
                                     <Text style={s5.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s5.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -724,20 +724,20 @@ const s6 = StyleSheet.create({
     page:  { padding: "18 24", backgroundColor: "#fff" },
     nw:    { flexDirection: "row", alignItems: "center" },
     vbar:  { width: 4, height: 36, backgroundColor: "#7c3aed", marginRight: 10 },
-    name:  { fontSize: 17, fontFamily: "Helvetica-Bold", color: "#0f172a", letterSpacing: 0.2 },
+    name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#0f172a", letterSpacing: 0.2 },
     ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#7c3aed", marginTop: 1 },
-    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#475569", marginTop: 4 },
+    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#475569", marginTop: 4 },
     div:   { height: 1, backgroundColor: "#e2e8f0", marginTop: 6, marginBottom: 2 },
     sw:    { flexDirection: "row", alignItems: "center", marginTop: 9, marginBottom: 3 },
     sbar:  { width: 3, height: 13, backgroundColor: "#7c3aed", marginRight: 6 },
     sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-    bold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:  { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#64748b" },
     br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.5, color: "#7c3aed" },
-    bt:    { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    bd:    { width: 10, fontSize: 10, color: "#7c3aed" },
+    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
     lnk:   { color: "#7c3aed", textDecoration: "underline" },
 });
 
@@ -763,12 +763,8 @@ function T6({ data }: { data: any }) {
                     <View style={s6.vbar} />
                     <View><Text style={s6.name}>{data.header?.name}</Text><Text style={s6.ht}>{data.header?.title}</Text></View>
                 </View>
-                <Text style={s6.hc}>
-                    {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s6.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s6.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s6.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                </Text>
+                <Text style={s6.hc}>{data.header?.contact}</Text>
+                {renderContactLinks(data.header?.links, s6.hc, s6.lnk)}
                 <View style={s6.div} />
                 {!!data.summary?.trim() && (<><S v="SUMMARY" /><Text style={s6.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
@@ -781,7 +777,7 @@ function T6({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }} wrap={false}>
                                 <View style={s6.row}><Text style={s6.bold}>{e.role} @ {e.company}</Text><Text style={s6.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s6.meta, { marginTop: 2 }]}>Stack: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -799,7 +795,7 @@ function T6({ data }: { data: any }) {
                                     </Text>
                                     <Text style={s6.meta}>{p.duration}</Text>
                                 </View>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s6.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -813,6 +809,7 @@ function T6({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s6.bold}>{edu.college}</Text><Text style={s6.body}>{edu.degree}</Text></View>
                                     <Text style={s6.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s6.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -824,226 +821,203 @@ function T6({ data }: { data: any }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TEMPLATE 7 — SIDEBAR TEAL  (two-column: teal left sidebar + white right)
+// TEMPLATE 7 — TEAL FLOW  (single-col, teal left-bar sections, ATS-optimised)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const s7 = StyleSheet.create({
-    page:   { flexDirection: "row", backgroundColor: "#fff" },
-    side:   { width: 175, backgroundColor: "#0f766e", padding: "22 13" },
-    main:   { flex: 1, padding: "20 16", backgroundColor: "#fff" },
-    // sidebar
-    sname:  { fontSize: 15, fontFamily: "Helvetica-Bold", color: "#ffffff", letterSpacing: 0.2, marginBottom: 2 },
-    sht:    { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#99f6e4", marginBottom: 10 },
-    shr:    { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: "#ccfbf1", textTransform: "uppercase", letterSpacing: 1.2, marginTop: 9, marginBottom: 3, borderBottomWidth: 0.5, borderBottomColor: "#14b8a6", paddingBottom: 2 },
-    sbody:  { fontSize: 8, fontFamily: "Helvetica", color: "#d1fae5", lineHeight: 1.5 },
-    slink:  { fontSize: 8, fontFamily: "Helvetica", color: "#a7f3d0", textDecoration: "underline" },
-    slabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#a7f3d0", marginTop: 3 },
-    // main
-    msh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#0f766e", textTransform: "uppercase", letterSpacing: 1, marginTop: 8, borderBottomWidth: 1, borderBottomColor: "#ccfbf1", paddingBottom: 2, marginBottom: 3 },
-    mbold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#111827" },
-    mbody:  { fontSize: 9, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
-    mmeta:  { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    mrow:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    mbr:    { flexDirection: "row", marginTop: 2 },
-    mbd:    { width: 10, fontSize: 9, color: "#0f766e" },
-    mbt:    { flex: 1, fontSize: 9, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
+    page:   { padding: "20 26", backgroundColor: "#fff" },
+    name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f766e" },
+    ht:     { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", marginTop: 2 },
+    hc:     { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 3, lineHeight: 1.4 },
+    div:    { height: 2, backgroundColor: "#0f766e", marginTop: 7 },
+    sw:     { flexDirection: "row", alignItems: "center", marginTop: 10, marginBottom: 3 },
+    sbar:   { width: 4, height: 14, backgroundColor: "#0f766e", marginRight: 7 },
+    sh:     { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 },
+    row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:   { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:   { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    meta:   { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:     { flexDirection: "row", marginTop: 2 },
+    bd:     { width: 10, fontSize: 10, color: "#0f766e" },
+    bt:     { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    lnk:    { color: "#0f766e", textDecoration: "underline" },
 });
 
 function T7({ data }: { data: any }) {
     const { careerSections, profileSections } = getOptionalSections(data);
     const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
         sections,
-        heading: (title) => <Text style={s7.msh}>{title}</Text>,
+        heading: (title) => <S v={title} />,
         bullet: (item, key) => <B key={key} t={item} />,
-        rowStyle: s7.mrow,
-        titleStyle: s7.mbold,
-        subtitleStyle: s7.mmeta,
-        durationStyle: s7.mmeta,
-        detailStyle: s7.mmeta,
+        rowStyle: s7.row,
+        titleStyle: s7.bold,
+        subtitleStyle: s7.body,
+        durationStyle: s7.meta,
+        detailStyle: s7.meta,
         entryGap: 6,
-        subtitlePlacement: "below",
     });
-    const B = ({ t }: { t: string }) => <View style={s7.mbr}><Text style={s7.mbd}>•</Text><Text style={s7.mbt}>{t}</Text></View>;
-    const contact = (data.header?.contact ?? "").split(" | ").join("\n");
+    const B = ({ t }: { t: string }) => <View style={s7.br}><Text style={s7.bd}>•</Text><Text style={s7.bt}>{t}</Text></View>;
+    const S = ({ v }: { v: string }) => <View style={s7.sw}><View style={s7.sbar} /><Text style={s7.sh}>{v}</Text></View>;
     return (
         <Document>
             <Page size="A4" style={s7.page}>
-                {/* Sidebar */}
-                <View style={s7.side}>
-                    <Text style={s7.sname}>{data.header?.name}</Text>
-                    <Text style={s7.sht}>{data.header?.title}</Text>
-                    <Text style={s7.shr}>CONTACT</Text>
-                    <Text style={s7.sbody}>{contact}</Text>
-                    {data.header?.links?.linkedin && <Text style={[s7.sbody, { marginTop: 3 }]}><Link src={data.header.links.linkedin} style={s7.slink}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text style={s7.sbody}><Link src={data.header.links.github} style={s7.slink}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text style={s7.sbody}><Link src={data.header.links.portfolio} style={s7.slink}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    {Array.isArray(data.skills) && data.skills.length > 0 && (<>
-                        <Text style={s7.shr}>SKILLS</Text>
+                <Text style={s7.name}>{data.header?.name}</Text>
+                <Text style={s7.ht}>{data.header?.title}</Text>
+                <Text style={s7.hc}>{data.header?.contact}</Text>
+                {renderContactLinks(data.header?.links, s7.hc, s7.lnk)}
+                <View style={s7.div} />
+                {!!data.summary?.trim() && (<><S v="SUMMARY" /><Text style={s7.body}>{data.summary}</Text></>)}
+                {Array.isArray(data.skills) && data.skills.length > 0 && (
+                    <><S v="SKILLS" />
                         {data.skills.map((sk: any, i: number) => (
-                            <Text key={i} style={{ marginTop: i > 0 ? 3 : 0 }}>
-                                <Text style={s7.slabel}>{sk.label}: </Text>
-                                <Text style={s7.sbody}>{sk.value}</Text>
-                            </Text>
+                            <Text key={i} style={s7.body}><Text style={s7.bold}>{sk.label}: </Text>{sk.value}</Text>
                         ))}
-                    </>)}
-                    {getEduList(data).length > 0 && (<>
-                        <Text style={s7.shr}>EDUCATION</Text>
-                        {getEduList(data).map((edu: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
-                                <Text style={s7.slabel}>{edu.college}</Text>
-                                <Text style={s7.sbody}>{edu.degree}</Text>
-                                <Text style={s7.sbody}>{edu.duration}</Text>
+                    </>
+                )}
+                {Array.isArray(data.experience) && data.experience.length > 0 && (
+                    <><S v="EXPERIENCE" />
+                        {data.experience.map((e: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
+                                <View style={s7.row}><Text style={s7.bold}>{e.role} | {e.company}</Text><Text style={s7.meta}>{e.duration}</Text></View>
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
+                                {e.techStack && <Text style={[s7.meta, { marginTop: 2 }]}>{e.techStack}</Text>}
                             </View>
                         ))}
-                    </>)}
-                </View>
-                {/* Main */}
-                <View style={s7.main}>
-                    {!!data.summary?.trim() && (<><Text style={s7.msh}>PROFILE</Text><Text style={s7.mbody}>{data.summary}</Text></>)}
-                    {Array.isArray(data.experience) && data.experience.length > 0 && (
-                        <><Text style={s7.msh}>EXPERIENCE</Text>
-                            {data.experience.map((e: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
-                                    <View style={s7.mrow}><Text style={s7.mbold}>{e.role}</Text><Text style={s7.mmeta}>{e.duration}</Text></View>
-                                    <Text style={s7.mmeta}>{e.company}</Text>
-                                    {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
-                                    {e.techStack && <Text style={[s7.mmeta, { marginTop: 2 }]}>Stack: {e.techStack}</Text>}
-                                </View>
-                            ))}
-                        </>
-                    )}
-                    {supplementalSections(careerSections)}
+                    </>
+                )}
+                {supplementalSections(careerSections)}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
-                        <><Text style={s7.msh}>PROJECTS</Text>
-                            {data.projects.map((p: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
-                                    <View style={s7.mrow}>
-                                        <Text style={s7.mbold}>
-                                            {p.link ? <Link src={p.link} style={{ color: "#0f766e", textDecoration: "underline" }}>{p.name}</Link> : p.name}
-                                        </Text>
-                                        <Text style={s7.mmeta}>{p.duration}</Text>
-                                    </View>
-                                    {p.role ? <Text style={s7.mmeta}>{p.role}</Text> : null}
-                                    {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
-                                    {p.techStack && <Text style={[s7.mmeta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
+                    <><S v="PROJECTS" />
+                        {data.projects.map((p: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
+                                <View style={s7.row}>
+                                    <Text style={s7.bold}>
+                                        {p.link ? <Link src={p.link} style={s7.lnk}>{p.name}</Link> : p.name}
+                                        {p.role ? <Text style={s7.meta}> | {p.role}</Text> : null}
+                                    </Text>
+                                    <Text style={s7.meta}>{p.duration}</Text>
                                 </View>
-                            ))}
-                        </>
-                    )}
-                    {supplementalSections(profileSections)}
-                </View>
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
+                                {p.techStack && <Text style={[s7.meta, { marginTop: 2 }]}>{p.techStack}</Text>}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {getEduList(data).length > 0 && (
+                    <><S v="EDUCATION" />
+                        {getEduList(data).map((edu: any, i: number) => (
+                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
+                                <View style={s7.row}>
+                                    <View style={{ flex: 1 }}><Text style={s7.bold}>{edu.college}</Text><Text style={s7.body}>{edu.degree}</Text></View>
+                                    <Text style={s7.meta}>{edu.duration}</Text>
+                                </View>
+                                {edu.score ? <Text style={s7.meta}>{edu.score}</Text> : null}
+                            </View>
+                        ))}
+                    </>
+                )}
+                {supplementalSections(profileSections)}
             </Page>
         </Document>
     );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TEMPLATE 8 — SIDEBAR NAVY  (two-column: dark navy sidebar + indigo headers)
+// TEMPLATE 8 — NAVY PRO  (single-col, dark navy header band, ATS-optimised)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const s8 = StyleSheet.create({
-    page:   { flexDirection: "row", backgroundColor: "#fff" },
-    side:   { width: 160, backgroundColor: "#1e293b", padding: "22 11" },
-    main:   { flex: 1, padding: "22 18", backgroundColor: "#fff" },
-    // sidebar
-    sname:  { fontSize: 14, fontFamily: "Helvetica-Bold", color: "#f8fafc", letterSpacing: 0.2, marginBottom: 2 },
-    sht:    { fontSize: 8, fontFamily: "Helvetica-Oblique", color: "#94a3b8", marginBottom: 12 },
-    shr:    { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: "#cbd5e1", textTransform: "uppercase", letterSpacing: 1.2, marginTop: 9, marginBottom: 2 },
-    sdiv:   { height: 0.5, backgroundColor: "#334155", marginBottom: 4 },
-    sbody:  { fontSize: 8, fontFamily: "Helvetica", color: "#94a3b8", lineHeight: 1.5 },
-    slabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#cbd5e1", marginTop: 3 },
-    slink:  { fontSize: 8, fontFamily: "Helvetica", color: "#818cf8", textDecoration: "underline" },
-    // main
-    msh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 9, borderBottomWidth: 1.5, borderBottomColor: "#6366f1", paddingBottom: 3, marginBottom: 4 },
-    mbold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    mbody:  { fontSize: 9, fontFamily: "Helvetica", color: "#475569", lineHeight: 1.45 },
-    mmeta:  { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#94a3b8" },
-    mrow:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    mbr:    { flexDirection: "row", marginTop: 2 },
-    mbd:    { width: 10, fontSize: 9, color: "#6366f1" },
-    mbt:    { flex: 1, fontSize: 9, fontFamily: "Helvetica", color: "#475569", lineHeight: 1.45 },
+    page:   { padding: "0", backgroundColor: "#fff" },
+    hbg:    { backgroundColor: "#1e3a5f", padding: "16 26 14 26" },
+    name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#ffffff" },
+    ht:     { fontSize: 10.5, fontFamily: "Helvetica", color: "#93c5fd", marginTop: 2 },
+    hc:     { fontSize: 9.5, fontFamily: "Helvetica", color: "#bfdbfe", marginTop: 3, lineHeight: 1.4 },
+    cnt:    { padding: "10 26" },
+    sh:     { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#1e3a5f", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 9, borderBottomWidth: 1.5, borderBottomColor: "#1e3a5f", paddingBottom: 2, marginBottom: 3 },
+    row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:   { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    btext:  { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    meta:   { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:     { flexDirection: "row", marginTop: 2 },
+    bd:     { width: 10, fontSize: 10, fontFamily: "Helvetica-Bold", color: "#1e3a5f" },
+    bt:     { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    lnk:    { color: "#93c5fd", textDecoration: "underline" },
+    lnkb:   { color: "#1e3a5f", textDecoration: "underline" },
 });
 
 function T8({ data }: { data: any }) {
     const { careerSections, profileSections } = getOptionalSections(data);
     const supplementalSections = (sections: ResumeSupplementalSection[]) => renderOptionalSections({
         sections,
-        heading: (title) => <Text style={s8.msh}>{title}</Text>,
+        heading: (title) => <Text style={s8.sh}>{title}</Text>,
         bullet: (item, key) => <B key={key} t={item} />,
-        rowStyle: s8.mrow,
-        titleStyle: s8.mbold,
-        subtitleStyle: s8.mmeta,
-        durationStyle: s8.mmeta,
-        detailStyle: s8.mmeta,
+        rowStyle: s8.row,
+        titleStyle: s8.bold,
+        subtitleStyle: s8.btext,
+        durationStyle: s8.meta,
+        detailStyle: s8.meta,
         entryGap: 7,
-        subtitlePlacement: "below",
+        firstEntryGap: 4,
     });
-    const B = ({ t }: { t: string }) => <View style={s8.mbr}><Text style={s8.mbd}>•</Text><Text style={s8.mbt}>{t}</Text></View>;
-    const contact = (data.header?.contact ?? "").split(" | ").join("\n");
+    const B = ({ t }: { t: string }) => <View style={s8.br}><Text style={s8.bd}>•</Text><Text style={s8.bt}>{t}</Text></View>;
     return (
         <Document>
             <Page size="A4" style={s8.page}>
-                {/* Sidebar */}
-                <View style={s8.side}>
-                    <Text style={s8.sname}>{data.header?.name}</Text>
-                    <Text style={s8.sht}>{data.header?.title}</Text>
-                    <Text style={s8.shr}>CONTACT</Text>
-                    <View style={s8.sdiv} />
-                    <Text style={s8.sbody}>{contact}</Text>
-                    {data.header?.links?.linkedin && <Text style={[s8.sbody, { marginTop: 3 }]}><Link src={data.header.links.linkedin} style={s8.slink}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text style={s8.sbody}><Link src={data.header.links.github} style={s8.slink}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text style={s8.sbody}><Link src={data.header.links.portfolio} style={s8.slink}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    {Array.isArray(data.skills) && data.skills.length > 0 && (<>
-                        <Text style={s8.shr}>SKILLS</Text>
-                        <View style={s8.sdiv} />
-                        {data.skills.map((sk: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 4 : 0 }}>
-                                <Text style={s8.slabel}>{sk.label}</Text>
-                                <Text style={s8.sbody}>{sk.value}</Text>
-                            </View>
-                        ))}
-                    </>)}
-                    {getEduList(data).length > 0 && (<>
-                        <Text style={s8.shr}>EDUCATION</Text>
-                        <View style={s8.sdiv} />
-                        {getEduList(data).map((edu: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
-                                <Text style={s8.slabel}>{edu.college}</Text>
-                                <Text style={s8.sbody}>{edu.degree}</Text>
-                                <Text style={s8.sbody}>{edu.duration}</Text>
-                            </View>
-                        ))}
-                    </>)}
+                <View style={s8.hbg}>
+                    <Text style={s8.name}>{data.header?.name}</Text>
+                    <Text style={s8.ht}>{data.header?.title}</Text>
+                    <Text style={s8.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s8.hc, s8.lnk)}
                 </View>
-                {/* Main */}
-                <View style={s8.main}>
-                    {!!data.summary?.trim() && (<><Text style={s8.msh}>PROFESSIONAL SUMMARY</Text><Text style={s8.mbody}>{data.summary}</Text></>)}
+                <View style={s8.cnt}>
+                    {!!data.summary?.trim() && (<><Text style={s8.sh}>SUMMARY</Text><Text style={[s8.btext, { marginTop: 4 }]}>{data.summary}</Text></>)}
+                    {Array.isArray(data.skills) && data.skills.length > 0 && (
+                        <><Text style={s8.sh}>SKILLS</Text>
+                            <View style={{ marginTop: 4 }}>
+                                {data.skills.map((sk: any, i: number) => (
+                                    <Text key={i} style={s8.bold}>{sk.label}: <Text style={s8.btext}>{sk.value}</Text></Text>
+                                ))}
+                            </View>
+                        </>
+                    )}
                     {Array.isArray(data.experience) && data.experience.length > 0 && (
-                        <><Text style={s8.msh}>WORK EXPERIENCE</Text>
+                        <><Text style={s8.sh}>EXPERIENCE</Text>
                             {data.experience.map((e: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }} wrap={false}>
-                                    <View style={s8.mrow}><Text style={s8.mbold}>{e.role}</Text><Text style={s8.mmeta}>{e.duration}</Text></View>
-                                    <Text style={s8.mmeta}>{e.company}</Text>
-                                    {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
-                                    {e.techStack && <Text style={[s8.mmeta, { marginTop: 2 }]}>Stack: {e.techStack}</Text>}
+                                <View key={i} style={{ marginTop: i > 0 ? 7 : 4 }} wrap={false}>
+                                    <View style={s8.row}><Text style={s8.bold}>{e.role} | {e.company}</Text><Text style={s8.meta}>{e.duration}</Text></View>
+                                    {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
+                                    {e.techStack && <Text style={[s8.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
                                 </View>
                             ))}
                         </>
                     )}
                     {supplementalSections(careerSections)}
-                {Array.isArray(data.projects) && data.projects.length > 0 && (
-                        <><Text style={s8.msh}>PROJECTS</Text>
+                    {Array.isArray(data.projects) && data.projects.length > 0 && (
+                        <><Text style={s8.sh}>PROJECTS</Text>
                             {data.projects.map((p: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
-                                    <View style={s8.mrow}>
-                                        <Text style={s8.mbold}>
-                                            {p.link ? <Link src={p.link} style={{ color: "#6366f1", textDecoration: "underline" }}>{p.name}</Link> : p.name}
-                                            {p.role ? <Text style={s8.mmeta}> ({p.role})</Text> : null}
+                                <View key={i} style={{ marginTop: i > 0 ? 5 : 4 }} wrap={false}>
+                                    <View style={s8.row}>
+                                        <Text style={s8.bold}>
+                                            {p.link ? <Link src={p.link} style={s8.lnkb}>{p.name}</Link> : p.name}
+                                            {p.role ? <Text> | {p.role}</Text> : null}
                                         </Text>
-                                        <Text style={s8.mmeta}>{p.duration}</Text>
+                                        <Text style={s8.meta}>{p.duration}</Text>
                                     </View>
-                                    {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
-                                    {p.techStack && <Text style={[s8.mmeta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
+                                    {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
+                                    {p.techStack && <Text style={[s8.meta, { marginTop: 2 }]}>Technologies: {p.techStack}</Text>}
+                                </View>
+                            ))}
+                        </>
+                    )}
+                    {getEduList(data).length > 0 && (
+                        <><Text style={s8.sh}>EDUCATION</Text>
+                            {getEduList(data).map((edu: any, i: number) => (
+                                <View key={i} style={{ marginTop: i > 0 ? 6 : 4 }} wrap={false}>
+                                    <View style={s8.row}>
+                                        <View style={{ flex: 1 }}><Text style={s8.bold}>{edu.college}</Text><Text style={s8.btext}>{edu.degree}</Text></View>
+                                        <Text style={s8.meta}>{edu.duration}</Text>
+                                    </View>
+                                    {edu.score ? <Text style={s8.meta}>{edu.score}</Text> : null}
                                 </View>
                             ))}
                         </>
@@ -1063,17 +1037,17 @@ const s9 = StyleSheet.create({
     page:  { padding: "22 28", backgroundColor: "#fff" },
     name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#064e3b", letterSpacing: 0.2 },
     ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#059669", marginTop: 2 },
-    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4 },
+    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4 },
     dbar:  { height: 2, backgroundColor: "#064e3b", marginTop: 8, marginBottom: 1 },
-    dthin: { height: 0.5, backgroundColor: "#d1fae5" },
+    dthin: { height: 0.75, backgroundColor: "#059669" },
     sh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#064e3b", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 10, marginBottom: 2 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    meta:  { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111827" },
+    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
     br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.5, color: "#059669" },
-    bt:    { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
+    bd:    { width: 10, fontSize: 10, color: "#059669" },
+    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
     lnk:   { color: "#059669", textDecoration: "underline" },
 });
 
@@ -1097,16 +1071,12 @@ function T9({ data }: { data: any }) {
             <Page size="A4" style={s9.page}>
                 <Text style={s9.name}>{data.header?.name}</Text>
                 <Text style={s9.ht}>{data.header?.title}</Text>
-                <Text style={s9.hc}>
-                    {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s9.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s9.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s9.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                </Text>
+                <Text style={s9.hc}>{data.header?.contact}</Text>
+                {renderContactLinks(data.header?.links, s9.hc, s9.lnk)}
                 <View style={s9.dbar} />
-                {!!data.summary?.trim() && (<><S v="PROFILE" /><Text style={s9.body}>{data.summary}</Text></>)}
+                {!!data.summary?.trim() && (<><S v="SUMMARY" /><Text style={s9.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
-                    <><S v="TECHNICAL SKILLS" />
+                    <><S v="SKILLS" />
                         {data.skills.map((sk: any, i: number) => <Text key={i} style={s9.body}><Text style={s9.bold}>{sk.label}: </Text>{sk.value}</Text>)}
                     </>
                 )}
@@ -1115,7 +1085,7 @@ function T9({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 7 : 0 }} wrap={false}>
                                 <View style={s9.row}><Text style={s9.bold}>{e.role} | {e.company}</Text><Text style={s9.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s9.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -1133,7 +1103,7 @@ function T9({ data }: { data: any }) {
                                     </Text>
                                     <Text style={s9.meta}>{p.duration}</Text>
                                 </View>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s9.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -1147,6 +1117,7 @@ function T9({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s9.bold}>{edu.college}</Text><Text style={s9.body}>{edu.degree}</Text></View>
                                     <Text style={s9.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s9.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -1163,19 +1134,19 @@ function T9({ data }: { data: any }) {
 
 const s10 = StyleSheet.create({
     page:  { padding: "16 24", backgroundColor: "#fff" },
-    name:  { fontSize: 17, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1.5 },
+    name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1.5 },
     ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", marginTop: 2 },
-    hc:    { fontSize: 8.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 2 },
+    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#6b7280", marginTop: 2 },
     hbar:  { height: 1.5, backgroundColor: "#000", marginTop: 5, marginBottom: 1 },
     sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 7, marginBottom: 0 },
-    shbar: { height: 0.5, backgroundColor: "#000", marginTop: 1, marginBottom: 3 },
+    shbar: { height: 1, backgroundColor: "#000", marginTop: 1, marginBottom: 3 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 3 },
-    bold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#000" },
-    body:  { fontSize: 9, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.4 },
-    meta:  { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
+    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#000" },
+    body:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.4 },
+    meta:  { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
     br:    { flexDirection: "row", marginTop: 1.5 },
-    bd:    { width: 10, fontSize: 9 },
-    bt:    { flex: 1, fontSize: 9, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.4 },
+    bd:    { width: 10, fontSize: 9.5 },
+    bt:    { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.4 },
     lnk:   { color: "#1d4ed8", textDecoration: "underline" },
 });
 
@@ -1199,12 +1170,8 @@ function T10({ data }: { data: any }) {
             <Page size="A4" style={s10.page}>
                 <Text style={s10.name}>{data.header?.name}</Text>
                 <Text style={s10.ht}>{data.header?.title}</Text>
-                <Text style={s10.hc}>
-                    {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s10.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s10.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s10.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                </Text>
+                <Text style={s10.hc}>{data.header?.contact}</Text>
+                {renderContactLinks(data.header?.links, s10.hc, s10.lnk)}
                 <View style={s10.hbar} />
                 {!!data.summary?.trim() && (<><S v="SUMMARY" /><Text style={s10.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
@@ -1217,7 +1184,7 @@ function T10({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }} wrap={false}>
                                 <View style={s10.row}><Text style={s10.bold}>{e.role}, {e.company}</Text><Text style={s10.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s10.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -1235,7 +1202,7 @@ function T10({ data }: { data: any }) {
                                     </Text>
                                     <Text style={s10.meta}>{p.duration}</Text>
                                 </View>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s10.meta, { marginTop: 2 }]}>Technologies: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -1249,6 +1216,7 @@ function T10({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s10.bold}>{edu.college}</Text><Text style={s10.body}>{edu.degree}</Text></View>
                                     <Text style={s10.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s10.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -1267,18 +1235,18 @@ const s11 = StyleSheet.create({
     left:  { flex: 1, paddingRight: 12 },
     name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f172a", letterSpacing: 0.2 },
     ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#2563eb", marginTop: 2 },
-    hc:    { fontSize: 8.5, fontFamily: "Helvetica", color: "#475569", textAlign: "right", lineHeight: 1.45, width: 180 },
+    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#475569", textAlign: "right", lineHeight: 1.45, width: 180 },
     bar:   { height: 1.5, backgroundColor: "#2563eb", marginTop: 7 },
     thin:  { height: 0.5, backgroundColor: "#bfdbfe", marginBottom: 2 },
     sh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#2563eb", textTransform: "uppercase", letterSpacing: 0.9, marginTop: 8 },
-    sl:    { height: 0.5, backgroundColor: "#bfdbfe", marginTop: 2, marginBottom: 3 },
+    sl:    { height: 1, backgroundColor: "#2563eb", marginTop: 2, marginBottom: 3 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:  { fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:  { fontSize: 8.6, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    meta:  { fontSize: 9.1, fontFamily: "Helvetica-Oblique", color: "#64748b" },
     br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.2, color: "#2563eb" },
-    bt:    { flex: 1, fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    bd:    { width: 10, fontSize: 9.7, color: "#2563eb" },
+    bt:    { flex: 1, fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
     lnk:   { color: "#2563eb", textDecoration: "underline" },
 });
 
@@ -1306,30 +1274,26 @@ function T11({ data }: { data: any }) {
                         <Text style={s11.name}>{data.header?.name}</Text>
                         <Text style={s11.ht}>{data.header?.title}</Text>
                     </View>
-                    <Text style={s11.hc}>
-                        {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s11.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s11.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s11.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    </Text>
+                    <Text style={s11.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s11.hc, s11.lnk)}
                 </View>
                 <View style={s11.bar} />
                 <View style={s11.thin} />
-                {!!data.summary?.trim() && (<><S v="Professional Summary" /><Text style={s11.body}>{data.summary}</Text></>)}
+                {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s11.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
-                    <><S v="Core Stack" />
+                    <><S v="Skills" />
                         {data.skills.map((sk: any, i: number) => (
                             <Text key={i} style={s11.body}><Text style={s11.bold}>{sk.label}: </Text>{sk.value}</Text>
                         ))}
                     </>
                 )}
                 {Array.isArray(data.experience) && data.experience.length > 0 && (
-                    <><S v="Professional Experience" />
+                    <><S v="Experience" />
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
                                 <View style={s11.row}><Text style={s11.bold}>{e.role}</Text><Text style={s11.meta}>{e.duration}</Text></View>
                                 <Text style={s11.body}>{e.company}</Text>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s11.meta, { marginTop: 2 }]}>Tech: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -1342,7 +1306,7 @@ function T11({ data }: { data: any }) {
                             <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
                                 <View style={s11.row}><Text style={s11.bold}>{p.name}</Text><Text style={s11.meta}>{p.duration}</Text></View>
                                 <Text style={s11.meta}>{p.role}</Text>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s11.meta, { marginTop: 2 }]}>Tech: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -1356,6 +1320,7 @@ function T11({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s11.bold}>{edu.college}</Text><Text style={s11.body}>{edu.degree}</Text></View>
                                     <Text style={s11.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s11.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -1372,18 +1337,18 @@ const s12 = StyleSheet.create({
     hdr:   { alignItems: "center", borderBottomWidth: 0.8, borderBottomColor: "#d1d5db", paddingBottom: 8 },
     name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#111827", letterSpacing: 0.4 },
     ht:    { fontSize: 9.8, fontFamily: "Helvetica", color: "#0f766e", marginTop: 2 },
-    hc:    { fontSize: 8.7, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, textAlign: "center", lineHeight: 1.4 },
+    hc:    { fontSize: 9.2, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, textAlign: "center", lineHeight: 1.4 },
     accent:{ width: 62, height: 2, backgroundColor: "#0f766e", marginTop: 6 },
     srow:  { flexDirection: "row", alignItems: "center", marginTop: 9, marginBottom: 3 },
     dot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: "#0f766e", marginRight: 6 },
     sh:    { fontSize: 9.3, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 1.1 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 9.4, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 9.3, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    meta:  { fontSize: 8.7, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827" },
+    body:  { fontSize: 9.8, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    meta:  { fontSize: 9.2, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
     br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.3, color: "#0f766e" },
-    bt:    { flex: 1, fontSize: 9.3, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
+    bd:    { width: 10, fontSize: 9.8, color: "#0f766e" },
+    bt:    { flex: 1, fontSize: 9.8, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
     lnk:   { color: "#0f766e", textDecoration: "underline" },
 });
 
@@ -1408,17 +1373,13 @@ function T12({ data }: { data: any }) {
                 <View style={s12.hdr}>
                     <Text style={s12.name}>{data.header?.name}</Text>
                     <Text style={s12.ht}>{data.header?.title}</Text>
-                    <Text style={s12.hc}>
-                        {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s12.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s12.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s12.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    </Text>
+                    <Text style={s12.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s12.hc, s12.lnk)}
                     <View style={s12.accent} />
                 </View>
                 {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s12.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
-                    <><S v="Technical Skills" />
+                    <><S v="Skills" />
                         {data.skills.map((sk: any, i: number) => (
                             <Text key={i} style={s12.body}><Text style={s12.bold}>{sk.label}: </Text>{sk.value}</Text>
                         ))}
@@ -1429,7 +1390,7 @@ function T12({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
                                 <View style={s12.row}><Text style={s12.bold}>{e.role} | {e.company}</Text><Text style={s12.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s12.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -1441,7 +1402,7 @@ function T12({ data }: { data: any }) {
                         {data.projects.map((p: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
                                 <View style={s12.row}><Text style={s12.bold}>{p.name} ({p.role})</Text><Text style={s12.meta}>{p.duration}</Text></View>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s12.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -1455,6 +1416,7 @@ function T12({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s12.bold}>{edu.college}</Text><Text style={s12.body}>{edu.degree}</Text></View>
                                     <Text style={s12.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s12.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -1470,17 +1432,17 @@ const s13 = StyleSheet.create({
     page:  { padding: "20 24", backgroundColor: "#fff" },
     name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#0f172a" },
     ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#475569", marginTop: 2 },
-    hc:    { fontSize: 8.6, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.45 },
+    hc:    { fontSize: 9.1, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.45 },
     top:   { height: 2.5, backgroundColor: "#475569", marginTop: 7, marginBottom: 5 },
     sw:    { backgroundColor: "#f1f5f9", padding: "4 6", marginTop: 8, marginBottom: 3, borderLeftWidth: 2, borderLeftColor: "#475569" },
     sh:    { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#1e293b", textTransform: "uppercase", letterSpacing: 0.9 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 9.4, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:  { fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:  { fontSize: 8.6, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    meta:  { fontSize: 9.1, fontFamily: "Helvetica-Oblique", color: "#64748b" },
     br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.2, color: "#475569" },
-    bt:    { flex: 1, fontSize: 9.2, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    bd:    { width: 10, fontSize: 9.7, color: "#475569" },
+    bt:    { flex: 1, fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
     lnk:   { color: "#334155", textDecoration: "underline" },
 });
 
@@ -1505,12 +1467,8 @@ function T13({ data }: { data: any }) {
             <Page size="A4" style={s13.page}>
                 <Text style={s13.name}>{data.header?.name}</Text>
                 <Text style={s13.ht}>{data.header?.title}</Text>
-                <Text style={s13.hc}>
-                    {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s13.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s13.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s13.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                </Text>
+                <Text style={s13.hc}>{data.header?.contact}</Text>
+                {renderContactLinks(data.header?.links, s13.hc, s13.lnk)}
                 <View style={s13.top} />
                 {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s13.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
@@ -1526,7 +1484,7 @@ function T13({ data }: { data: any }) {
                             <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
                                 <View style={s13.row}><Text style={s13.bold}>{e.role}</Text><Text style={s13.meta}>{e.duration}</Text></View>
                                 <Text style={s13.meta}>{e.company}</Text>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s13.meta, { marginTop: 2 }]}>Platforms: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -1539,7 +1497,7 @@ function T13({ data }: { data: any }) {
                             <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
                                 <View style={s13.row}><Text style={s13.bold}>{p.name}</Text><Text style={s13.meta}>{p.duration}</Text></View>
                                 <Text style={s13.meta}>{p.role}</Text>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s13.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -1553,6 +1511,7 @@ function T13({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s13.bold}>{edu.college}</Text><Text style={s13.body}>{edu.degree}</Text></View>
                                     <Text style={s13.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s13.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -1569,17 +1528,17 @@ const s14 = StyleSheet.create({
     hdr:    { borderBottomWidth: 1.2, borderBottomColor: "#1d4ed8", paddingBottom: 7 },
     name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f172a" },
     ht:     { fontSize: 9.4, fontFamily: "Helvetica", color: "#1d4ed8", marginTop: 2 },
-    hc:     { fontSize: 8.6, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.4 },
+    hc:     { fontSize: 9, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.4 },
     box:    { borderLeftWidth: 3, borderLeftColor: "#1d4ed8", backgroundColor: "#eff6ff", padding: "6 8", marginTop: 8 },
     sh:     { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 1, marginTop: 8, marginBottom: 2 },
-    sl:     { height: 0.5, backgroundColor: "#bfdbfe", marginBottom: 3 },
+    sl:     { height: 1, backgroundColor: "#1d4ed8", marginBottom: 3 },
     row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:   { fontSize: 9.4, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:   { fontSize: 9.1, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:   { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    bold:   { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:   { fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    meta:   { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#64748b" },
     br:     { flexDirection: "row", marginTop: 2 },
-    bd:     { width: 10, fontSize: 9.1, color: "#1d4ed8" },
-    bt:     { flex: 1, fontSize: 9.1, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    bd:     { width: 10, fontSize: 9.7, color: "#1d4ed8" },
+    bt:     { flex: 1, fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
     lnk:    { color: "#1d4ed8", textDecoration: "underline" },
 });
 
@@ -1604,12 +1563,8 @@ function T14({ data }: { data: any }) {
                 <View style={s14.hdr}>
                     <Text style={s14.name}>{data.header?.name}</Text>
                     <Text style={s14.ht}>{data.header?.title}</Text>
-                    <Text style={s14.hc}>
-                        {data.header?.contact}
-                        {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s14.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                        {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s14.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                        {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s14.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                    </Text>
+                    <Text style={s14.hc}>{data.header?.contact}</Text>
+                    {renderContactLinks(data.header?.links, s14.hc, s14.lnk)}
                 </View>
                 {!!data.summary?.trim() && (
                     <>
@@ -1629,7 +1584,7 @@ function T14({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }}>
                                 <View style={s14.row}><Text style={s14.bold}>{e.role} - {e.company}</Text><Text style={s14.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s14.meta, { marginTop: 2 }]}>Technologies: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -1642,7 +1597,7 @@ function T14({ data }: { data: any }) {
                             <View key={i} style={{ marginTop: i > 0 ? 5 : 0 }}>
                                 <View style={s14.row}><Text style={s14.bold}>{p.name}</Text><Text style={s14.meta}>{p.duration}</Text></View>
                                 <Text style={s14.meta}>{p.role}</Text>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s14.meta, { marginTop: 2 }]}>Stack: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -1656,6 +1611,7 @@ function T14({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s14.bold}>{edu.college}</Text><Text style={s14.body}>{edu.degree}</Text></View>
                                     <Text style={s14.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s14.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -1669,19 +1625,19 @@ function T14({ data }: { data: any }) {
 // TEMPLATE 15 - SDE COMPACT (black-and-white, dense and ATS-maximised)
 const s15 = StyleSheet.create({
     page:  { padding: "15 22", backgroundColor: "#fff" },
-    name:  { fontSize: 18, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1.2 },
+    name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1.2 },
     ht:    { fontSize: 9, fontFamily: "Helvetica", color: "#1f2937", marginTop: 1.5 },
-    hc:    { fontSize: 8.2, fontFamily: "Helvetica", color: "#4b5563", marginTop: 2, lineHeight: 1.35 },
+    hc:    { fontSize: 8.7, fontFamily: "Helvetica", color: "#4b5563", marginTop: 2, lineHeight: 1.35 },
     bar:   { height: 1.4, backgroundColor: "#000", marginTop: 4, marginBottom: 1 },
     sh:    { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1, marginTop: 6 },
     sl:    { height: 0.5, backgroundColor: "#000", marginTop: 1, marginBottom: 2 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 3 },
-    bold:  { fontSize: 9.1, fontFamily: "Helvetica-Bold", color: "#000" },
-    body:  { fontSize: 8.8, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
-    meta:  { fontSize: 8.2, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
+    bold:  { fontSize: 9.6, fontFamily: "Helvetica-Bold", color: "#000" },
+    body:  { fontSize: 9.3, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
+    meta:  { fontSize: 8.7, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
     br:    { flexDirection: "row", marginTop: 1.5 },
-    bd:    { width: 8, fontSize: 8.8, color: "#000" },
-    bt:    { flex: 1, fontSize: 8.8, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
+    bd:    { width: 8, fontSize: 9.3, color: "#000" },
+    bt:    { flex: 1, fontSize: 9.3, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
     lnk:   { color: "#1d4ed8", textDecoration: "underline" },
 });
 
@@ -1705,12 +1661,8 @@ function T15({ data }: { data: any }) {
             <Page size="A4" style={s15.page}>
                 <Text style={s15.name}>{data.header?.name}</Text>
                 <Text style={s15.ht}>{data.header?.title}</Text>
-                <Text style={s15.hc}>
-                    {data.header?.contact}
-                    {data.header?.links?.linkedin && <Text>{" | "}<Link src={data.header.links.linkedin} style={s15.lnk}>{shortUrl(data.header.links.linkedin)}</Link></Text>}
-                    {data.header?.links?.github && <Text>{" | "}<Link src={data.header.links.github} style={s15.lnk}>{shortUrl(data.header.links.github)}</Link></Text>}
-                    {data.header?.links?.portfolio && <Text>{" | "}<Link src={data.header.links.portfolio} style={s15.lnk}>{shortUrl(data.header.links.portfolio)}</Link></Text>}
-                </Text>
+                <Text style={s15.hc}>{data.header?.contact}</Text>
+                {renderContactLinks(data.header?.links, s15.hc, s15.lnk)}
                 <View style={s15.bar} />
                 {!!data.summary?.trim() && (<><S v="Summary" /><Text style={s15.body}>{data.summary}</Text></>)}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
@@ -1725,7 +1677,7 @@ function T15({ data }: { data: any }) {
                         {data.experience.map((e: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 4 : 0 }}>
                                 <View style={s15.row}><Text style={s15.bold}>{e.role}, {e.company}</Text><Text style={s15.meta}>{e.duration}</Text></View>
-                                {e.points?.map((p: string, j: number) => p && <B key={j} t={p} />)}
+                                {e.points?.map((p: string, j: number) => p ? <B key={j} t={p} /> : null)}
                                 {e.techStack && <Text style={[s15.meta, { marginTop: 1.5 }]}>Tech: {e.techStack}</Text>}
                             </View>
                         ))}
@@ -1737,7 +1689,7 @@ function T15({ data }: { data: any }) {
                         {data.projects.map((p: any, i: number) => (
                             <View key={i} style={{ marginTop: i > 0 ? 3 : 0 }}>
                                 <View style={s15.row}><Text style={s15.bold}>{p.name} ({p.role})</Text><Text style={s15.meta}>{p.duration}</Text></View>
-                                {p.points?.map((pt: string, j: number) => pt && <B key={j} t={pt} />)}
+                                {p.points?.map((pt: string, j: number) => pt ? <B key={j} t={pt} /> : null)}
                                 {p.techStack && <Text style={[s15.meta, { marginTop: 1.5 }]}>Tech: {p.techStack}</Text>}
                             </View>
                         ))}
@@ -1751,6 +1703,7 @@ function T15({ data }: { data: any }) {
                                     <View style={{ flex: 1 }}><Text style={s15.bold}>{edu.college}</Text><Text style={s15.body}>{edu.degree}</Text></View>
                                     <Text style={s15.meta}>{edu.duration}</Text>
                                 </View>
+                                {edu.score ? <Text style={s15.meta}>{edu.score}</Text> : null}
                             </View>
                         ))}
                     </>
@@ -1892,57 +1845,46 @@ const BASE_TEMPLATES: TemplateInfo[] = [
         ),
     },
     {
-        id: "sidebar-teal", name: "Sidebar Teal", description: "2-col teal sidebar, ATS-safe",
+        id: "sidebar-teal", name: "Teal Flow", description: "Single-col teal left-bar — ATS safe",
         accent: "#0f766e", bg: "#f0fdf4", component: T7, premium: true,
         thumb: (
-            <div className="w-full h-full flex">
-                <div className="w-[35%] bg-teal-700 px-1.5 py-2 flex flex-col gap-0.5">
-                    <div className="h-2 w-12 bg-white/80 rounded-sm" />
-                    <div className="h-1 w-14 bg-teal-300/70 rounded-sm" />
-                    <div className="h-px w-full bg-teal-500/50 mt-1" />
-                    <div className="h-0.5 w-8 bg-teal-300 rounded-sm mt-0.5" />
-                    <div className="h-1 w-full bg-teal-400/50 rounded-sm" />
-                    <div className="h-1 w-full bg-teal-400/50 rounded-sm" />
-                    <div className="h-px w-full bg-teal-500/50 mt-0.5" />
-                    <div className="h-0.5 w-7 bg-teal-300 rounded-sm mt-0.5" />
-                    <div className="h-1 w-full bg-teal-400/50 rounded-sm" />
-                    <div className="h-1 w-3/4 bg-teal-400/50 rounded-sm" />
+            <div className="w-full h-full bg-white flex flex-col px-2 pt-2 gap-0.5">
+                <div className="h-2.5 w-20 bg-teal-700 rounded-sm" />
+                <div className="h-1 w-16 bg-gray-400 rounded-sm" />
+                <div className="h-1 w-24 bg-gray-300 rounded-sm" />
+                <div className="h-0.5 w-full bg-teal-700 mt-1" />
+                <div className="flex items-center gap-1 mt-1">
+                    <div className="w-1 h-3 bg-teal-700 rounded-sm" />
+                    <div className="h-1 w-12 bg-gray-700 rounded-sm" />
                 </div>
-                <div className="flex-1 px-1.5 py-2 flex flex-col gap-0.5 bg-white">
-                    <div className="h-1 w-14 bg-teal-700 rounded-sm" />
-                    <div className="h-px w-full bg-teal-200" />
-                    <div className="h-1 w-full bg-gray-300 rounded-sm" /><div className="h-1 w-4/5 bg-gray-300 rounded-sm" />
-                    <div className="h-1 w-14 bg-teal-700 rounded-sm mt-0.5" />
-                    <div className="h-px w-full bg-teal-200" />
-                    <div className="h-1 w-full bg-gray-300 rounded-sm" /><div className="h-1 w-3/4 bg-gray-300 rounded-sm" />
+                <div className="h-1 w-full bg-gray-300 rounded-sm" /><div className="h-1 w-4/5 bg-gray-300 rounded-sm" />
+                <div className="flex items-center gap-1 mt-0.5">
+                    <div className="w-1 h-3 bg-teal-700 rounded-sm" />
+                    <div className="h-1 w-14 bg-gray-700 rounded-sm" />
                 </div>
+                <div className="h-1 w-full bg-gray-300 rounded-sm" /><div className="h-1 w-3/4 bg-gray-300 rounded-sm" />
             </div>
         ),
     },
     {
-        id: "sidebar-navy", name: "Sidebar Navy", description: "2-col dark sidebar, indigo accents",
-        accent: "#4f46e5", bg: "#eef2ff", component: T8, premium: true,
+        id: "sidebar-navy", name: "Navy Pro", description: "Single-col navy banner — ATS safe",
+        accent: "#1e3a5f", bg: "#eff6ff", component: T8, premium: true,
         thumb: (
-            <div className="w-full h-full flex">
-                <div className="w-[32%] bg-slate-800 px-1.5 py-2 flex flex-col gap-0.5">
-                    <div className="h-2 w-10 bg-white/80 rounded-sm" />
-                    <div className="h-1 w-12 bg-slate-400/60 rounded-sm" />
-                    <div className="h-px w-full bg-slate-600 mt-1" />
-                    <div className="h-0.5 w-7 bg-slate-400 rounded-sm mt-0.5" />
-                    <div className="h-1 w-full bg-slate-500/50 rounded-sm" />
-                    <div className="h-1 w-4/5 bg-slate-500/50 rounded-sm" />
-                    <div className="h-px w-full bg-slate-600 mt-0.5" />
-                    <div className="h-0.5 w-6 bg-slate-400 rounded-sm mt-0.5" />
-                    <div className="h-1 w-full bg-slate-500/50 rounded-sm" />
-                    <div className="h-1 w-2/3 bg-slate-500/50 rounded-sm" />
+            <div className="w-full h-full bg-white flex flex-col">
+                <div className="bg-[#1e3a5f] px-2 pt-2 pb-1.5 flex flex-col gap-0.5">
+                    <div className="h-2.5 w-20 bg-white rounded-sm" />
+                    <div className="h-1 w-16 bg-blue-300/70 rounded-sm" />
+                    <div className="h-1 w-24 bg-blue-200/50 rounded-sm" />
                 </div>
-                <div className="flex-1 px-1.5 py-2 flex flex-col gap-0.5 bg-white">
-                    <div className="h-1 w-20 bg-slate-800 rounded-sm" />
-                    <div className="h-0.5 w-full bg-indigo-500 rounded-sm" />
-                    <div className="h-1 w-full bg-gray-300 rounded-sm" /><div className="h-1 w-4/5 bg-gray-300 rounded-sm" />
-                    <div className="h-1 w-16 bg-slate-800 rounded-sm mt-0.5" />
-                    <div className="h-0.5 w-full bg-indigo-500 rounded-sm" />
-                    <div className="h-1 w-full bg-gray-300 rounded-sm" /><div className="h-1 w-3/4 bg-gray-300 rounded-sm" />
+                <div className="flex-1 px-2 pt-1.5 flex flex-col gap-0.5">
+                    <div className="h-1 w-14 bg-[#1e3a5f] rounded-sm border-b border-[#1e3a5f]" />
+                    <div className="h-0.5 w-full bg-[#1e3a5f] opacity-30 mb-0.5" />
+                    <div className="h-1 w-full bg-gray-200 rounded-sm" />
+                    <div className="h-1 w-4/5 bg-gray-200 rounded-sm" />
+                    <div className="h-1 w-14 bg-[#1e3a5f] rounded-sm mt-1" />
+                    <div className="h-0.5 w-full bg-[#1e3a5f] opacity-30 mb-0.5" />
+                    <div className="h-1 w-full bg-gray-200 rounded-sm" />
+                    <div className="h-1 w-3/4 bg-gray-200 rounded-sm" />
                 </div>
             </div>
         ),
@@ -2123,8 +2065,8 @@ const TEMPLATE_TAGS: Record<string, ResumeCategory[]> = {
     "minimal":             ["modern", "ats"],
     "executive":           ["professional"],
     "tech":                ["tech", "ats"],
-    "sidebar-teal":        ["two-column", "modern"],
-    "sidebar-navy":        ["two-column", "professional"],
+    "sidebar-teal":        ["modern", "ats"],
+    "sidebar-navy":        ["professional", "ats"],
     "emerald":             ["modern"],
     "ats":                 ["ats", "tech"],
     "faang-focus":         ["tech", "ats"],

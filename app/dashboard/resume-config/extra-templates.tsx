@@ -284,6 +284,7 @@ function createTemplate(spec: TemplateSpec): ComponentType<{ data: any }> {
                             {!isRail && <Text style={[styles.meta, { flexShrink: 0, marginLeft: 8 }]}>{edu.duration}</Text>}
                         </View>
                         {isRail && <Text style={styles.railBody}>{edu.duration}</Text>}
+                        {edu.score ? <Text style={styles.meta}>{edu.score}</Text> : null}
                     </View>
                 ))}
             </View>

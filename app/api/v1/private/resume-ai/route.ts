@@ -63,6 +63,7 @@ const RESUME_JSON_SCHEMA = {
             college: "",
             degree: "",
             duration: "",
+            score: "",
         },
     ],
     certifications: [
@@ -167,7 +168,7 @@ ADD RELEVANT SKILLS FROM JD:
 
 ⑤ EDUCATION & CERTIFICATIONS (target 14/15):
 - Education field is an ARRAY. List ALL education in order from most recent to oldest: degree → junior college/intermediate → high school.
-- Each entry: college = institution name + city, degree = qualification name + CGPA if ≥ 7.0/10, duration = year range.
+- Each entry: college = institution name + city, degree = qualification name ONLY (no CGPA here), score = CGPA/percentage (e.g., "CGPA: 8.4/10" or "Percentage: 92%"), duration = year range.
 - For high school and junior college: omit CGPA, just show marks percentage if available (e.g., "Marks: 961/1000").
 - NEVER create a "Academic Background" custom section — put all education in the education array.
 - Certifications: include ALL structured learning — professional certs, Coursera/edX/Udemy completions, AWS Skill Builder, Google Cloud Skills Boost, Microsoft Learn, bootcamp certificates, vendor training. Format: "Certification Name — Issuer, Year".
@@ -400,7 +401,7 @@ function buildResumeGenerationPrompt({
         "",
         "EDUCATION:",
         "  • education is an ARRAY — list ALL institutions: degree (most recent) → junior college → high school.",
-        "  • Include CGPA/GPA in degree string if ≥ 7.0/10 or ≥ 3.0/4.0: 'B.Tech Computer Science | CGPA: 8.4/10'.",
+        "  • Output CGPA/GPA in the score field (NOT in degree): score = "CGPA: 8.4/10" or "GPA: 3.8/4.0" or "Percentage: 92%" or "Marks: 961/1000".",
         "  • For high school / junior college: show qualification + marks if available, no CGPA format.",
         "  • NEVER put educational history in customSections — always use the education array.",
         "  • Coursework: only include if courses directly match JD (max 6). Experienced candidates: leave [] empty.",
@@ -645,6 +646,20 @@ function parseJsonObject(value: string): LooseRecord {
     }
 }
 
+function cleanContact(raw: string): string {
+    return raw
+        .split(/\s*[|,]\s*/)
+        .filter((part) => {
+            const t = part.trim();
+            if (!t) return false;
+            if (/^https?:\/\//i.test(t)) return false;
+            if (/^(www\.)?[\w-]+\.(com|io|dev|net|org|me|app|co)\//i.test(t)) return false;
+            if (/^(linkedin|github|twitter|instagram|behance|dribbble)\.com/i.test(t)) return false;
+            return true;
+        })
+        .join(" | ");
+}
+
 function normalizeResumeJson(value: LooseRecord) {
     const header = asRecord(value.header);
     const headerLinks = asRecord(header?.links);
@@ -653,7 +668,7 @@ function normalizeResumeJson(value: LooseRecord) {
         header: {
             name: firstText(header, ["name", "fullName"]),
             title: firstText(header, ["title", "headline", "role"]),
-            contact: firstText(header, ["contact", "contactInfo"]),
+            contact: cleanContact(firstText(header, ["contact", "contactInfo"])),
             links: {
                 linkedin: firstText(headerLinks, ["linkedin"]),
                 github: firstText(headerLinks, ["github"]),
@@ -787,7 +802,7 @@ function normalizePositionEntries(value: unknown) {
         } => Boolean(item));
 }
 
-function normalizeEducation(value: unknown): Array<{ college: string; degree: string; duration: string }> {
+function normalizeEducation(value: unknown): Array<{ college: string; degree: string; duration: string; score: string }> {
     const items = Array.isArray(value) ? value : (value && typeof value === "object" ? [value] : []);
 
     return items
@@ -797,9 +812,10 @@ function normalizeEducation(value: unknown): Array<{ college: string; degree: st
             const college = firstText(record, ["college", "school", "university", "institution"]);
             const degree = firstText(record, ["degree", "qualification", "program"]);
             const duration = buildDuration(record);
-            return (college || degree) ? { college, degree, duration } : null;
+            const score = firstText(record, ["score", "gpa", "cgpa", "percentage", "grade", "marks"]);
+            return (college || degree) ? { college, degree, duration, score } : null;
         })
-        .filter((e): e is { college: string; degree: string; duration: string } => Boolean(e));
+        .filter((e): e is { college: string; degree: string; duration: string; score: string } => Boolean(e));
 }
 
 function normalizeCertifications(value: unknown) {
