@@ -232,7 +232,7 @@ function PreviewModal({
   cvName: string;
   onClose: () => void;
 }) {
-  const [selectedTemplate, setSelectedTemplate] = useState<CvTemplateId>("classic");
+  const [selectedTemplate, setSelectedTemplate] = useState<CvTemplateId>("london" as CvTemplateId);
   const template = CV_TEMPLATES.find((t) => t.id === selectedTemplate) ?? CV_TEMPLATES[0];
   const TemplateDoc = template.component;
 
@@ -244,108 +244,105 @@ function PreviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-4xl bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[95dvh] sm:max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-900/80 backdrop-blur-sm">
 
-        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+      {/* ── Top bar ── */}
+      <div className="shrink-0 bg-white border-b border-gray-100 px-4 sm:px-6 py-0 flex items-stretch min-h-[52px]">
+
+        {/* Left — CV name */}
+        <div className="flex items-center gap-2.5 flex-1 min-w-0 py-3">
+          <div className="p-1.5 bg-violet-100 rounded-lg shrink-0">
+            <FiEye size={13} className="text-violet-600" />
+          </div>
+          <p className="font-semibold text-gray-800 text-sm truncate">{cvName}</p>
         </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 shrink-0">
-          <div>
-            <h3 className="font-bold text-gray-900 flex items-center gap-2.5">
-              <div className="p-1.5 bg-violet-100 rounded-lg">
-                <FiEye size={14} className="text-violet-600" />
-              </div>
-              Preview &amp; Download
-            </h3>
-            <p className="text-xs text-gray-500 mt-1 truncate max-w-xs sm:max-w-sm">{cvName}</p>
-          </div>
+        {/* Centre — template switcher (desktop) */}
+        <div className="hidden sm:flex items-center gap-1 px-4 border-l border-r border-gray-100">
+          <span className="text-xs text-gray-400 font-medium mr-2">Template</span>
+          {CV_TEMPLATES.map((t) => (
+            <button key={t.id} type="button"
+              onClick={() => setSelectedTemplate(t.id as CvTemplateId)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                selectedTemplate === t.id
+                  ? "border-violet-500 bg-violet-600 text-white shadow-sm"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:text-violet-600"
+              }`}>
+              {selectedTemplate === t.id && <FiCheck size={10} />}
+              {t.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Right — download + close */}
+        <div className="flex items-center gap-2 pl-4">
+          <BlobProvider document={<TemplateDoc data={resumeJson} />}>
+            {({ url, loading }: { url: string | null; loading: boolean }) => (
+              <button type="button"
+                disabled={loading || !url}
+                onClick={() => url && triggerDownload(url)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl shadow shadow-violet-600/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                {loading
+                  ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /><span className="hidden sm:inline">Preparing…</span></>
+                  : <><FiDownload size={14} /><span className="hidden sm:inline">Download PDF</span></>}
+              </button>
+            )}
+          </BlobProvider>
           <button type="button" onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
-            <FiX size={17} />
+            className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all">
+            <FiX size={18} />
           </button>
         </div>
+      </div>
 
-        {/* Template selector */}
-        <div className="px-5 sm:px-6 py-3 border-b border-gray-100 shrink-0">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Template</p>
-          <div className="flex gap-2 flex-wrap">
-            {CV_TEMPLATES.map((t) => (
-              <button key={t.id} type="button"
-                onClick={() => setSelectedTemplate(t.id as CvTemplateId)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all ${
-                  selectedTemplate === t.id
-                    ? "border-violet-500 bg-violet-50 text-violet-700 shadow-sm"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                }`}>
-                {selectedTemplate === t.id && <FiCheck size={12} />}
-                {t.name}
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] text-gray-400 mt-1">{template.description}</p>
-        </div>
+      {/* ── Mobile template switcher ── */}
+      <div className="sm:hidden shrink-0 bg-white border-b border-gray-100 px-4 py-2.5 flex items-center gap-2">
+        <span className="text-xs text-gray-400 font-medium shrink-0">Template:</span>
+        {CV_TEMPLATES.map((t) => (
+          <button key={t.id} type="button"
+            onClick={() => setSelectedTemplate(t.id as CvTemplateId)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+              selectedTemplate === t.id
+                ? "border-violet-500 bg-violet-600 text-white"
+                : "border-gray-200 bg-white text-gray-600"
+            }`}>
+            {selectedTemplate === t.id && <FiCheck size={10} />}
+            {t.name}
+          </button>
+        ))}
+      </div>
 
-        {/* PDF Preview */}
-        <div className="flex-1 overflow-hidden bg-gray-100 min-h-0">
-          <BlobProvider document={<TemplateDoc data={resumeJson} />}>
-            {({ url, loading, error }: { url: string | null; loading: boolean; error: Error | null }) => {
-              if (loading) {
-                return (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-                    <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-sm text-gray-400">Rendering PDF…</p>
-                  </div>
-                );
-              }
-              if (error || !url) {
-                return (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <p className="text-sm text-red-500">Failed to render PDF. Try a different template.</p>
-                  </div>
-                );
-              }
+      {/* ── PDF viewer — takes all remaining space ── */}
+      <div className="flex-1 min-h-0 bg-gray-200 flex items-stretch justify-center p-3 sm:p-6">
+        <BlobProvider document={<TemplateDoc data={resumeJson} />}>
+          {({ url, loading, error }: { url: string | null; loading: boolean; error: Error | null }) => {
+            if (loading) {
               return (
-                <iframe
-                  key={url}
-                  src={`${url}#toolbar=0&navpanes=0&scrollbar=0`}
-                  className="w-full h-full border-0"
-                  title="CV Preview"
-                />
+                <div className="w-full flex flex-col items-center justify-center gap-4">
+                  <div className="w-8 h-8 border-3 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-gray-400 font-medium">Rendering your CV…</p>
+                </div>
               );
-            }}
-          </BlobProvider>
-        </div>
-
-        {/* Footer with download */}
-        <div className="px-5 sm:px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0 bg-white rounded-b-2xl">
-          <p className="text-xs text-gray-400 hidden sm:block">
-            Select a template above, then download.
-          </p>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button type="button" onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
-              Close
-            </button>
-            <BlobProvider document={<TemplateDoc data={resumeJson} />}>
-              {({ url, loading }: { url: string | null; loading: boolean }) => (
-                <button type="button"
-                  disabled={loading || !url}
-                  onClick={() => url && triggerDownload(url)}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl shadow-lg shadow-violet-600/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                  {loading ? (
-                    <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Preparing…</>
-                  ) : (
-                    <><FiDownload size={14} /> Download PDF</>
-                  )}
-                </button>
-              )}
-            </BlobProvider>
-          </div>
-        </div>
+            }
+            if (error || !url) {
+              return (
+                <div className="w-full flex flex-col items-center justify-center gap-3">
+                  <p className="text-sm text-red-500 font-medium">Failed to render PDF.</p>
+                  <p className="text-xs text-gray-400">Try selecting a different template.</p>
+                </div>
+              );
+            }
+            return (
+              <iframe
+                key={url}
+                src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
+                className="w-full max-w-3xl bg-white rounded-xl shadow-2xl border border-gray-300"
+                style={{ height: "100%" }}
+                title="CV Preview"
+              />
+            );
+          }}
+        </BlobProvider>
       </div>
     </div>
   );

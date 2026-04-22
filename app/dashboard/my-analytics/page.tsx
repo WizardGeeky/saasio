@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
     BarChart, Bar, ComposedChart, Line,
+    AreaChart, Area,
     PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, ResponsiveContainer,
 } from "recharts";
@@ -14,7 +15,7 @@ import { getStoredToken } from "@/app/utils/token";
 import {
     FiZap, FiPackage, FiMessageSquare, FiRefreshCw,
     FiAlertCircle, FiUser, FiCalendar, FiShield,
-    FiTarget, FiCheckCircle,
+    FiTarget, FiCheckCircle, FiGrid,
 } from "react-icons/fi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -76,6 +77,9 @@ type AnalyticsData = {
             resolved: number;
             rejected: number;
         };
+        cvs: {
+            total: number;
+        };
     };
     periodStats: {
         ats: {
@@ -85,9 +89,11 @@ type AnalyticsData = {
         subscriptions: number;
         resumes: number;
         complaints: number;
+        cvs: number;
     };
     series: {
         ats: Array<{ label: string; count: number; avgScore: number }>;
+        cvs: Array<{ label: string; count: number }>;
     };
     recentResumes: RecentResume[];
 };
@@ -109,6 +115,10 @@ const atsConfig: ChartConfig = {
 
 const sectionConfig: ChartConfig = {
     score: { label: "Score", color: "hsl(215, 90%, 55%)" },
+};
+
+const cvConfig: ChartConfig = {
+    count: { label: "CVs Generated", color: "hsl(262, 70%, 60%)" },
 };
 
 // ─── Colour palette ───────────────────────────────────────────────────────────
@@ -410,6 +420,61 @@ export default function MyAnalyticsPage() {
                         </div>
                     </section>
 
+
+                    {/* ═══ 4. CV Analytics ═══ */}
+                    <section>
+                        <SectionHeading>CV Generation</SectionHeading>
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 xl:grid-cols-1 gap-4 xl:col-span-1">
+                                <StatCard
+                                    icon={FiGrid}
+                                    label="Total CVs Generated"
+                                    color="purple"
+                                    value={g.cvs.total}
+                                    sub="All-time AI-generated CVs"
+                                />
+                                <StatCard
+                                    icon={FiZap}
+                                    label={`CVs (${periodLabel})`}
+                                    color="indigo"
+                                    value={p.cvs}
+                                    sub={p.cvs > 0 ? "CVs in this period" : "None in this period"}
+                                />
+                            </div>
+                            <ChartCard
+                                title="CV Generation Trend"
+                                subtitle={`AI-generated CVs over ${periodLabel}`}
+                                className="xl:col-span-2"
+                            >
+                                {s.cvs.every((d) => d.count === 0) ? (
+                                    <p className="text-sm text-gray-400 text-center py-10">No CVs generated yet.</p>
+                                ) : (
+                                    <ChartContainer config={cvConfig} className="h-44 w-full aspect-auto">
+                                        <AreaChart data={s.cvs} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="gCvsUser" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%"  stopColor="hsl(262,70%,60%)" stopOpacity={0.25} />
+                                                    <stop offset="95%" stopColor="hsl(262,70%,60%)" stopOpacity={0.02} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                            <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                                            <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
+                                            <ChartTooltip content={<ChartTooltipContent />} />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="count"
+                                                stroke="hsl(262,70%,60%)"
+                                                fill="url(#gCvsUser)"
+                                                strokeWidth={2}
+                                                dot={false}
+                                            />
+                                        </AreaChart>
+                                    </ChartContainer>
+                                )}
+                            </ChartCard>
+                        </div>
+                    </section>
 
                     {/* ═══ 5. ATS Trend ═══ */}
                     <section>

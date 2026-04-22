@@ -13,469 +13,301 @@ function getEduList(data: any) {
     if (Array.isArray(data.education)) return data.education.filter((e: any) => e?.college || e?.degree);
     return (data.education?.college || data.education?.degree) ? [data.education] : [];
 }
+function getExpList(data: any)    { return Array.isArray(data.experience)     ? data.experience     : []; }
+function getInternList(data: any) { return Array.isArray(data.internships)    ? data.internships    : []; }
+function getProjList(data: any)   { return Array.isArray(data.projects)       ? data.projects       : []; }
+function getCertList(data: any)   { return Array.isArray(data.certifications) ? data.certifications : []; }
+function getSkillList(data: any)  { return Array.isArray(data.skills)         ? data.skills         : []; }
 
-function getExpList(data: any) {
-    return Array.isArray(data.experience) ? data.experience : [];
-}
+// =============================================================================
+// TEMPLATE 1 — "LONDON CLASSIC"
+// Pure black / white / gray. Name top-left + CV badge top-right. Three-column
+// link grid. Uppercase letter-spaced section headings with rule. Bullet points.
+// =============================================================================
 
-function getInternList(data: any) {
-    return Array.isArray(data.internships) ? data.internships : [];
-}
+const s4 = StyleSheet.create({
+    page:        { padding: "38 46", backgroundColor: "#fff", fontFamily: "Helvetica" },
 
-function getProjList(data: any) {
-    return Array.isArray(data.projects) ? data.projects : [];
-}
-
-function getCertList(data: any) {
-    return Array.isArray(data.certifications) ? data.certifications : [];
-}
-
-function getSkillList(data: any) {
-    return Array.isArray(data.skills) ? data.skills : [];
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TEMPLATE 1 — FORMAL PROFESSIONAL CV
-// Clean Times serif. Centered header, small-caps sections, two-column skills.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const s1 = StyleSheet.create({
-    page:       { padding: "22 30", backgroundColor: "#fff", fontFamily: "Times-Roman" },
     // Header
-    hName:      { fontSize: 26, fontFamily: "Times-Bold", textAlign: "center", textTransform: "uppercase", letterSpacing: 2, color: "#111" },
-    hTitle:     { fontSize: 11, fontFamily: "Times-Italic", textAlign: "center", color: "#444", marginTop: 3 },
-    hRule:      { height: 1.5, backgroundColor: "#222", marginTop: 5, marginBottom: 3 },
-    hContact:   { fontSize: 9, fontFamily: "Times-Roman", textAlign: "center", color: "#555", lineHeight: 1.6 },
-    hLinks:     { fontSize: 9, fontFamily: "Times-Roman", textAlign: "center", color: "#1a56a0", marginTop: 2, lineHeight: 1.6 },
-    // Section
-    sHead:      { fontSize: 10, fontFamily: "Times-Bold", textTransform: "uppercase", letterSpacing: 2, color: "#111", marginTop: 12, marginBottom: 1 },
-    sRule:      { height: 0.75, backgroundColor: "#888", marginBottom: 5 },
-    // Career entry
-    entryRow:   { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-    entryTitle: { fontSize: 10.5, fontFamily: "Times-Bold", color: "#111", flex: 1 },
-    entryDate:  { fontSize: 9.5, fontFamily: "Times-Italic", color: "#555", flexShrink: 0 },
-    entryCo:    { fontSize: 10, fontFamily: "Times-Italic", color: "#333", marginTop: 1 },
-    bullet:     { flexDirection: "row", marginTop: 2.5, paddingLeft: 4 },
-    bulletDot:  { width: 10, fontSize: 10, color: "#111" },
-    bulletText: { flex: 1, fontSize: 9.5, fontFamily: "Times-Roman", color: "#222", lineHeight: 1.45 },
-    stack:      { fontSize: 9, fontFamily: "Times-Italic", color: "#555", marginTop: 2, paddingLeft: 4 },
-    // Skills two-column
-    skillsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 0 },
-    skillItem:  { width: "50%", flexDirection: "row", marginTop: 3 },
-    skillLabel: { fontSize: 9.5, fontFamily: "Times-Bold", color: "#111" },
-    skillValue: { fontSize: 9.5, fontFamily: "Times-Roman", color: "#333", flex: 1, lineHeight: 1.4 },
-    // Summary
-    summary:    { fontSize: 10, fontFamily: "Times-Roman", color: "#222", lineHeight: 1.6, textAlign: "justify" },
-    // Edu
-    eduRow:     { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    eduDeg:     { fontSize: 10, fontFamily: "Times-Bold", color: "#111" },
-    eduDate:    { fontSize: 9.5, fontFamily: "Times-Italic", color: "#555" },
-    eduColl:    { fontSize: 10, fontFamily: "Times-Italic", color: "#333", marginTop: 1 },
-    eduScore:   { fontSize: 9.5, fontFamily: "Times-Roman", color: "#555", marginTop: 1 },
-    // Cert
-    certText:   { fontSize: 9.5, fontFamily: "Times-Roman", color: "#333", marginTop: 3, lineHeight: 1.4 },
-    lnk:        { color: "#1a56a0", textDecoration: "underline" },
+    name:        { fontSize: 26, fontFamily: "Helvetica-Bold", color: "#111", textTransform: "uppercase", letterSpacing: 1 },
+    nameTitle:   { fontSize: 11, fontFamily: "Helvetica", color: "#555", marginTop: 3 },
+    // Contact + info
+    contact:     { marginTop: 7, fontSize: 9.5, fontFamily: "Helvetica", color: "#555", lineHeight: 1.8 },
+    rule:        { height: 0.75, backgroundColor: "#ccc", marginTop: 10, marginBottom: 10 },
+    thinRule:    { height: 0.35, backgroundColor: "#e0e0e0", marginTop: 7, marginBottom: 0 },
+
+    // 3-column link grid
+    infoGrid:    { flexDirection: "row", marginBottom: 2 },
+    infoCol:     { flex: 1 },
+    infoLabel:   { fontSize: 9, fontFamily: "Helvetica-Bold", color: "#333" },
+    infoValue:   { fontSize: 9, fontFamily: "Helvetica", color: "#555", marginTop: 2 },
+    infoLnk:     { fontSize: 9, fontFamily: "Helvetica", color: "#1a56a0", textDecoration: "underline", marginTop: 2 },
+
+    // Summary (no heading)
+    summary:     { fontSize: 10, fontFamily: "Helvetica", color: "#333", lineHeight: 1.7, textAlign: "justify" },
+
+    // Section heading
+    secWrap:     { marginTop: 16 },
+    secHead:     { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#111", textTransform: "uppercase", letterSpacing: 2.5 },
+    secRule:     { height: 1, backgroundColor: "#bbb", marginTop: 5, marginBottom: 9 },
+
+    // Entry
+    entryWrap:   { marginTop: 9 },
+    entryTop:    { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+    entryTitle:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111", flex: 1 },
+    entryDate:   { fontSize: 9.5, fontFamily: "Helvetica", color: "#666", flexShrink: 0, paddingLeft: 10 },
+    entrySub:    { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#555", marginTop: 2 },
+    entryDesc:   { fontSize: 9.5, fontFamily: "Helvetica", color: "#444", marginTop: 4, lineHeight: 1.65 },
+    bullet:      { flexDirection: "row", marginTop: 3.5, paddingLeft: 8 },
+    bulletMark:  { width: 11, fontSize: 10, color: "#444", fontFamily: "Helvetica" },
+    bulletText:  { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#444", lineHeight: 1.55 },
+    stack:       { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#888", marginTop: 3, paddingLeft: 8 },
+
+    // Education
+    eduTop:      { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+    degree:      { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111", flex: 1 },
+    eduDate:     { fontSize: 9.5, fontFamily: "Helvetica", color: "#666", flexShrink: 0, paddingLeft: 10 },
+    college:     { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#555", marginTop: 2 },
+    score:       { fontSize: 9.5, fontFamily: "Helvetica", color: "#666", marginTop: 2, lineHeight: 1.6 },
+
+    // Skills table
+    skillRow:    { flexDirection: "row", marginTop: 6 },
+    skillLabel:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#333", width: 130 },
+    skillValue:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#555", flex: 1 },
+
+    // Certs
+    certItem:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#444", marginTop: 5, lineHeight: 1.5 },
+    lnk:         { color: "#1a56a0", textDecoration: "underline" },
 });
 
-function FormalCvSection({ title }: { title: string }) {
+function C4Section({ title }: { title: string }) {
     return (
-        <View>
-            <Text style={s1.sHead}>{title}</Text>
-            <View style={s1.sRule} />
+        <View style={s4.secWrap}>
+            <Text style={s4.secHead}>{title}</Text>
+            <View style={s4.secRule} />
         </View>
     );
 }
 
-export function ClassicCvTemplate({ data }: { data: any }) {
-    const exp = getExpList(data);
+export function LondonClassicTemplate({ data }: { data: any }) {
+    const exp    = getExpList(data);
     const intern = getInternList(data);
-    const proj = getProjList(data);
-    const edu = getEduList(data);
-    const certs = getCertList(data);
+    const proj   = getProjList(data);
+    const edu    = getEduList(data);
+    const certs  = getCertList(data);
     const skills = getSkillList(data);
     const { linkedin, github, portfolio } = data.header?.links ?? {};
 
     const Bullet = ({ t }: { t: string }) => (
-        <View style={s1.bullet}>
-            <Text style={s1.bulletDot}>▸</Text>
-            <Text style={s1.bulletText}>{t}</Text>
+        <View style={s4.bullet}>
+            <Text style={s4.bulletMark}>-</Text>
+            <Text style={s4.bulletText}>{t}</Text>
         </View>
     );
 
-    const EntryBlock = ({ role, company, duration, points, techStack }: any) => (
-        <View style={{ marginTop: 6 }} wrap={false}>
-            <View style={s1.entryRow}>
-                <Text style={s1.entryTitle}>{role}</Text>
-                <Text style={s1.entryDate}>{duration}</Text>
+    const Entry = ({ title, sub, duration, points, techStack }: any) => (
+        <View style={s4.entryWrap} wrap={false}>
+            <View style={s4.entryTop}>
+                <Text style={s4.entryTitle}>{title}</Text>
+                {duration ? <Text style={s4.entryDate}>{duration}</Text> : null}
             </View>
-            <Text style={s1.entryCo}>{company}</Text>
+            {sub ? <Text style={s4.entrySub}>{sub}</Text> : null}
             {(points ?? []).map((p: string, i: number) => p ? <Bullet key={i} t={p} /> : null)}
-            {techStack ? <Text style={s1.stack}>Technologies: {techStack}</Text> : null}
+            {techStack ? <Text style={s4.stack}>Technologies: {techStack}</Text> : null}
         </View>
     );
+
+    // Build 3-column info grid from available links
+    const infoCols = [
+        portfolio ? { label: "Website",  value: portfolio  } : null,
+        linkedin  ? { label: "LinkedIn", value: linkedin   } : null,
+        github    ? { label: "GitHub",   value: github     } : null,
+    ].filter(Boolean) as { label: string; value: string }[];
 
     return (
         <Document>
-            <Page size="A4" style={s1.page}>
+            <Page size="A4" style={s4.page}>
 
-                {/* ── Header ── */}
-                <Text style={s1.hName}>{data.header?.name}</Text>
-                {data.header?.title ? <Text style={s1.hTitle}>{data.header.title}</Text> : null}
-                <View style={s1.hRule} />
-                {data.header?.contact ? <Text style={s1.hContact}>{data.header.contact}</Text> : null}
-                {(linkedin || github || portfolio) ? (
-                    <Text style={s1.hLinks}>
-                        {linkedin ? <Link src={linkedin} style={s1.lnk}>{shortUrl(linkedin)}</Link> : null}
-                        {linkedin && github ? <Text>  •  </Text> : null}
-                        {github ? <Link src={github} style={s1.lnk}>{shortUrl(github)}</Link> : null}
-                        {(linkedin || github) && portfolio ? <Text>  •  </Text> : null}
-                        {portfolio ? <Link src={portfolio} style={s1.lnk}>{shortUrl(portfolio)}</Link> : null}
-                    </Text>
-                ) : null}
+                {/* Header */}
+                <View>
+                    <Text style={s4.name}>{data.header?.name}</Text>
+                    {data.header?.title ? <Text style={s4.nameTitle}>{data.header.title}</Text> : null}
+                </View>
 
-                {/* ── Professional Profile ── */}
-                {data.summary?.trim() ? (
+                {/* Contact */}
+                {data.header?.contact ? <Text style={s4.contact}>{data.header.contact}</Text> : null}
+
+                <View style={s4.rule} />
+
+                {/* Info grid */}
+                {infoCols.length > 0 && (
                     <View>
-                        <FormalCvSection title="Professional Profile" />
-                        <Text style={s1.summary}>{data.summary}</Text>
-                    </View>
-                ) : null}
-
-                {/* ── Career History ── */}
-                {exp.length > 0 ? (
-                    <View>
-                        <FormalCvSection title="Career History" />
-                        {exp.map((e: any, i: number) => <EntryBlock key={i} role={e.role} company={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />)}
-                    </View>
-                ) : null}
-
-                {/* ── Internships ── */}
-                {intern.length > 0 ? (
-                    <View>
-                        <FormalCvSection title="Internships & Training" />
-                        {intern.map((e: any, i: number) => <EntryBlock key={i} role={e.role} company={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />)}
-                    </View>
-                ) : null}
-
-                {/* ── Projects ── */}
-                {proj.length > 0 ? (
-                    <View>
-                        <FormalCvSection title="Projects & Contributions" />
-                        {proj.map((p: any, i: number) => (
-                            <View key={i} style={{ marginTop: 6 }} wrap={false}>
-                                <View style={s1.entryRow}>
-                                    <Text style={s1.entryTitle}>
-                                        {p.link ? <Link src={p.link} style={s1.lnk}>{p.name}</Link> : p.name}
-                                        {p.role ? <Text style={{ fontFamily: "Times-Italic", color: "#444" }}> · {p.role}</Text> : null}
-                                    </Text>
-                                    <Text style={s1.entryDate}>{p.duration}</Text>
-                                </View>
-                                {(p.points ?? []).map((pt: string, j: number) => pt ? <Bullet key={j} t={pt} /> : null)}
-                                {p.techStack ? <Text style={s1.stack}>Technologies: {p.techStack}</Text> : null}
-                            </View>
-                        ))}
-                    </View>
-                ) : null}
-
-                {/* ── Core Competencies ── */}
-                {skills.length > 0 ? (
-                    <View>
-                        <FormalCvSection title="Core Competencies" />
-                        <View style={s1.skillsWrap}>
-                            {skills.map((sk: any, i: number) => (
-                                <View key={i} style={s1.skillItem}>
-                                    <Text style={s1.skillLabel}>{sk.label}:  </Text>
-                                    <Text style={s1.skillValue}>{sk.value}</Text>
+                        <View style={s4.infoGrid}>
+                            {infoCols.map((col, i) => (
+                                <View key={i} style={s4.infoCol}>
+                                    <Text style={s4.infoLabel}>{col.label}</Text>
+                                    <Link src={col.value} style={s4.infoLnk}>{shortUrl(col.value)}</Link>
                                 </View>
                             ))}
                         </View>
+                        <View style={s4.rule} />
                     </View>
-                ) : null}
+                )}
 
-                {/* ── Education ── */}
-                {edu.length > 0 ? (
+                {/* Summary */}
+                {data.summary?.trim() ? <Text style={s4.summary}>{data.summary}</Text> : null}
+
+                {/* Work Experience */}
+                {exp.length > 0 && (
                     <View>
-                        <FormalCvSection title="Education & Qualifications" />
+                        <C4Section title="Work Experience" />
+                        {exp.map((e: any, i: number) => (
+                            <Entry key={i} title={e.role} sub={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />
+                        ))}
+                    </View>
+                )}
+
+                {/* Internships */}
+                {intern.length > 0 && (
+                    <View>
+                        <C4Section title="Internships and Training" />
+                        {intern.map((e: any, i: number) => (
+                            <Entry key={i} title={e.role} sub={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />
+                        ))}
+                    </View>
+                )}
+
+                {/* Projects */}
+                {proj.length > 0 && (
+                    <View>
+                        <C4Section title="Projects and Contributions" />
+                        {proj.map((p: any, i: number) => (
+                            <Entry key={i} title={p.name} sub={p.role} duration={p.duration} points={p.points} techStack={p.techStack} />
+                        ))}
+                    </View>
+                )}
+
+                {/* Education */}
+                {edu.length > 0 && (
+                    <View>
+                        <C4Section title="Education and Qualifications" />
                         {edu.map((e: any, i: number) => (
-                            <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
-                                <View style={s1.eduRow}>
-                                    <Text style={s1.eduDeg}>{e.degree}</Text>
-                                    <Text style={s1.eduDate}>{e.duration}</Text>
+                            <View key={i} style={[s4.entryWrap]} wrap={false}>
+                                <View style={s4.eduTop}>
+                                    <Text style={s4.degree}>{e.degree}</Text>
+                                    {e.duration ? <Text style={s4.eduDate}>{e.duration}</Text> : null}
                                 </View>
-                                <Text style={s1.eduColl}>{e.college}</Text>
-                                {e.score ? <Text style={s1.eduScore}>{e.score}</Text> : null}
+                                {e.college ? <Text style={s4.college}>{e.college}</Text> : null}
+                                {e.score   ? <Text style={s4.score}>{e.score}</Text>     : null}
                             </View>
                         ))}
                     </View>
-                ) : null}
+                )}
 
-                {/* ── Certifications ── */}
-                {certs.length > 0 ? (
+                {/* Skills */}
+                {skills.length > 0 && (
                     <View>
-                        <FormalCvSection title="Certifications & Professional Development" />
+                        <C4Section title="Skills" />
+                        {skills.map((sk: any, i: number) => (
+                            <View key={i} style={s4.skillRow}>
+                                <Text style={s4.skillLabel}>{sk.label}</Text>
+                                <Text style={s4.skillValue}>{sk.value}</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* Certifications */}
+                {certs.length > 0 && (
+                    <View>
+                        <C4Section title="Certifications" />
                         {certs.map((c: any, i: number) => (
-                            <Text key={i} style={s1.certText}>
-                                {typeof c === "string" ? c : [c.name, c.issuer, c.date].filter(Boolean).join(" — ")}
+                            <Text key={i} style={s4.certItem}>
+                                {typeof c === "string" ? c : [c.name, c.issuer, c.date].filter(Boolean).join("  -  ")}
                             </Text>
                         ))}
                     </View>
-                ) : null}
+                )}
 
             </Page>
         </Document>
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TEMPLATE 2 — EXECUTIVE TWO-COLUMN CV
-// Dark left sidebar (contact + skills), white right main (profile + history).
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
+// TEMPLATE 2 — "MODERN STRUCTURED"
+// Light-gray section bars with left accent stripe. Personal details table.
+// Name + summary header. Helvetica throughout. Clean entry separators.
+// =============================================================================
 
-const SIDEBAR_W = 175;
-const MAIN_W    = 370;
-const ACCENT    = "#1e3a5f";
-const ACCENT2   = "#2563eb";
+const S5_BAR_BG  = "#f0f0f0";
+const S5_ACCENT  = "#2c2c2c";
+const S5_DRK     = "#1a1a1a";
+const S5_MID     = "#555";
+const S5_LIT     = "#888";
 
-const s2 = StyleSheet.create({
-    page:       { padding: 0, backgroundColor: "#fff", flexDirection: "row" },
-    // Sidebar
-    sidebar:    { width: SIDEBAR_W, backgroundColor: ACCENT, padding: "26 16", minHeight: "100%" },
-    sbName:     { fontSize: 18, fontFamily: "Helvetica-Bold", color: "#fff", lineHeight: 1.2 },
-    sbTitle:    { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#b0c4de", marginTop: 4, lineHeight: 1.5 },
-    sbDivider:  { height: 1, backgroundColor: "#3a5a8a", marginTop: 14, marginBottom: 10 },
-    sbSHead:    { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#7ba7d8", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 },
-    sbItem:     { fontSize: 9, fontFamily: "Helvetica", color: "#cdd8e8", lineHeight: 1.6, marginBottom: 2 },
-    sbLabel:    { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: "#7ba7d8" },
-    sbSkCat:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#cdd8e8", marginTop: 6 },
-    sbSkVal:    { fontSize: 9, fontFamily: "Helvetica", color: "#a0b8d4", lineHeight: 1.5, marginTop: 1 },
-    sbLnk:      { color: "#7ba7d8", textDecoration: "underline", fontSize: 9 },
-    // Main
-    main:       { flex: 1, padding: "22 20 22 18", backgroundColor: "#fff" },
-    mSHead:     { fontSize: 10, fontFamily: "Helvetica-Bold", color: ACCENT, textTransform: "uppercase", letterSpacing: 1.5, marginTop: 12, marginBottom: 2 },
-    mSLine:     { height: 1.5, backgroundColor: ACCENT2, marginBottom: 6 },
-    mSummary:   { fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.65, textAlign: "justify" },
-    mEntryRow:  { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginTop: 7 },
-    mRole:      { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827", flex: 1 },
-    mDate:      { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#6b7280", flexShrink: 0, paddingLeft: 4 },
-    mCompany:   { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: ACCENT2, marginTop: 1 },
-    mBullet:    { flexDirection: "row", marginTop: 2.5 },
-    mBulletDot: { width: 10, fontSize: 9.5, color: ACCENT2 },
-    mBulletTxt: { flex: 1, fontSize: 9, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
-    mStack:     { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#6b7280", marginTop: 2 },
-    mEduRow:    { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
-    mEduDeg:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#111827", flex: 1 },
-    mEduDate:   { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    mEduColl:   { fontSize: 9, fontFamily: "Helvetica", color: "#374151", marginTop: 1 },
-    mEduScore:  { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#6b7280", marginTop: 1 },
-    mCert:      { fontSize: 9, fontFamily: "Helvetica", color: "#374151", marginTop: 3, lineHeight: 1.4 },
-    mProjName:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827" },
-    mLnk:       { color: ACCENT2, textDecoration: "underline" },
-});
+const s5 = StyleSheet.create({
+    page:        { padding: "34 44", backgroundColor: "#fff", fontFamily: "Helvetica" },
 
-export function ModernCvTemplate({ data }: { data: any }) {
-    const exp    = getExpList(data);
-    const intern = getInternList(data);
-    const proj   = getProjList(data);
-    const edu    = getEduList(data);
-    const certs  = getCertList(data);
-    const skills = getSkillList(data);
-    const { linkedin, github, portfolio } = data.header?.links ?? {};
+    // Header
+    name:        { fontSize: 22, fontFamily: "Helvetica-Bold", color: S5_DRK },
+    nameTitle:   { fontSize: 11, fontFamily: "Helvetica-Oblique", color: S5_MID, marginTop: 3 },
+    summary:     { fontSize: 10, fontFamily: "Helvetica", color: "#333", lineHeight: 1.72, marginTop: 10, textAlign: "justify" },
+    headerRule:  { height: 0.5, backgroundColor: "#d5d5d5", marginTop: 13, marginBottom: 0 },
 
-    const MBullet = ({ t }: { t: string }) => (
-        <View style={s2.mBullet}>
-            <Text style={s2.mBulletDot}>›</Text>
-            <Text style={s2.mBulletTxt}>{t}</Text>
-        </View>
-    );
+    // Section bar — gray background with left accent stripe
+    secOuter:    { marginTop: 14 },
+    secBar:      { flexDirection: "row", alignItems: "stretch", backgroundColor: S5_BAR_BG, marginBottom: 7 },
+    secStripe:   { width: 4, backgroundColor: S5_ACCENT },
+    secLabel:    { fontSize: 11, fontFamily: "Helvetica-Bold", color: S5_DRK, paddingVertical: 6, paddingHorizontal: 10 },
 
-    const MSection = ({ title }: { title: string }) => (
-        <View>
-            <Text style={s2.mSHead}>{title}</Text>
-            <View style={s2.mSLine} />
-        </View>
-    );
+    // Personal details table
+    detailRow:   { flexDirection: "row", alignItems: "flex-start", marginTop: 5 },
+    detailKey:   { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: S5_MID, width: 120 },
+    detailVal:   { fontSize: 9.5, fontFamily: "Helvetica", color: S5_DRK, flex: 1, lineHeight: 1.55 },
+    detailLnk:   { fontSize: 9.5, fontFamily: "Helvetica", color: "#1a56a0", textDecoration: "underline", flex: 1 },
 
-    const EntryBlock = ({ role, company, duration, points, techStack }: any) => (
-        <View wrap={false}>
-            <View style={s2.mEntryRow}>
-                <Text style={s2.mRole}>{role}</Text>
-                <Text style={s2.mDate}>{duration}</Text>
-            </View>
-            {company ? <Text style={s2.mCompany}>{company}</Text> : null}
-            {(points ?? []).map((p: string, i: number) => p ? <MBullet key={i} t={p} /> : null)}
-            {techStack ? <Text style={s2.mStack}>Stack: {techStack}</Text> : null}
-        </View>
-    );
+    // Entry
+    entryWrap:   { marginTop: 9 },
+    entryTop:    { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+    entryTitle:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: S5_DRK, flex: 1 },
+    entryDate:   { fontSize: 9.5, fontFamily: "Helvetica", color: S5_LIT, flexShrink: 0, paddingLeft: 10 },
+    entrySub:    { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: S5_MID, marginTop: 2 },
+    bullet:      { flexDirection: "row", marginTop: 3.5, paddingLeft: 8 },
+    bulletMark:  { width: 11, fontSize: 10, color: "#444", fontFamily: "Helvetica" },
+    bulletText:  { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#444", lineHeight: 1.55 },
+    stack:       { fontSize: 9, fontFamily: "Helvetica-Oblique", color: S5_LIT, marginTop: 3, paddingLeft: 8 },
+    entryDivider:{ height: 0.35, backgroundColor: "#e0e0e0", marginTop: 9 },
 
-    return (
-        <Document>
-            <Page size="A4" style={s2.page}>
+    // Education
+    eduTop:      { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+    degree:      { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: S5_DRK, flex: 1 },
+    eduDate:     { fontSize: 9.5, fontFamily: "Helvetica", color: S5_LIT, flexShrink: 0, paddingLeft: 10 },
+    college:     { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: S5_MID, marginTop: 2 },
+    score:       { fontSize: 9.5, fontFamily: "Helvetica", color: S5_LIT, marginTop: 2, lineHeight: 1.6 },
 
-                {/* ── Left Sidebar ── */}
-                <View style={s2.sidebar} fixed>
-                    <Text style={s2.sbName}>{data.header?.name}</Text>
-                    {data.header?.title ? <Text style={s2.sbTitle}>{data.header.title}</Text> : null}
-
-                    <View style={s2.sbDivider} />
-                    <Text style={s2.sbSHead}>Contact</Text>
-                    {data.header?.contact ? (
-                        data.header.contact.split("|").map((part: string, i: number) => (
-                            <Text key={i} style={s2.sbItem}>{part.trim()}</Text>
-                        ))
-                    ) : null}
-                    {linkedin ? <Link src={linkedin} style={s2.sbLnk}>{shortUrl(linkedin)}</Link> : null}
-                    {github ? <Link src={github} style={s2.sbLnk}>{shortUrl(github)}</Link> : null}
-                    {portfolio ? <Link src={portfolio} style={s2.sbLnk}>{shortUrl(portfolio)}</Link> : null}
-
-                    {skills.length > 0 ? (
-                        <View>
-                            <View style={s2.sbDivider} />
-                            <Text style={s2.sbSHead}>Technical Skills</Text>
-                            {skills.map((sk: any, i: number) => (
-                                <View key={i} style={{ marginTop: 5 }}>
-                                    <Text style={s2.sbSkCat}>{sk.label}</Text>
-                                    <Text style={s2.sbSkVal}>{sk.value}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    ) : null}
-
-                    {certs.length > 0 ? (
-                        <View>
-                            <View style={s2.sbDivider} />
-                            <Text style={s2.sbSHead}>Certifications</Text>
-                            {certs.map((c: any, i: number) => (
-                                <Text key={i} style={{ ...s2.sbItem, marginTop: 4 }}>
-                                    {typeof c === "string" ? c : c.name || ""}
-                                </Text>
-                            ))}
-                        </View>
-                    ) : null}
-                </View>
-
-                {/* ── Right Main ── */}
-                <View style={s2.main}>
-                    {data.summary?.trim() ? (
-                        <View>
-                            <MSection title="Professional Profile" />
-                            <Text style={s2.mSummary}>{data.summary}</Text>
-                        </View>
-                    ) : null}
-
-                    {exp.length > 0 ? (
-                        <View>
-                            <MSection title="Career History" />
-                            {exp.map((e: any, i: number) => (
-                                <EntryBlock key={i} role={e.role} company={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />
-                            ))}
-                        </View>
-                    ) : null}
-
-                    {intern.length > 0 ? (
-                        <View>
-                            <MSection title="Internships" />
-                            {intern.map((e: any, i: number) => (
-                                <EntryBlock key={i} role={e.role} company={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />
-                            ))}
-                        </View>
-                    ) : null}
-
-                    {proj.length > 0 ? (
-                        <View>
-                            <MSection title="Key Projects" />
-                            {proj.map((p: any, i: number) => (
-                                <View key={i} style={{ marginTop: i > 0 ? 6 : 0 }} wrap={false}>
-                                    <View style={s2.mEntryRow}>
-                                        <Text style={s2.mProjName}>
-                                            {p.link ? <Link src={p.link} style={s2.mLnk}>{p.name}</Link> : p.name}
-                                        </Text>
-                                        <Text style={s2.mDate}>{p.duration}</Text>
-                                    </View>
-                                    {(p.points ?? []).map((pt: string, j: number) => pt ? <MBullet key={j} t={pt} /> : null)}
-                                    {p.techStack ? <Text style={s2.mStack}>Stack: {p.techStack}</Text> : null}
-                                </View>
-                            ))}
-                        </View>
-                    ) : null}
-
-                    {edu.length > 0 ? (
-                        <View>
-                            <MSection title="Education" />
-                            {edu.map((e: any, i: number) => (
-                                <View key={i} wrap={false}>
-                                    <View style={s2.mEduRow}>
-                                        <Text style={s2.mEduDeg}>{e.degree}</Text>
-                                        <Text style={s2.mEduDate}>{e.duration}</Text>
-                                    </View>
-                                    <Text style={s2.mEduColl}>{e.college}</Text>
-                                    {e.score ? <Text style={s2.mEduScore}>{e.score}</Text> : null}
-                                </View>
-                            ))}
-                        </View>
-                    ) : null}
-                </View>
-
-            </Page>
-        </Document>
-    );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TEMPLATE 3 — CONTEMPORARY MINIMAL CV
-// Accent header band, clean Helvetica, bold role lines, timeline dates.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PRI = "#0f172a";
-const ACC = "#6d28d9";
-
-const s3 = StyleSheet.create({
-    page:      { padding: 0, backgroundColor: "#fff" },
-    // Top band
-    band:      { backgroundColor: PRI, padding: "20 28 16 28" },
-    bName:     { fontSize: 24, fontFamily: "Helvetica-Bold", color: "#fff", letterSpacing: 0.5 },
-    bTitle:    { fontSize: 11, fontFamily: "Helvetica", color: "#94a3b8", marginTop: 3 },
-    bContact:  { fontSize: 9, fontFamily: "Helvetica", color: "#64748b", marginTop: 6, lineHeight: 1.6 },
-    bLinks:    { fontSize: 9, fontFamily: "Helvetica", color: "#7c86a8", marginTop: 2, lineHeight: 1.6 },
-    bLnk:      { color: "#818cf8", textDecoration: "underline" },
-    // Accent strip
-    strip:     { height: 4, backgroundColor: ACC },
-    // Body
-    body:      { padding: "14 28" },
-    // Section header
-    sHead:     { flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 6 },
-    sHeadLine: { width: 3, height: 14, backgroundColor: ACC, marginRight: 7, borderRadius: 2 },
-    sHeadText: { fontSize: 11, fontFamily: "Helvetica-Bold", color: PRI, textTransform: "uppercase", letterSpacing: 1 },
-    sRule:     { height: 0.5, backgroundColor: "#e2e8f0", marginTop: 3, marginBottom: 4 },
-    // Summary
-    summary:   { fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.7, textAlign: "justify" },
-    // Entry card
-    card:      { marginTop: 8, paddingLeft: 10, borderLeft: 2, borderLeftColor: "#e2e8f0" } as any,
-    cardRow:   { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    cardRole:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: PRI, flex: 1 },
-    cardDate:  { fontSize: 9, fontFamily: "Helvetica", color: ACC, backgroundColor: "#ede9fe", paddingHorizontal: 6, paddingVertical: 1.5, borderRadius: 4 } as any,
-    cardCo:    { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280", marginTop: 2 },
-    bullet:    { flexDirection: "row", marginTop: 3 },
-    bulletDot: { width: 10, fontSize: 9, color: ACC },
-    bulletTxt: { flex: 1, fontSize: 9, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
-    stack:     { fontSize: 8.5, fontFamily: "Helvetica", color: "#9ca3af", marginTop: 2 },
     // Skills
-    skillRow:  { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 4 } as any,
-    skillTag:  { fontSize: 8.5, fontFamily: "Helvetica", color: "#374151", backgroundColor: "#f1f5f9", paddingHorizontal: 7, paddingVertical: 2.5, borderRadius: 4, marginBottom: 3 } as any,
-    skillCat:  { fontSize: 9, fontFamily: "Helvetica-Bold", color: "#374151", marginTop: 5, marginBottom: 1 },
-    // Edu
-    eduBlock:  { flexDirection: "row", justifyContent: "space-between", marginTop: 8, paddingLeft: 10, borderLeft: 2, borderLeftColor: "#e2e8f0" } as any,
-    eduLeft:   { flex: 1 },
-    eduDeg:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: PRI },
-    eduColl:   { fontSize: 9, fontFamily: "Helvetica", color: "#6b7280", marginTop: 1 },
-    eduScore:  { fontSize: 8.5, fontFamily: "Helvetica-Oblique", color: "#9ca3af", marginTop: 1 },
-    eduDate:   { fontSize: 9, fontFamily: "Helvetica", color: ACC },
-    // Cert
-    certItem:  { fontSize: 9, fontFamily: "Helvetica", color: "#374151", marginTop: 4, lineHeight: 1.4 },
-    certBullet:{ color: ACC, marginRight: 4 },
-    lnk:       { color: "#818cf8", textDecoration: "underline" },
+    skillRow:    { flexDirection: "row", marginTop: 6 },
+    skillLabel:  { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#444", width: 130 },
+    skillValue:  { fontSize: 9.5, fontFamily: "Helvetica", color: S5_MID, flex: 1 },
+
+    // Certs
+    certItem:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#444", marginTop: 5, lineHeight: 1.5 },
+    lnk:         { color: "#1a56a0", textDecoration: "underline" },
 });
 
-export function MinimalCvTemplate({ data }: { data: any }) {
+function S5Section({ title }: { title: string }) {
+    return (
+        <View style={s5.secOuter}>
+            <View style={s5.secBar}>
+                <View style={s5.secStripe} />
+                <Text style={s5.secLabel}>{title}</Text>
+            </View>
+        </View>
+    );
+}
+
+export function ModernStructuredTemplate({ data }: { data: any }) {
     const exp    = getExpList(data);
     const intern = getInternList(data);
     const proj   = getProjList(data);
@@ -483,152 +315,151 @@ export function MinimalCvTemplate({ data }: { data: any }) {
     const certs  = getCertList(data);
     const skills = getSkillList(data);
     const { linkedin, github, portfolio } = data.header?.links ?? {};
+
+    const contactParts = (data.header?.contact || "")
+        .split("|")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
 
     const Bullet = ({ t }: { t: string }) => (
-        <View style={s3.bullet}>
-            <Text style={s3.bulletDot}>•</Text>
-            <Text style={s3.bulletTxt}>{t}</Text>
+        <View style={s5.bullet}>
+            <Text style={s5.bulletMark}>-</Text>
+            <Text style={s5.bulletText}>{t}</Text>
         </View>
     );
 
-    const Section = ({ title }: { title: string }) => (
-        <View style={s3.sHead}>
-            <View style={s3.sHeadLine} />
-            <Text style={s3.sHeadText}>{title}</Text>
-        </View>
-    );
-
-    const EntryCard = ({ role, company, duration, points, techStack }: any) => (
-        <View style={s3.card} wrap={false}>
-            <View style={s3.cardRow}>
-                <Text style={s3.cardRole}>{role}</Text>
-                {duration ? <Text style={s3.cardDate}>{duration}</Text> : null}
+    const Entry = ({ title, sub, duration, points, techStack, showDivider }: any) => (
+        <View style={s5.entryWrap} wrap={false}>
+            <View style={s5.entryTop}>
+                <Text style={s5.entryTitle}>{title}</Text>
+                {duration ? <Text style={s5.entryDate}>{duration}</Text> : null}
             </View>
-            {company ? <Text style={s3.cardCo}>{company}</Text> : null}
+            {sub ? <Text style={s5.entrySub}>{sub}</Text> : null}
             {(points ?? []).map((p: string, i: number) => p ? <Bullet key={i} t={p} /> : null)}
-            {techStack ? <Text style={s3.stack}>Stack: {techStack}</Text> : null}
+            {techStack ? <Text style={s5.stack}>Technologies: {techStack}</Text> : null}
+            {showDivider ? <View style={s5.entryDivider} /> : null}
         </View>
     );
 
     return (
         <Document>
-            <Page size="A4" style={s3.page}>
+            <Page size="A4" style={s5.page}>
 
-                {/* ── Top band ── */}
-                <View style={s3.band}>
-                    <Text style={s3.bName}>{data.header?.name}</Text>
-                    {data.header?.title ? <Text style={s3.bTitle}>{data.header.title}</Text> : null}
-                    {data.header?.contact ? <Text style={s3.bContact}>{data.header.contact}</Text> : null}
-                    {(linkedin || github || portfolio) ? (
-                        <Text style={s3.bLinks}>
-                            {linkedin ? <Link src={linkedin} style={s3.bLnk}>{shortUrl(linkedin)}</Link> : null}
-                            {linkedin && github ? <Text>  ·  </Text> : null}
-                            {github ? <Link src={github} style={s3.bLnk}>{shortUrl(github)}</Link> : null}
-                            {(linkedin || github) && portfolio ? <Text>  ·  </Text> : null}
-                            {portfolio ? <Link src={portfolio} style={s3.bLnk}>{shortUrl(portfolio)}</Link> : null}
-                        </Text>
-                    ) : null}
-                </View>
-                <View style={s3.strip} />
+                {/* Header */}
+                <Text style={s5.name}>{data.header?.name}</Text>
+                {data.header?.title ? <Text style={s5.nameTitle}>{data.header.title}</Text> : null}
+                {data.summary?.trim() ? <Text style={s5.summary}>{data.summary}</Text> : null}
+                <View style={s5.headerRule} />
 
-                <View style={s3.body}>
+                {/* Personal Details */}
+                <S5Section title="Personal Details" />
+                {data.header?.name ? (
+                    <View style={s5.detailRow}>
+                        <Text style={s5.detailKey}>Name</Text>
+                        <Text style={s5.detailVal}>{data.header.name}</Text>
+                    </View>
+                ) : null}
+                {contactParts.map((part: string, i: number) => (
+                    <View key={i} style={s5.detailRow}>
+                        <Text style={s5.detailKey}>{i === 0 ? "Address / Email" : i === 1 ? "Phone" : `Contact ${i + 1}`}</Text>
+                        <Text style={s5.detailVal}>{part}</Text>
+                    </View>
+                ))}
+                {linkedin ? (
+                    <View style={s5.detailRow}>
+                        <Text style={s5.detailKey}>LinkedIn</Text>
+                        <Link src={linkedin} style={s5.detailLnk}>{shortUrl(linkedin)}</Link>
+                    </View>
+                ) : null}
+                {github ? (
+                    <View style={s5.detailRow}>
+                        <Text style={s5.detailKey}>GitHub</Text>
+                        <Link src={github} style={s5.detailLnk}>{shortUrl(github)}</Link>
+                    </View>
+                ) : null}
+                {portfolio ? (
+                    <View style={s5.detailRow}>
+                        <Text style={s5.detailKey}>Portfolio / Website</Text>
+                        <Link src={portfolio} style={s5.detailLnk}>{shortUrl(portfolio)}</Link>
+                    </View>
+                ) : null}
 
-                    {/* ── Profile ── */}
-                    {data.summary?.trim() ? (
-                        <View>
-                            <Section title="Professional Profile" />
-                            <Text style={s3.summary}>{data.summary}</Text>
-                        </View>
-                    ) : null}
+                {/* Work Experience */}
+                {exp.length > 0 && (
+                    <View>
+                        <S5Section title="Work Experience" />
+                        {exp.map((e: any, i: number) => (
+                            <Entry key={i} title={e.role} sub={e.company} duration={e.duration}
+                                points={e.points} techStack={e.techStack} showDivider={i < exp.length - 1} />
+                        ))}
+                    </View>
+                )}
 
-                    {/* ── Career History ── */}
-                    {exp.length > 0 ? (
-                        <View>
-                            <Section title="Career History" />
-                            {exp.map((e: any, i: number) => (
-                                <EntryCard key={i} role={e.role} company={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />
-                            ))}
-                        </View>
-                    ) : null}
+                {/* Internships */}
+                {intern.length > 0 && (
+                    <View>
+                        <S5Section title="Internships and Training" />
+                        {intern.map((e: any, i: number) => (
+                            <Entry key={i} title={e.role} sub={e.company} duration={e.duration}
+                                points={e.points} techStack={e.techStack} showDivider={i < intern.length - 1} />
+                        ))}
+                    </View>
+                )}
 
-                    {/* ── Internships ── */}
-                    {intern.length > 0 ? (
-                        <View>
-                            <Section title="Internships" />
-                            {intern.map((e: any, i: number) => (
-                                <EntryCard key={i} role={e.role} company={e.company} duration={e.duration} points={e.points} techStack={e.techStack} />
-                            ))}
-                        </View>
-                    ) : null}
+                {/* Projects */}
+                {proj.length > 0 && (
+                    <View>
+                        <S5Section title="Projects and Contributions" />
+                        {proj.map((p: any, i: number) => (
+                            <Entry key={i} title={p.name} sub={p.role} duration={p.duration}
+                                points={p.points} techStack={p.techStack} showDivider={i < proj.length - 1} />
+                        ))}
+                    </View>
+                )}
 
-                    {/* ── Projects ── */}
-                    {proj.length > 0 ? (
-                        <View>
-                            <Section title="Featured Projects" />
-                            {proj.map((p: any, i: number) => (
-                                <View key={i} style={s3.card} wrap={false}>
-                                    <View style={s3.cardRow}>
-                                        <Text style={s3.cardRole}>
-                                            {p.link ? <Link src={p.link} style={s3.lnk}>{p.name}</Link> : p.name}
-                                            {p.role ? <Text style={{ ...s3.cardCo }}> · {p.role}</Text> : null}
-                                        </Text>
-                                        {p.duration ? <Text style={s3.cardDate}>{p.duration}</Text> : null}
-                                    </View>
-                                    {(p.points ?? []).map((pt: string, j: number) => pt ? <Bullet key={j} t={pt} /> : null)}
-                                    {p.techStack ? <Text style={s3.stack}>Stack: {p.techStack}</Text> : null}
+                {/* Education */}
+                {edu.length > 0 && (
+                    <View>
+                        <S5Section title="Education and Qualifications" />
+                        {edu.map((e: any, i: number) => (
+                            <View key={i} style={s5.entryWrap} wrap={false}>
+                                <View style={s5.eduTop}>
+                                    <Text style={s5.degree}>{e.degree}</Text>
+                                    {e.duration ? <Text style={s5.eduDate}>{e.duration}</Text> : null}
                                 </View>
-                            ))}
-                        </View>
-                    ) : null}
+                                {e.college ? <Text style={s5.college}>{e.college}</Text> : null}
+                                {e.score   ? <Text style={s5.score}>{e.score}</Text>     : null}
+                                {i < edu.length - 1 ? <View style={s5.entryDivider} /> : null}
+                            </View>
+                        ))}
+                    </View>
+                )}
 
-                    {/* ── Skills ── */}
-                    {skills.length > 0 ? (
-                        <View>
-                            <Section title="Technical Expertise" />
-                            {skills.map((sk: any, i: number) => (
-                                <View key={i}>
-                                    <Text style={s3.skillCat}>{sk.label}</Text>
-                                    <View style={s3.skillRow}>
-                                        {(sk.value || "").split(",").map((v: string, j: number) => v.trim() ? (
-                                            <Text key={j} style={s3.skillTag}>{v.trim()}</Text>
-                                        ) : null)}
-                                    </View>
-                                </View>
-                            ))}
-                        </View>
-                    ) : null}
+                {/* Skills */}
+                {skills.length > 0 && (
+                    <View>
+                        <S5Section title="Skills" />
+                        {skills.map((sk: any, i: number) => (
+                            <View key={i} style={s5.skillRow}>
+                                <Text style={s5.skillLabel}>{sk.label}</Text>
+                                <Text style={s5.skillValue}>{sk.value}</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
 
-                    {/* ── Education ── */}
-                    {edu.length > 0 ? (
-                        <View>
-                            <Section title="Education" />
-                            {edu.map((e: any, i: number) => (
-                                <View key={i} style={s3.eduBlock} wrap={false}>
-                                    <View style={s3.eduLeft}>
-                                        <Text style={s3.eduDeg}>{e.degree}</Text>
-                                        <Text style={s3.eduColl}>{e.college}</Text>
-                                        {e.score ? <Text style={s3.eduScore}>{e.score}</Text> : null}
-                                    </View>
-                                    <Text style={s3.eduDate}>{e.duration}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    ) : null}
+                {/* Certifications */}
+                {certs.length > 0 && (
+                    <View>
+                        <S5Section title="Certifications" />
+                        {certs.map((c: any, i: number) => (
+                            <Text key={i} style={s5.certItem}>
+                                {typeof c === "string" ? c : [c.name, c.issuer, c.date].filter(Boolean).join("  -  ")}
+                            </Text>
+                        ))}
+                    </View>
+                )}
 
-                    {/* ── Certifications ── */}
-                    {certs.length > 0 ? (
-                        <View>
-                            <Section title="Certifications" />
-                            {certs.map((c: any, i: number) => (
-                                <Text key={i} style={s3.certItem}>
-                                    <Text style={s3.certBullet}>◆  </Text>
-                                    {typeof c === "string" ? c : [c.name, c.issuer, c.date].filter(Boolean).join(" — ")}
-                                </Text>
-                            ))}
-                        </View>
-                    ) : null}
-
-                </View>
             </Page>
         </Document>
     );
@@ -638,23 +469,17 @@ export function MinimalCvTemplate({ data }: { data: any }) {
 
 export const CV_TEMPLATES = [
     {
-        id:          "classic",
-        name:        "Formal",
-        description: "Traditional Times serif — centered header, two-column competencies",
-        component:   ClassicCvTemplate,
+        id:          "london",
+        name:        "London Classic",
+        description: "Black & white - CV badge - Info grid - Uppercase section headings",
+        component:   LondonClassicTemplate,
     },
     {
-        id:          "modern",
-        name:        "Executive",
-        description: "Navy sidebar with skills + white main column — two-column CV layout",
-        component:   ModernCvTemplate,
-    },
-    {
-        id:          "minimal",
-        name:        "Contemporary",
-        description: "Dark header band, tag-style skills, purple accents — modern clean CV",
-        component:   MinimalCvTemplate,
+        id:          "structured",
+        name:        "Modern Structured",
+        description: "Gray section bars - Personal details table - Clean dividers - Helvetica",
+        component:   ModernStructuredTemplate,
     },
 ] as const;
 
-export type CvTemplateId = "classic" | "modern" | "minimal";
+export type CvTemplateId = "london" | "structured";
