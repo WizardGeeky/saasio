@@ -4,6 +4,7 @@ import { connectDB } from "@/app/configs/database.config";
 import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
 import ResumeDownload from "@/models/ResumeDownload";
+import { decrypt } from "@/app/configs/crypto.config";
 
 // ─── GET — all users' CV history with global stats (admin view) ───────────────
 // Requires: GET /api/v1/private/cv-history privilege.
@@ -138,7 +139,7 @@ export const GET = withAuth(async (
             _id:                     String(r._id),
             userId:                  r.userId,
             userName:                r.userName || "—",
-            userEmail:               r.userEmail || "—",
+            userEmail:               r.userEmail ? (() => { try { return decrypt(r.userEmail); } catch { return r.userEmail; } })() : "—",
             resumeName:              r.resumeName || "",
             resumeTitle:             r.resumeTitle || "",
             fileName:                r.fileName || "",

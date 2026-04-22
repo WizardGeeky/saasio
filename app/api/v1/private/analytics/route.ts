@@ -13,6 +13,8 @@ import PaymentOrder from "@/models/PaymentOrder";
 import Subscription from "@/models/Subscription";
 import Complaint from "@/models/Complaint";
 import ResumeDownload from "@/models/ResumeDownload";
+import Quiz from "@/models/Quiz";
+import QuizParticipation from "@/models/QuizParticipation";
 import { RESUME_TEMPLATE_CATALOG } from "@/app/dashboard/resume-config/template-catalog";
 
 export type Period = "today" | "7d" | "30d" | "6m" | "all";
@@ -134,6 +136,8 @@ export const GET = withAuth(
                 atsStats,
                 topResumeTemplates,
                 cvStats,
+                quizStatusAgg,
+                totalQuizParticipants,
             ] = await Promise.all([
                 User.aggregate([{ $group: { _id: "$accountStatus", count: { $sum: 1 } } }]),
                 Role.countDocuments(),
@@ -181,6 +185,9 @@ export const GET = withAuth(
                         },
                     },
                 ]),
+                // Quiz stats
+                Quiz.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
+                QuizParticipation.countDocuments(),
             ]);
 
             const resumeFormatCount = RESUME_TEMPLATE_CATALOG.length;
@@ -308,6 +315,17 @@ export const GET = withAuth(
                     thisWeek:    cvThisWeek,
                     uniqueUsers: cvUniqueUsers,
                 },
+                quizzes: (() => {
+                    const qMap = Object.fromEntries((quizStatusAgg as any[]).map((s: any) => [s._id, s.count]));
+                    const qTotal = (Object.values(qMap) as number[]).reduce((s, v) => s + v, 0);
+                    return {
+                        total:        qTotal,
+                        inactive:     qMap["INACTIVE"]  ?? 0,
+                        active:       qMap["ACTIVE"]    ?? 0,
+                        published:    qMap["PUBLISHED"] ?? 0,
+                        participants: totalQuizParticipants,
+                    };
+                })(),
             };
 
             // ── 2. Period-specific counts ────────────────────────────────────
@@ -317,6 +335,7 @@ export const GET = withAuth(
                 periodSub,
                 periodAts,
                 periodComp,
+                periodQuizzes,
             ] = await Promise.all([
                 User.countDocuments(matchDate),
                 PaymentOrder.aggregate([
@@ -332,6 +351,7 @@ export const GET = withAuth(
                     { $group: { _id: null, total: { $sum: 1 }, avgScore: { $avg: "$analysis.score" } } }
                 ]),
                 Complaint.countDocuments(matchDate),
+                QuizParticipation.countDocuments(matchDate),
             ]);
 
             const ptxMap: Record<string, { count: number; revenue: number }> = {};
@@ -361,6 +381,7 @@ export const GET = withAuth(
                     avgScore: Math.round(periodAts[0]?.avgScore ?? 0),
                 },
                 complaints: periodComp,
+                quizParticipations: periodQuizzes,
             };
 
             // ── 3. Time-series data ──────────────────────────────────────────
@@ -371,6 +392,7 @@ export const GET = withAuth(
                 atsSeries,
                 compSeries,
                 cvSeriesRaw,
+                quizSeriesRaw,
             ] = await Promise.all([
                 PaymentOrder.aggregate([
                     { $match: matchDate },
@@ -425,6 +447,14 @@ export const GET = withAuth(
                     }},
                     { $sort: { _id: 1 } },
                 ]),
+                QuizParticipation.aggregate([
+                    { $match: matchDate },
+                    { $group: {
+                        _id:   { $dateToString: { format: fmt, date: "$createdAt" } },
+                        count: { $sum: 1 },
+                    }},
+                    { $sort: { _id: 1 } },
+                ]),
             ]);
 
             const series = {
@@ -434,6 +464,7 @@ export const GET = withAuth(
                 atsRecords:    fillSeries(buckets, atsSeries as any, { count: 0, avgScore: 0 }, period),
                 complaints:    fillSeries(buckets, compSeries as any, { count: 0 }, period),
                 cvs:           fillSeries(buckets, cvSeriesRaw as any, { count: 0 }, period),
+                quizzes:       fillSeries(buckets, quizSeriesRaw as any, { count: 0 }, period),
             };
 
             // Combine revenue series

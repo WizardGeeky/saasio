@@ -15,7 +15,7 @@ import { getStoredToken } from "@/app/utils/token";
 import {
     FiZap, FiPackage, FiMessageSquare, FiRefreshCw,
     FiAlertCircle, FiUser, FiCalendar, FiShield,
-    FiTarget, FiCheckCircle, FiGrid,
+    FiTarget, FiCheckCircle, FiGrid, FiAward, FiCheckSquare,
 } from "react-icons/fi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -80,6 +80,11 @@ type AnalyticsData = {
         cvs: {
             total: number;
         };
+        quizzes: {
+            total: number;
+            avgScore: number;
+            best: number;
+        };
     };
     periodStats: {
         ats: {
@@ -90,10 +95,12 @@ type AnalyticsData = {
         resumes: number;
         complaints: number;
         cvs: number;
+        quizzes: number;
     };
     series: {
-        ats: Array<{ label: string; count: number; avgScore: number }>;
-        cvs: Array<{ label: string; count: number }>;
+        ats:     Array<{ label: string; count: number; avgScore: number }>;
+        cvs:     Array<{ label: string; count: number }>;
+        quizzes: Array<{ label: string; count: number }>;
     };
     recentResumes: RecentResume[];
 };
@@ -119,6 +126,10 @@ const sectionConfig: ChartConfig = {
 
 const cvConfig: ChartConfig = {
     count: { label: "CVs Generated", color: "hsl(262, 70%, 60%)" },
+};
+
+const quizConfig: ChartConfig = {
+    count: { label: "Quiz Participations", color: "hsl(32, 95%, 55%)" },
 };
 
 // ─── Colour palette ───────────────────────────────────────────────────────────
@@ -474,6 +485,54 @@ export default function MyAnalyticsPage() {
                                 )}
                             </ChartCard>
                         </div>
+                    </section>
+
+                    {/* ═══ Quiz Participation ═══ */}
+                    <section>
+                        <SectionHeading>Quiz Participation</SectionHeading>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                            <StatCard
+                                icon={FiCheckSquare}
+                                label="Total Participations"
+                                value={g.quizzes?.total ?? 0}
+                                sub="All quizzes taken"
+                            />
+                            <StatCard
+                                icon={FiAward}
+                                label="Avg Score"
+                                value={`${g.quizzes?.avgScore ?? 0}%`}
+                                sub="Average across all quizzes"
+                                color="purple"
+                            />
+                            <StatCard
+                                icon={FiTarget}
+                                label="Best Score"
+                                value={`${g.quizzes?.best ?? 0}%`}
+                                sub="Highest quiz score"
+                                color="green"
+                            />
+                        </div>
+                        <ChartCard title="Quiz Participation Trend" subtitle={`Participations — ${periodLabel}`}>
+                            {(s.quizzes ?? []).every((d) => d.count === 0) ? (
+                                <p className="text-sm text-gray-400 text-center py-8">No quiz participations in this period.</p>
+                            ) : (
+                                <ChartContainer config={quizConfig} className="h-44 w-full aspect-auto">
+                                    <AreaChart data={s.quizzes ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="gQuizUser" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%"  stopColor="hsl(32,95%,55%)" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="hsl(32,95%,55%)" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                        <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                                        <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <Area type="monotone" dataKey="count" stroke="hsl(32,95%,55%)" fill="url(#gQuizUser)" strokeWidth={2} dot={false} />
+                                    </AreaChart>
+                                </ChartContainer>
+                            )}
+                        </ChartCard>
                     </section>
 
                     {/* ═══ 5. ATS Trend ═══ */}

@@ -42,6 +42,8 @@ import {
     FiStar,
     FiLayers,
     FiGrid,
+    FiBookOpen,
+    FiCheckSquare,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -138,6 +140,23 @@ export const NAV_CONFIG: NavConfig[] = [
         icon: FiLayers,
         privileges: [
             { method: "GET", apiPath: "/api/v1/private/cv-history" },
+        ],
+    },
+    {
+        name: "My Quizzes",
+        href: "/dashboard/my-quizzes",
+        icon: FiCheckSquare,
+        privileges: [],
+    },
+    {
+        name: "Quizzes",
+        href: "/dashboard/quizzes",
+        icon: FiBookOpen,
+        privileges: [
+            { method: "GET",    apiPath: "/api/v1/private/quizzes" },
+            { method: "POST",   apiPath: "/api/v1/private/quizzes" },
+            { method: "PUT",    apiPath: "/api/v1/private/quizzes" },
+            { method: "DELETE", apiPath: "/api/v1/private/quizzes" },
         ],
     },
     {

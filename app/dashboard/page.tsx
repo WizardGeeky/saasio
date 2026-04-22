@@ -122,6 +122,13 @@ type DashboardAnalyticsData = {
             thisWeek: number;
             uniqueUsers: number;
         };
+        quizzes: {
+            total: number;
+            inactive: number;
+            active: number;
+            published: number;
+            participants: number;
+        };
     };
     periodStats: {
         users: number;
@@ -142,6 +149,7 @@ type DashboardAnalyticsData = {
             avgScore: number;
         };
         complaints: number;
+        quizParticipations: number;
     };
     series: {
         revenue: RevenuePoint[];
@@ -151,6 +159,7 @@ type DashboardAnalyticsData = {
         atsRecords: AtsPoint[];
         complaints: CountPoint[];
         cvs: CountPoint[];
+        quizzes: CountPoint[];
     };
 };
 
@@ -202,6 +211,10 @@ const compConfig: ChartConfig = {
 
 const cvConfig: ChartConfig = {
     count: { label: "CVs Generated", color: "hsl(262, 70%, 60%)" },
+};
+
+const quizConfig: ChartConfig = {
+    count: { label: "Quiz Participations", color: "hsl(32, 95%, 55%)" },
 };
 
 const resumeUsageConfig: ChartConfig = {
@@ -725,6 +738,35 @@ export default function DashboardPage() {
                                     <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={30} allowDecimals={false} />
                                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                     <Area type="monotone" dataKey="count" stroke="hsl(262,70%,60%)" fill="url(#gCvs)" strokeWidth={2} dot={false} />
+                                </AreaChart>
+                            </ChartContainer>
+                        </ChartCard>
+                    </section>
+
+                    {/* ═══ Quizzes ═══ */}
+                    <section>
+                        <SectionHeading>Quizzes</SectionHeading>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
+                            <StatCard icon={FiGrid}          label="Total Quizzes"     color="indigo"  value={(g.quizzes?.total        ?? 0).toLocaleString("en-IN")} />
+                            <StatCard icon={FiGrid}          label="Published"         color="green"   value={(g.quizzes?.published    ?? 0).toLocaleString("en-IN")} />
+                            <StatCard icon={FiGrid}          label="Active"            color="amber"   value={(g.quizzes?.active       ?? 0).toLocaleString("en-IN")} />
+                            <StatCard icon={FiUsers}         label="Participants"      color="purple"  value={(g.quizzes?.participants ?? 0).toLocaleString("en-IN")} />
+                            <StatCard icon={FiTrendingUp}    label="Participations (Period)" color="teal" value={(p?.quizParticipations ?? 0).toLocaleString("en-IN")} />
+                        </div>
+                        <ChartCard title="Quiz Participation Trend" subtitle={`Participations — ${periodLabel}`}>
+                            <ChartContainer config={quizConfig} className="h-52 w-full aspect-auto">
+                                <AreaChart data={s.quizzes ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="gQuiz" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%"  stopColor="hsl(32,95%,55%)" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="hsl(32,95%,55%)" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                    <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={30} allowDecimals={false} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Area type="monotone" dataKey="count" stroke="hsl(32,95%,55%)" fill="url(#gQuiz)" strokeWidth={2} dot={false} />
                                 </AreaChart>
                             </ChartContainer>
                         </ChartCard>

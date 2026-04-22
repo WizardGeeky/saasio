@@ -9,6 +9,7 @@ import Subscription from "@/models/Subscription";
 import Complaint from "@/models/Complaint";
 import { User } from "@/models/User";
 import ResumeDownload from "@/models/ResumeDownload";
+import QuizParticipation from "@/models/QuizParticipation";
 import { resolveSubscriptionQuota } from "@/app/utils/subscription-usage";
 
 export type Period = "today" | "7d" | "30d" | "6m" | "all";
@@ -108,6 +109,8 @@ export const GET = withAuth(
             const resumePeriodMatch = start ? { userId: user.sub, createdAt: { $gte: start } } : { userId: user.sub };
             const cvAllTimeMatch  = { userId: user.sub, source: "my-cvs-ai" };
             const cvPeriodMatch   = start ? { userId: user.sub, source: "my-cvs-ai", createdAt: { $gte: start } } : { userId: user.sub, source: "my-cvs-ai" };
+            const quizAllTimeMatch = { userId: user.sub };
+            const quizPeriodMatch  = start ? { userId: user.sub, createdAt: { $gte: start } } : { userId: user.sub };
 
             // ── All-time aggregations ──────────────────────────────────────
             const [
@@ -122,6 +125,8 @@ export const GET = withAuth(
                 recentResumeDownloads,
                 activeSubscriptions,
                 totalCvGenerations,
+                totalQuizParticipations,
+                quizAvgScore,
             ] = await Promise.all([
                 AtsRecord.aggregate([
                     { $match: atsAllTimeMatch },
@@ -178,6 +183,11 @@ export const GET = withAuth(
                     .sort({ createdAt: -1 })
                     .lean(),
                 ResumeDownload.countDocuments(cvAllTimeMatch),
+                QuizParticipation.countDocuments(quizAllTimeMatch),
+                QuizParticipation.aggregate([
+                    { $match: quizAllTimeMatch },
+                    { $group: { _id: null, avgPct: { $avg: "$percentage" }, best: { $max: "$percentage" } } },
+                ]),
             ]);
 
             const activeSubscriptionQuotas = await Promise.all(
@@ -283,10 +293,15 @@ export const GET = withAuth(
                 cvs: {
                     total: totalCvGenerations ?? 0,
                 },
+                quizzes: {
+                    total:    totalQuizParticipations ?? 0,
+                    avgScore: Math.round((quizAvgScore as any[])[0]?.avgPct ?? 0),
+                    best:     (quizAvgScore as any[])[0]?.best ?? 0,
+                },
             };
 
             // ── Period stats ───────────────────────────────────────────────
-            const [periodAts, periodSubs, periodComps, periodResumeDownloads, periodCvGenerations] = await Promise.all([
+            const [periodAts, periodSubs, periodComps, periodResumeDownloads, periodCvGenerations, periodQuizParticipations] = await Promise.all([
                 AtsRecord.aggregate([
                     { $match: atsPeriodMatch },
                     { $group: { _id: null, total: { $sum: 1 }, avgScore: { $avg: "$analysis.score" } } },
@@ -295,6 +310,7 @@ export const GET = withAuth(
                 Complaint.countDocuments(compPeriodMatch),
                 ResumeDownload.countDocuments(resumePeriodMatch),
                 ResumeDownload.countDocuments(cvPeriodMatch),
+                QuizParticipation.countDocuments(quizPeriodMatch),
             ]);
 
             const periodStats = {
@@ -305,11 +321,12 @@ export const GET = withAuth(
                 subscriptions: periodSubs,
                 resumes: periodResumeDownloads,
                 complaints:    periodComps,
-                cvs:           periodCvGenerations,
+                cvs:    periodCvGenerations,
+                quizzes: periodQuizParticipations,
             };
 
             // ── Time-series ────────────────────────────────────────────────
-            const [atsSeries, cvSeriesRaw] = await Promise.all([
+            const [atsSeries, cvSeriesRaw, quizSeriesRaw] = await Promise.all([
                 AtsRecord.aggregate([
                     { $match: atsPeriodMatch },
                     { $group: {
@@ -327,11 +344,20 @@ export const GET = withAuth(
                     }},
                     { $sort: { _id: 1 } },
                 ]),
+                QuizParticipation.aggregate([
+                    { $match: quizPeriodMatch },
+                    { $group: {
+                        _id:   { $dateToString: { format: fmt, date: "$createdAt" } },
+                        count: { $sum: 1 },
+                    }},
+                    { $sort: { _id: 1 } },
+                ]),
             ]);
 
             const series = {
                 ats: fillSeries(buckets, atsSeries as any, { count: 0, avgScore: 0 }, period),
-                cvs: fillSeries(buckets, cvSeriesRaw as any, { count: 0 }, period),
+                cvs:    fillSeries(buckets, cvSeriesRaw    as any, { count: 0 }, period),
+                quizzes: fillSeries(buckets, quizSeriesRaw as any, { count: 0 }, period),
             };
 
             const recentResumes = (recentResumeDownloads as any[]).map((resume) => ({
