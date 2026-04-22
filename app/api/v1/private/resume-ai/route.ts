@@ -401,7 +401,7 @@ function buildResumeGenerationPrompt({
         "",
         "EDUCATION:",
         "  • education is an ARRAY — list ALL institutions: degree (most recent) → junior college → high school.",
-        "  • Output CGPA/GPA in the score field (NOT in degree): score = "CGPA: 8.4/10" or "GPA: 3.8/4.0" or "Percentage: 92%" or "Marks: 961/1000".",
+        "  • Output CGPA/GPA in the score field (NOT in degree): score = \"CGPA: 8.4/10\" or \"GPA: 3.8/4.0\" or \"Percentage: 92%\" or \"Marks: 961/1000\".",
         "  • For high school / junior college: show qualification + marks if available, no CGPA format.",
         "  • NEVER put educational history in customSections — always use the education array.",
         "  • Coursework: only include if courses directly match JD (max 6). Experienced candidates: leave [] empty.",
