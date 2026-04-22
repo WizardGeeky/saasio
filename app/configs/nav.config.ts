@@ -40,6 +40,8 @@ import {
     FiFileText,
     FiDownload,
     FiStar,
+    FiLayers,
+    FiGrid,
 } from "react-icons/fi";
 
 export interface NavPrivilege {
@@ -122,6 +124,20 @@ export const NAV_CONFIG: NavConfig[] = [
         icon: FiDownload,
         privileges: [
             { method: "GET", apiPath: "/api/v1/private/resumes-history" },
+        ],
+    },
+    {
+        name: "My CVs",
+        href: "/dashboard/my-cvs",
+        icon: FiGrid,
+        privileges: [],
+    },
+    {
+        name: "CV History",
+        href: "/dashboard/cv-history",
+        icon: FiLayers,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/cv-history" },
         ],
     },
     {

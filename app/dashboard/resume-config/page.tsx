@@ -2555,6 +2555,32 @@ export default function ResumeConfigPage() {
         };
     }, [toastError, toastSuccess]);
 
+    // Load AI-generated CV data passed from My CVs page via sessionStorage
+    useEffect(() => {
+        const fromMyCvs = new URLSearchParams(window.location.search).get("from") === "my-cvs";
+        if (!fromMyCvs) return;
+
+        const raw = sessionStorage.getItem("ai_cv_from_mycvs");
+        if (!raw) return;
+
+        try {
+            const parsed = JSON.parse(raw);
+            const resumeJson = parsed?.resumeJson;
+            if (!resumeJson) return;
+
+            const sanitized = sanitizeResumeData(resumeJson);
+            setResumeData(sanitized as any);
+            setJsonInput(JSON.stringify(sanitized, null, 2));
+            setJsonError(null);
+            setMobileTab("preview");
+            setPdfReady(true);
+            sessionStorage.removeItem("ai_cv_from_mycvs");
+            toastSuccess("AI-generated CV loaded! Choose a template and download.");
+        } catch {
+            // silently ignore malformed data
+        }
+    }, [toastSuccess]);
+
     useEffect(() => {
         if (!aiResumeModalOpen) return;
 

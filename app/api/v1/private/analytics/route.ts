@@ -119,6 +119,9 @@ export const GET = withAuth(
             const matchDate  = dateFilter ? { createdAt: dateFilter } : {};
 
             // ── 1. Global all-time counts ────────────────────────────────────
+            const thisWeekStart = new Date();
+            thisWeekStart.setDate(thisWeekStart.getDate() - 7);
+
             const [
                 userStats,
                 roleCount,
@@ -130,6 +133,7 @@ export const GET = withAuth(
                 subStats,
                 atsStats,
                 topResumeTemplates,
+                cvStats,
             ] = await Promise.all([
                 User.aggregate([{ $group: { _id: "$accountStatus", count: { $sum: 1 } } }]),
                 Role.countDocuments(),
@@ -167,9 +171,25 @@ export const GET = withAuth(
                     { $sort: { downloadCount: -1, memberCount: -1, "_id.templateName": 1 } },
                     { $limit: RESUME_TEMPLATE_CATALOG.length },
                 ]),
+                // CV stats — source="my-cvs-ai" records only
+                ResumeDownload.aggregate([
+                    {
+                        $facet: {
+                            total:       [{ $match: { source: "my-cvs-ai" } }, { $count: "n" }],
+                            thisWeek:    [{ $match: { source: "my-cvs-ai", createdAt: { $gte: thisWeekStart } } }, { $count: "n" }],
+                            uniqueUsers: [{ $match: { source: "my-cvs-ai" } }, { $group: { _id: "$userId" } }, { $count: "n" }],
+                        },
+                    },
+                ]),
             ]);
 
             const resumeFormatCount = RESUME_TEMPLATE_CATALOG.length;
+
+            // Flatten CV stats
+            const cvFacet    = cvStats[0] ?? {};
+            const cvTotal       = cvFacet.total?.[0]?.n       ?? 0;
+            const cvThisWeek    = cvFacet.thisWeek?.[0]?.n    ?? 0;
+            const cvUniqueUsers = cvFacet.uniqueUsers?.[0]?.n ?? 0;
 
             // Flatten user stats
             const userMap = Object.fromEntries(userStats.map((u: any) => [u._id, u.count]));
@@ -283,6 +303,11 @@ export const GET = withAuth(
                     topTemplates: resumeTemplateUsage,
                     mostUsedTemplate,
                 },
+                cvs: {
+                    total:       cvTotal,
+                    thisWeek:    cvThisWeek,
+                    uniqueUsers: cvUniqueUsers,
+                },
             };
 
             // ── 2. Period-specific counts ────────────────────────────────────
@@ -345,6 +370,7 @@ export const GET = withAuth(
                 userSeries,
                 atsSeries,
                 compSeries,
+                cvSeriesRaw,
             ] = await Promise.all([
                 PaymentOrder.aggregate([
                     { $match: matchDate },
@@ -391,6 +417,14 @@ export const GET = withAuth(
                     }},
                     { $sort: { _id: 1 } },
                 ]),
+                ResumeDownload.aggregate([
+                    { $match: { source: "my-cvs-ai", ...(dateFilter ? { createdAt: dateFilter } : {}) } },
+                    { $group: {
+                        _id:   { $dateToString: { format: fmt, date: "$createdAt" } },
+                        count: { $sum: 1 },
+                    }},
+                    { $sort: { _id: 1 } },
+                ]),
             ]);
 
             const series = {
@@ -399,6 +433,7 @@ export const GET = withAuth(
                 users:         fillSeries(buckets, userSeries as any, { count: 0 }, period),
                 atsRecords:    fillSeries(buckets, atsSeries as any, { count: 0, avgScore: 0 }, period),
                 complaints:    fillSeries(buckets, compSeries as any, { count: 0 }, period),
+                cvs:           fillSeries(buckets, cvSeriesRaw as any, { count: 0 }, period),
             };
 
             // Combine revenue series

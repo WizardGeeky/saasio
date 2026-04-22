@@ -106,6 +106,8 @@ export const GET = withAuth(
             const compPeriodMatch  = start ? { userId: user.sub, createdAt: { $gte: start } } : { userId: user.sub };
             const resumeAllTimeMatch = { userId: user.sub };
             const resumePeriodMatch = start ? { userId: user.sub, createdAt: { $gte: start } } : { userId: user.sub };
+            const cvAllTimeMatch  = { userId: user.sub, source: "my-cvs-ai" };
+            const cvPeriodMatch   = start ? { userId: user.sub, source: "my-cvs-ai", createdAt: { $gte: start } } : { userId: user.sub, source: "my-cvs-ai" };
 
             // ── All-time aggregations ──────────────────────────────────────
             const [
@@ -119,6 +121,7 @@ export const GET = withAuth(
                 topResumeTemplate,
                 recentResumeDownloads,
                 activeSubscriptions,
+                totalCvGenerations,
             ] = await Promise.all([
                 AtsRecord.aggregate([
                     { $match: atsAllTimeMatch },
@@ -174,6 +177,7 @@ export const GET = withAuth(
                 })
                     .sort({ createdAt: -1 })
                     .lean(),
+                ResumeDownload.countDocuments(cvAllTimeMatch),
             ]);
 
             const activeSubscriptionQuotas = await Promise.all(
@@ -276,10 +280,13 @@ export const GET = withAuth(
                     resolved:   compMap["RESOLVED"]    ?? 0,
                     rejected:   compMap["REJECTED"]    ?? 0,
                 },
+                cvs: {
+                    total: totalCvGenerations ?? 0,
+                },
             };
 
             // ── Period stats ───────────────────────────────────────────────
-            const [periodAts, periodSubs, periodComps, periodResumeDownloads] = await Promise.all([
+            const [periodAts, periodSubs, periodComps, periodResumeDownloads, periodCvGenerations] = await Promise.all([
                 AtsRecord.aggregate([
                     { $match: atsPeriodMatch },
                     { $group: { _id: null, total: { $sum: 1 }, avgScore: { $avg: "$analysis.score" } } },
@@ -287,6 +294,7 @@ export const GET = withAuth(
                 Subscription.countDocuments(subPeriodMatch),
                 Complaint.countDocuments(compPeriodMatch),
                 ResumeDownload.countDocuments(resumePeriodMatch),
+                ResumeDownload.countDocuments(cvPeriodMatch),
             ]);
 
             const periodStats = {
@@ -297,21 +305,33 @@ export const GET = withAuth(
                 subscriptions: periodSubs,
                 resumes: periodResumeDownloads,
                 complaints:    periodComps,
+                cvs:           periodCvGenerations,
             };
 
             // ── Time-series ────────────────────────────────────────────────
-            const atsSeries = await AtsRecord.aggregate([
-                { $match: atsPeriodMatch },
-                { $group: {
-                    _id:      { $dateToString: { format: fmt, date: "$createdAt" } },
-                    count:    { $sum: 1 },
-                    avgScore: { $avg: "$analysis.score" },
-                }},
-                { $sort: { _id: 1 } },
+            const [atsSeries, cvSeriesRaw] = await Promise.all([
+                AtsRecord.aggregate([
+                    { $match: atsPeriodMatch },
+                    { $group: {
+                        _id:      { $dateToString: { format: fmt, date: "$createdAt" } },
+                        count:    { $sum: 1 },
+                        avgScore: { $avg: "$analysis.score" },
+                    }},
+                    { $sort: { _id: 1 } },
+                ]),
+                ResumeDownload.aggregate([
+                    { $match: cvPeriodMatch },
+                    { $group: {
+                        _id:   { $dateToString: { format: fmt, date: "$createdAt" } },
+                        count: { $sum: 1 },
+                    }},
+                    { $sort: { _id: 1 } },
+                ]),
             ]);
 
             const series = {
                 ats: fillSeries(buckets, atsSeries as any, { count: 0, avgScore: 0 }, period),
+                cvs: fillSeries(buckets, cvSeriesRaw as any, { count: 0 }, period),
             };
 
             const recentResumes = (recentResumeDownloads as any[]).map((resume) => ({
