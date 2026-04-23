@@ -32,15 +32,19 @@ export const PUT = withAuth(
             await connectDB();
             const { id } = await ctx.params;
             const body = await req.json();
-            const { title, instructions, price, currency, status, questions } = body;
+            const { title, instructions, price, prizeMoney, firstPrize, secondPrize, thirdPrize, currency, status, questions } = body;
 
             const quiz = await Quiz.findById(id);
             if (!quiz) return NextResponse.json({ message: "Quiz not found." }, { status: 404 });
 
-            if (title?.trim())            quiz.title        = title.trim();
+            if (title?.trim())               quiz.title        = title.trim();
             if (Array.isArray(instructions)) quiz.instructions = instructions.filter((i: string) => i?.trim());
-            if (price !== undefined)      quiz.price        = Math.max(0, Number(price) || 0);
-            if (currency)                 quiz.currency     = currency;
+            if (price !== undefined)         quiz.price        = Math.max(0, Number(price) || 0);
+            if (prizeMoney !== undefined)    (quiz as any).prizeMoney   = Math.max(0, Number(prizeMoney) || 0);
+            if (firstPrize !== undefined)    (quiz as any).firstPrize   = Math.max(0, Number(firstPrize)  || 0);
+            if (secondPrize !== undefined)   (quiz as any).secondPrize  = Math.max(0, Number(secondPrize) || 0);
+            if (thirdPrize !== undefined)    (quiz as any).thirdPrize   = Math.max(0, Number(thirdPrize)  || 0);
+            if (currency)                    quiz.currency     = currency;
 
             if (status) {
                 const validStatuses = ["INACTIVE", "ACTIVE", "PUBLISHED"];

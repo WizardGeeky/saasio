@@ -18,6 +18,50 @@ export const GET = withAuth(
             const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12", 10)));
             const skip  = (page - 1) * limit;
 
+            // ── Leaderboard tab ────────────────────────────────────────────
+            if (tab === "leaderboard") {
+                const quizId = searchParams.get("quizId") ?? "";
+                if (!quizId) return NextResponse.json({ message: "quizId is required." }, { status: 400 });
+
+                const quiz = await Quiz.findById(quizId).lean() as any;
+                if (!quiz) return NextResponse.json({ message: "Quiz not found." }, { status: 404 });
+
+                const entries = await QuizParticipation.find({ quizId }, {
+                    userId: 1, userName: 1, score: 1, totalQuestions: 1,
+                    percentage: 1, timeTakenSeconds: 1, createdAt: 1,
+                }).lean();
+
+                const maxScore = (quiz.questions ?? []).reduce((s: number, q: any) => s + (q.points ?? 1), 0);
+
+                const ranked = (entries as any[])
+                    .sort((a, b) =>
+                        b.percentage - a.percentage ||
+                        (a.timeTakenSeconds ?? 99999) - (b.timeTakenSeconds ?? 99999)
+                    )
+                    .map((e, idx) => ({
+                        rank:             idx + 1,
+                        userId:           e.userId,
+                        userName:         e.userName,
+                        score:            e.score,
+                        maxScore,
+                        percentage:       e.percentage,
+                        timeTakenSeconds: e.timeTakenSeconds ?? 0,
+                        submittedAt:      e.createdAt,
+                        isMe:             e.userId === user.sub,
+                    }));
+
+                const myEntry = ranked.find((r) => r.isMe);
+                return NextResponse.json({
+                    success:     true,
+                    quizTitle:   quiz.title,
+                    prizeMoney:  quiz.prizeMoney ?? 0,
+                    currency:    quiz.currency ?? "INR",
+                    leaderboard: ranked,
+                    myRank:      myEntry?.rank ?? null,
+                }, { status: 200 });
+            }
+
+            // ── Available tab ──────────────────────────────────────────────
             if (tab === "available") {
                 const [quizzes, userParticipations] = await Promise.all([
                     Quiz.find({ status: "PUBLISHED" }).sort({ createdAt: -1 }).lean(),
@@ -35,6 +79,7 @@ export const GET = withAuth(
                         title:            q.title,
                         instructions:     q.instructions ?? [],
                         price:            q.price,
+                        prizeMoney:       q.prizeMoney ?? 0,
                         currency:         q.currency,
                         participantCount: q.participantCount ?? 0,
                         createdByName:    q.createdByName,
@@ -45,21 +90,22 @@ export const GET = withAuth(
                             options: qq.options,
                             points:  qq.points,
                         })),
-                        participated:       !!participation,
-                        myScore:            participation?.score    ?? null,
-                        myPercentage:       participation?.percentage ?? null,
-                        createdAt:          q.createdAt,
+                        participated:    !!participation,
+                        myScore:         participation?.score      ?? null,
+                        myPercentage:    participation?.percentage ?? null,
+                        createdAt:       q.createdAt,
                     };
                 });
 
                 return NextResponse.json({ success: true, quizzes: result }, { status: 200 });
             }
 
-            // History tab
+            // ── History tab ────────────────────────────────────────────────
             const [total, participations] = await Promise.all([
                 QuizParticipation.countDocuments({ userId: user.sub }),
                 QuizParticipation.find({ userId: user.sub }, {
-                    quizId: 1, quizTitle: 1, score: 1, totalQuestions: 1, percentage: 1, createdAt: 1,
+                    quizId: 1, quizTitle: 1, score: 1, totalQuestions: 1,
+                    percentage: 1, timeTakenSeconds: 1, createdAt: 1,
                 })
                     .sort({ createdAt: -1 })
                     .skip(skip)
@@ -69,13 +115,14 @@ export const GET = withAuth(
 
             const pages   = Math.max(1, Math.ceil(total / limit));
             const history = (participations as any[]).map((p) => ({
-                _id:            String(p._id),
-                quizId:         p.quizId,
-                quizTitle:      p.quizTitle,
-                score:          p.score,
-                totalQuestions: p.totalQuestions,
-                percentage:     p.percentage,
-                createdAt:      p.createdAt,
+                _id:              String(p._id),
+                quizId:           p.quizId,
+                quizTitle:        p.quizTitle,
+                score:            p.score,
+                totalQuestions:   p.totalQuestions,
+                percentage:       p.percentage,
+                timeTakenSeconds: p.timeTakenSeconds ?? 0,
+                createdAt:        p.createdAt,
             }));
 
             return NextResponse.json({ success: true, history, pagination: { total, page, pages, limit } }, { status: 200 });
@@ -90,7 +137,7 @@ export const POST = withAuth(
         try {
             await connectDB();
 
-            const { quizId, answers } = await req.json();
+            const { quizId, answers, timeTakenSeconds } = await req.json();
 
             if (!quizId)
                 return NextResponse.json({ message: "Quiz ID is required." }, { status: 400 });
@@ -122,7 +169,7 @@ export const POST = withAuth(
             if (existing)
                 return NextResponse.json({ message: "You have already participated in this quiz." }, { status: 409 });
 
-            const questions     = quiz.questions ?? [];
+            const questions      = quiz.questions ?? [];
             const totalQuestions = questions.length;
             let score = 0;
 
@@ -137,15 +184,16 @@ export const POST = withAuth(
             const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
             const participation = await QuizParticipation.create({
-                quizId:         String(quiz._id),
-                quizTitle:      quiz.title,
-                userId:         user.sub,
-                userName:       user.name,
-                userEmail:      user.email,
+                quizId:           String(quiz._id),
+                quizTitle:        quiz.title,
+                userId:           user.sub,
+                userName:         user.name,
+                userEmail:        user.email,
                 score,
                 totalQuestions,
                 percentage,
-                answers:        answers.map((a: any) => ({
+                timeTakenSeconds: Math.max(0, Number(timeTakenSeconds) || 0),
+                answers:          answers.map((a: any) => ({
                     questionIndex:  a.questionIndex,
                     selectedOption: a.selectedOption,
                 })),

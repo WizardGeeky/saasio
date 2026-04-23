@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/app/configs/database.config";
 import { withAuth, checkPrivilege } from "@/app/utils/withAuth";
 import { CustomJwtPayload } from "@/app/configs/jwt.config";
+import { decrypt } from "@/app/configs/crypto.config";
 import QuizParticipation from "@/models/QuizParticipation";
 import Quiz from "@/models/Quiz";
 
@@ -58,7 +59,7 @@ export const GET = withAuth(
 
             const raw = await QuizParticipation.find(filter, {
                 quizId: 1, quizTitle: 1, userId: 1, userName: 1, userEmail: 1,
-                score: 1, totalQuestions: 1, percentage: 1, createdAt: 1,
+                score: 1, totalQuestions: 1, percentage: 1, timeTakenSeconds: 1, createdAt: 1,
             })
                 .sort({ createdAt: -1 })
                 .skip(skip)
@@ -66,16 +67,17 @@ export const GET = withAuth(
                 .lean();
 
             const records = (raw as any[]).map((r) => ({
-                _id:            String(r._id),
-                quizId:         r.quizId,
-                quizTitle:      r.quizTitle,
-                userId:         r.userId,
-                userName:       r.userName,
-                userEmail:      r.userEmail,
-                score:          r.score,
-                totalQuestions: r.totalQuestions,
-                percentage:     r.percentage,
-                createdAt:      r.createdAt,
+                _id:              String(r._id),
+                quizId:           r.quizId,
+                quizTitle:        r.quizTitle,
+                userId:           r.userId,
+                userName:         r.userName,
+                userEmail:        r.userEmail ? (() => { try { return decrypt(r.userEmail); } catch { return r.userEmail; } })() : "—",
+                score:            r.score,
+                totalQuestions:   r.totalQuestions,
+                percentage:       r.percentage,
+                timeTakenSeconds: r.timeTakenSeconds ?? 0,
+                createdAt:        r.createdAt,
             }));
 
             const quizDropdown = (allQuizzes as any[]).map((q) => ({ _id: String(q._id), title: q.title }));

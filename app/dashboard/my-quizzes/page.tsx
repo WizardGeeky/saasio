@@ -7,7 +7,7 @@ import CheckoutButton, { type PaymentSuccessData } from "@/components/checkout-b
 import {
     FiCheckSquare, FiRefreshCw, FiChevronLeft, FiChevronRight,
     FiBookOpen, FiUsers, FiDollarSign, FiCheck, FiX, FiCalendar,
-    FiAward, FiList, FiAlertCircle, FiArrowRight, FiLock,
+    FiAward, FiList, FiAlertCircle, FiArrowRight, FiLock, FiClock,
 } from "react-icons/fi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,6 +24,7 @@ interface AvailableQuiz {
     title: string;
     instructions: string[];
     price: number;
+    prizeMoney: number;
     currency: string;
     participantCount: number;
     createdByName: string;
@@ -42,7 +43,20 @@ interface HistoryRecord {
     score: number;
     totalQuestions: number;
     percentage: number;
+    timeTakenSeconds: number;
     createdAt: string;
+}
+
+interface LeaderboardEntry {
+    rank: number;
+    userId: string;
+    userName: string;
+    score: number;
+    maxScore: number;
+    percentage: number;
+    timeTakenSeconds: number;
+    submittedAt: string;
+    isMe: boolean;
 }
 
 interface Pagination {
@@ -58,6 +72,13 @@ type TabId = "available" | "history";
 
 function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatSeconds(sec: number) {
+    if (!sec) return "—";
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 function ScoreRing({ pct }: { pct: number }) {
@@ -118,14 +139,25 @@ function PaginationBar({ pagination, onPage, limit, onLimitChange }: {
 function TakeQuizModal({ quiz, onClose, onSubmit, isSubmitting }: {
     quiz: AvailableQuiz;
     onClose: () => void;
-    onSubmit: (answers: { questionIndex: number; selectedOption: number }[]) => Promise<void>;
+    onSubmit: (answers: { questionIndex: number; selectedOption: number }[], timeTakenSeconds: number) => Promise<void>;
     isSubmitting: boolean;
 }) {
-    // Paid quizzes start at "payment" step; free quizzes skip straight to instructions
     const initialStep = quiz.price > 0 ? "payment" : "instructions";
     const [step, setStep]       = useState<"payment" | "instructions" | "quiz">(initialStep);
     const [answers, setAnswers] = useState<Record<number, number>>({});
-    const [paid, setPaid]       = useState(quiz.price === 0); // free quizzes already "paid"
+    const [paid, setPaid]       = useState(quiz.price === 0);
+    const [elapsed, setElapsed] = useState(0);
+    const timerRef              = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Start timer when quiz step becomes active
+    React.useEffect(() => {
+        if (step === "quiz") {
+            timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+        } else {
+            if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+        }
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, [step]);
 
     const allAnswered   = quiz.questions.every((q) => answers[q.index] !== undefined);
     const answeredCount = Object.keys(answers).length;
@@ -139,11 +171,12 @@ function TakeQuizModal({ quiz, onClose, onSubmit, isSubmitting }: {
     };
 
     const handleSubmit = async () => {
+        if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
         const answerArray = quiz.questions.map((q) => ({
             questionIndex:  q.index,
             selectedOption: answers[q.index] ?? -1,
         }));
-        await onSubmit(answerArray);
+        await onSubmit(answerArray, elapsed);
     };
 
     // Step labels for the progress indicator
@@ -163,7 +196,12 @@ function TakeQuizModal({ quiz, onClose, onSubmit, isSubmitting }: {
                     <div className="min-w-0 flex-1 pr-2">
                         <h2 className="font-bold text-gray-900 text-base leading-tight truncate">{quiz.title}</h2>
                         {step === "quiz" && (
-                            <p className="text-xs text-gray-400 mt-0.5">{answeredCount} / {quiz.questionCount} answered</p>
+                            <div className="flex items-center gap-3 mt-0.5">
+                                <p className="text-xs text-gray-400">{answeredCount} / {quiz.questionCount} answered</p>
+                                <p className="text-xs text-indigo-500 font-medium flex items-center gap-1">
+                                    <FiClock size={11} />{formatSeconds(elapsed)}
+                                </p>
+                            </div>
                         )}
                     </div>
                     <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 shrink-0">
@@ -361,6 +399,124 @@ function TakeQuizModal({ quiz, onClose, onSubmit, isSubmitting }: {
     );
 }
 
+// ─── Leaderboard Modal ───────────────────────────────────────────────────────
+
+function LeaderboardModal({ quizId, onClose }: { quizId: string; onClose: () => void }) {
+    const token = getStoredToken();
+    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<{
+        quizTitle: string;
+        prizeMoney: number;
+        currency: string;
+        leaderboard: LeaderboardEntry[];
+        myRank: number | null;
+    } | null>(null);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetch(`/api/v1/private/my-quizzes?tab=leaderboard&quizId=${quizId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const json = await res.json();
+                if (res.ok) setData(json);
+            } finally { setLoading(false); }
+        })();
+    }, [quizId]);
+
+    const rankStyle = (rank: number) =>
+        rank === 1 ? "text-amber-600 font-black" :
+        rank === 2 ? "text-slate-500 font-bold"  :
+        rank === 3 ? "text-orange-600 font-bold"  : "text-gray-500 font-medium";
+
+    const rankBg = (rank: number, isMe: boolean) =>
+        isMe ? "bg-indigo-50 border-indigo-100" :
+        rank === 1 ? "bg-amber-50 border-amber-100" : "bg-white border-gray-100";
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={onClose}>
+            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}>
+                <div className="sm:hidden flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-gray-300 rounded-full" /></div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <FiAward size={18} className="text-amber-500" />
+                        <div>
+                            <h2 className="font-bold text-gray-900 text-base leading-tight">Leaderboard</h2>
+                            {data && <p className="text-xs text-gray-400 truncate max-w-[220px]">{data.quizTitle}</p>}
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><FiX size={18} /></button>
+                </div>
+
+                {/* Prize banner */}
+                {data && data.prizeMoney > 0 && (
+                    <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 shrink-0">
+                        <FiAward size={14} className="text-amber-500 shrink-0" />
+                        <span className="text-sm font-semibold text-amber-800">
+                            Prize Pool: ₹{data.prizeMoney.toLocaleString("en-IN")} — Top scorer wins!
+                        </span>
+                    </div>
+                )}
+
+                {/* My rank banner */}
+                {data?.myRank && (
+                    <div className="px-5 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-indigo-700 font-medium">Your rank: <strong>#{data.myRank}</strong> out of {data.leaderboard.length}</span>
+                    </div>
+                )}
+
+                {/* Body */}
+                <div className="overflow-y-auto flex-1 p-4 space-y-2">
+                    {loading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
+                        ))
+                    ) : !data || data.leaderboard.length === 0 ? (
+                        <div className="py-12 text-center text-gray-400 text-sm">No participants yet</div>
+                    ) : data.leaderboard.map((entry) => (
+                        <div key={entry.userId}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${rankBg(entry.rank, entry.isMe)} transition-colors`}>
+                            <div className={`w-7 text-center text-sm ${rankStyle(entry.rank)} shrink-0`}>
+                                {entry.rank <= 3 ? ["🥇","🥈","🥉"][entry.rank - 1] : `#${entry.rank}`}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-sm font-semibold text-gray-900 truncate">{entry.userName}</span>
+                                    {entry.isMe && (
+                                        <span className="shrink-0 text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded-full">You</span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
+                                    <span>{entry.score}/{entry.maxScore} pts</span>
+                                    {entry.timeTakenSeconds > 0 && (
+                                        <span className="flex items-center gap-0.5"><FiClock size={10} />{formatSeconds(entry.timeTakenSeconds)}</span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className={`text-sm font-black shrink-0 ${
+                                entry.percentage >= 80 ? "text-emerald-600" :
+                                entry.percentage >= 50 ? "text-amber-600" : "text-red-500"
+                            }`}>
+                                {entry.percentage}%
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="p-4 border-t border-gray-100 shrink-0">
+                    <button onClick={onClose}
+                        className="w-full py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Result Modal ─────────────────────────────────────────────────────────────
 
 function ResultModal({ result, quizTitle, onClose }: {
@@ -412,9 +568,10 @@ export default function MyQuizzesPage() {
     const [histPag, setHistPag]     = useState<Pagination>({ total: 0, page: 1, pages: 1, limit: 12 });
     const [histLimit, setHistLimit] = useState(12);
 
-    const [takeQuiz, setTakeQuiz]         = useState<AvailableQuiz | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [quizResult, setQuizResult]     = useState<{ result: { score: number; totalQuestions: number; percentage: number; maxScore: number }; quizTitle: string } | null>(null);
+    const [takeQuiz, setTakeQuiz]           = useState<AvailableQuiz | null>(null);
+    const [isSubmitting, setIsSubmitting]   = useState(false);
+    const [quizResult, setQuizResult]       = useState<{ result: { score: number; totalQuestions: number; percentage: number; maxScore: number }; quizTitle: string } | null>(null);
+    const [leaderboardQuizId, setLeaderboardQuizId] = useState<string | null>(null);
 
     const fetchAvailable = useCallback(async () => {
         setLoading(true);
@@ -445,14 +602,14 @@ export default function MyQuizzesPage() {
         else fetchHistory();
     }, [tab]);
 
-    const handleSubmit = async (answers: { questionIndex: number; selectedOption: number }[]) => {
+    const handleSubmit = async (answers: { questionIndex: number; selectedOption: number }[], timeTakenSeconds: number) => {
         if (!takeQuiz) return;
         setIsSubmitting(true);
         try {
             const res  = await fetch("/api/v1/private/my-quizzes", {
                 method:  "POST",
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-                body:    JSON.stringify({ quizId: takeQuiz._id, answers }),
+                body:    JSON.stringify({ quizId: takeQuiz._id, answers, timeTakenSeconds }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to submit");
@@ -578,6 +735,11 @@ export default function MyQuizzesPage() {
                                                     <FiDollarSign size={11} className="text-gray-400" />
                                                     {quiz.price === 0 ? "Free" : `₹${quiz.price}`}
                                                 </span>
+                                                {quiz.prizeMoney > 0 && (
+                                                    <span className="flex items-center gap-1 font-semibold text-amber-600">
+                                                        <FiAward size={11} />Prize ₹{quiz.prizeMoney.toLocaleString("en-IN")}
+                                                    </span>
+                                                )}
                                             </div>
 
                                             {quiz.participated && quiz.myPercentage !== null && (
@@ -588,10 +750,16 @@ export default function MyQuizzesPage() {
                                                 </div>
                                             )}
 
-                                            <div className="mt-auto">
+                                            <div className="mt-auto space-y-2">
                                                 {quiz.participated ? (
-                                                    <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-                                                        <FiCheck size={12} /> Already participated
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                                                            <FiCheck size={12} /> Already participated
+                                                        </div>
+                                                        <button onClick={() => setLeaderboardQuizId(quiz._id)}
+                                                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors">
+                                                            <FiAward size={12} /> View Leaderboard
+                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <button onClick={() => setTakeQuiz(quiz)}
@@ -615,7 +783,7 @@ export default function MyQuizzesPage() {
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-gray-50 border-b border-gray-100">
-                                            {["#", "Quiz", "Score", "Percentage", "Date"].map((h) => (
+                                            {["#", "Quiz", "Score", "Percentage", "Time", "Date"].map((h) => (
                                                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                                             ))}
                                         </tr>
@@ -628,7 +796,7 @@ export default function MyQuizzesPage() {
                                                 ))}
                                             </tr>
                                         )) : history.length === 0 ? (
-                                            <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-400 text-sm">No participation history</td></tr>
+                                            <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-400 text-sm">No participation history</td></tr>
                                         ) : history.map((h, idx) => {
                                             const rowNum = (histPag.page - 1) * histPag.limit + idx + 1;
                                             return (
@@ -637,6 +805,7 @@ export default function MyQuizzesPage() {
                                                     <td className="px-4 py-3 font-medium text-gray-800 max-w-[240px] truncate">{h.quizTitle}</td>
                                                     <td className="px-4 py-3 text-xs text-gray-700 font-medium">{h.score}/{h.totalQuestions}</td>
                                                     <td className="px-4 py-3"><ScoreBadge pct={h.percentage} /></td>
+                                                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{formatSeconds(h.timeTakenSeconds)}</td>
                                                     <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(h.createdAt)}</td>
                                                 </tr>
                                             );
@@ -662,6 +831,7 @@ export default function MyQuizzesPage() {
                                         </div>
                                         <div className="flex items-center gap-3 text-xs text-gray-500">
                                             <span className="flex items-center gap-1"><FiCheck size={11} />{h.score}/{h.totalQuestions}</span>
+                                            {h.timeTakenSeconds > 0 && <span className="flex items-center gap-1"><FiClock size={11} />{formatSeconds(h.timeTakenSeconds)}</span>}
                                             <span className="flex items-center gap-1"><FiCalendar size={11} />{formatDate(h.createdAt)}</span>
                                         </div>
                                     </div>
@@ -688,6 +858,12 @@ export default function MyQuizzesPage() {
                     result={quizResult.result}
                     quizTitle={quizResult.quizTitle}
                     onClose={() => { setQuizResult(null); if (tab === "history") fetchHistory(); }}
+                />
+            )}
+            {leaderboardQuizId && (
+                <LeaderboardModal
+                    quizId={leaderboardQuizId}
+                    onClose={() => setLeaderboardQuizId(null)}
                 />
             )}
         </div>

@@ -13,6 +13,10 @@ export interface IQuiz extends Document {
     title: string;
     instructions: string[];
     price: number;
+    prizeMoney: number;
+    firstPrize: number;
+    secondPrize: number;
+    thirdPrize: number;
     currency: string;
     status: QuizStatus;
     questions: IQuizQuestion[];
@@ -49,6 +53,26 @@ const QuizSchema: Schema<IQuiz> = new Schema(
         price: {
             type: Number,
             required: true,
+            min: 0,
+            default: 0,
+        },
+        prizeMoney: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
+        firstPrize: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
+        secondPrize: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
+        thirdPrize: {
+            type: Number,
             min: 0,
             default: 0,
         },

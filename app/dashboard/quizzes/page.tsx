@@ -8,7 +8,7 @@ import {
     FiBookOpen, FiRefreshCw, FiSearch, FiUsers, FiAlertCircle,
     FiX, FiChevronLeft, FiChevronRight, FiFilter, FiChevronDown, FiChevronUp,
     FiPlus, FiTrash2, FiAlertTriangle, FiEdit2, FiCheck, FiLayers,
-    FiDollarSign, FiCalendar, FiUser,
+    FiDollarSign, FiCalendar, FiUser, FiAward, FiSend, FiClock,
 } from "react-icons/fi";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
@@ -22,6 +22,10 @@ interface QuizRecord {
     title: string;
     instructions: string[];
     price: number;
+    prizeMoney: number;
+    firstPrize: number;
+    secondPrize: number;
+    thirdPrize: number;
     currency: string;
     status: QuizStatus;
     questionCount: number;
@@ -48,7 +52,18 @@ interface Participation {
     score: number;
     totalQuestions: number;
     percentage: number;
+    timeTakenSeconds: number;
     createdAt: string;
+}
+
+interface PerformanceEntry {
+    rank: number;
+    userName: string;
+    score: number;
+    maxScore: number;
+    percentage: number;
+    timeTakenSeconds: number;
+    prize: number;
 }
 
 interface QuizSummary {
@@ -81,6 +96,10 @@ interface QuizFormData {
     title: string;
     instructions: string[];
     price: string;
+    prizeMoney: string;
+    firstPrize: string;
+    secondPrize: string;
+    thirdPrize: string;
     currency: string;
     status: QuizStatus;
     questions: QuizQuestion[];
@@ -90,6 +109,13 @@ interface QuizFormData {
 
 function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatSeconds(sec: number) {
+    if (!sec) return "—";
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 function formatDateTime(iso: string) {
@@ -124,17 +150,18 @@ function ScoreBadge({ pct }: { pct: number }) {
     );
 }
 
-function StatCard({ icon: Icon, label, value, color, bg }: {
-    icon: React.ElementType; label: string; value: string | number; color: string; bg: string;
+function StatCard({ icon: Icon, label, value, color, bg, span }: {
+    icon: React.ElementType; label: string; value: string | number;
+    color: string; bg: string; span?: boolean;
 }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 shadow-sm flex items-center gap-3 sm:block">
-            <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg ${bg} flex items-center justify-center shrink-0 sm:mb-3`}>
+        <div className={`bg-white rounded-xl border border-gray-100 p-3 sm:p-4 shadow-sm flex items-center gap-3${span ? " col-span-2 sm:col-span-1" : ""}`}>
+            <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
                 <Icon size={16} className={color} />
             </div>
             <div className="min-w-0">
-                <div className="text-sm sm:text-xl font-bold text-gray-900 leading-tight truncate" title={String(value)}>{value}</div>
-                <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+                <div className="text-base sm:text-xl font-bold text-gray-900 leading-tight" title={String(value)}>{value}</div>
+                <div className="text-xs text-gray-500 mt-0.5 leading-tight">{label}</div>
             </div>
         </div>
     );
@@ -148,21 +175,24 @@ function PaginationBar({ pagination, onPage, limit, onLimitChange }: {
     const to   = Math.min(page * limit, total);
     const nums: number[] = [];
     if (pages <= 5) { for (let i = 1; i <= pages; i++) nums.push(i); }
-    else { for (let i = 0; i < 5; i++) nums.push(Math.max(1, Math.min(page - 2 + i, pages - 4 + i))); }
+    else {
+        const start = Math.max(1, Math.min(page - 1, pages - 3));
+        for (let i = start; i <= Math.min(start + 3, pages); i++) nums.push(i);
+    }
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 bg-gray-50">
-            <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-500">{total === 0 ? "No records" : `Showing ${from}–${to} of ${total}`}</span>
+        <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs text-gray-500 truncate">{total === 0 ? "No records" : `${from}–${to} / ${total}`}</span>
                 <select value={limit} onChange={(e) => onLimitChange(Number(e.target.value))}
-                    className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none">
-                    {[10, 20, 50].map((n) => <option key={n} value={n}>{n} / page</option>)}
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none shrink-0">
+                    {[10, 20, 50].map((n) => <option key={n} value={n}>{n}/pg</option>)}
                 </select>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 shrink-0">
                 <button onClick={() => onPage(page - 1)} disabled={page <= 1}
                     className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed">
-                    <FiChevronLeft size={16} />
+                    <FiChevronLeft size={15} />
                 </button>
                 {nums.map((p) => (
                     <button key={p} onClick={() => onPage(p)}
@@ -172,7 +202,7 @@ function PaginationBar({ pagination, onPage, limit, onLimitChange }: {
                 ))}
                 <button onClick={() => onPage(page + 1)} disabled={page >= pages}
                     className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed">
-                    <FiChevronRight size={16} />
+                    <FiChevronRight size={15} />
                 </button>
             </div>
         </div>
@@ -218,8 +248,9 @@ function DeleteModal({ title, onConfirm, onCancel, isDeleting }: {
 const EMPTY_QUESTION = (): QuizQuestion => ({ text: "", options: ["", ""], correctOption: 0, points: 1 });
 
 const EMPTY_FORM = (): QuizFormData => ({
-    title: "", instructions: [""], price: "0", currency: "INR",
-    status: "INACTIVE", questions: [EMPTY_QUESTION()],
+    title: "", instructions: [""], price: "0", prizeMoney: "0",
+    firstPrize: "0", secondPrize: "0", thirdPrize: "0",
+    currency: "INR", status: "INACTIVE", questions: [EMPTY_QUESTION()],
 });
 
 function QuizFormModal({ initial, onClose, onSave, isSaving }: {
@@ -231,12 +262,16 @@ function QuizFormModal({ initial, onClose, onSave, isSaving }: {
     const [form, setForm] = useState<QuizFormData>(() => {
         if (initial) {
             return {
-                title: initial.title,
+                title:        initial.title,
                 instructions: initial.instructions?.length ? initial.instructions : [""],
-                price: String(initial.price),
-                currency: initial.currency,
-                status: initial.status,
-                questions: initial.questions?.length ? initial.questions : [EMPTY_QUESTION()],
+                price:        String(initial.price),
+                prizeMoney:   String(initial.prizeMoney  ?? 0),
+                firstPrize:   String(initial.firstPrize  ?? 0),
+                secondPrize:  String(initial.secondPrize ?? 0),
+                thirdPrize:   String(initial.thirdPrize  ?? 0),
+                currency:     initial.currency,
+                status:       initial.status,
+                questions:    initial.questions?.length ? initial.questions : [EMPTY_QUESTION()],
             };
         }
         return EMPTY_FORM();
@@ -302,7 +337,7 @@ function QuizFormModal({ initial, onClose, onSave, isSaving }: {
                                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Price (₹)</label>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Entry Price (₹)</label>
                             <input type="number" min="0" value={form.price} onChange={(e) => setField("price", e.target.value)}
                                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50" />
                         </div>
@@ -314,6 +349,29 @@ function QuizFormModal({ initial, onClose, onSave, isSaving }: {
                                 <option value="ACTIVE">Active</option>
                                 <option value="PUBLISHED">Published</option>
                             </select>
+                        </div>
+                    </div>
+
+                    {/* Prize Distribution */}
+                    <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-4">
+                        <div className="flex items-center gap-1.5 mb-3">
+                            <FiAward size={14} className="text-amber-600" />
+                            <label className="text-xs font-semibold text-amber-800">Prize Distribution (₹)</label>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {([
+                                { key: "firstPrize",  label: "🥇 1st Prize", field: form.firstPrize  },
+                                { key: "secondPrize", label: "🥈 2nd Prize", field: form.secondPrize },
+                                { key: "thirdPrize",  label: "🥉 3rd Prize", field: form.thirdPrize  },
+                            ] as { key: keyof QuizFormData; label: string; field: string }[]).map(({ key, label, field }) => (
+                                <div key={key}>
+                                    <label className="block text-[11px] font-medium text-gray-600 mb-1">{label}</label>
+                                    <input type="number" min="0" value={field}
+                                        onChange={(e) => setField(key, e.target.value)}
+                                        placeholder="0"
+                                        className="w-full px-3 py-2 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white" />
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -436,6 +494,217 @@ function QuizFormModal({ initial, onClose, onSave, isSaving }: {
     );
 }
 
+// ─── Performance Modal ────────────────────────────────────────────────────────
+
+function PerformanceModal({ quiz, token, onClose }: {
+    quiz: QuizRecord; token: string; onClose: () => void;
+}) {
+    const { error: toastError, success: toastSuccess } = useToast();
+    const [participants, setParticipants] = useState<(Participation & { rank: number })[]>([]);
+    const [loading, setLoading]           = useState(true);
+    const [publishing, setPublishing]     = useState(false);
+    const [winners, setWinners]           = useState<PerformanceEntry[]>([]);
+    const [sortMode, setSortMode]         = useState<"score" | "time">("score");
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const res  = await fetch(`/api/v1/private/quiz-participations?quizId=${quiz._id}&limit=500`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                if (!res.ok) { toastError(data.message ?? "Failed to load"); return; }
+                const raw: Participation[] = data.records ?? [];
+                const sorted = [...raw].sort((a, b) =>
+                    b.percentage - a.percentage ||
+                    (a.timeTakenSeconds ?? 99999) - (b.timeTakenSeconds ?? 99999)
+                ).map((p, i) => ({ ...p, rank: i + 1 }));
+                setParticipants(sorted);
+                const prizes = [quiz.firstPrize ?? 0, quiz.secondPrize ?? 0, quiz.thirdPrize ?? 0];
+                setWinners(sorted.slice(0, 3).map((p, i) => ({
+                    rank: p.rank, userName: p.userName, score: p.score,
+                    maxScore: 0, percentage: p.percentage,
+                    timeTakenSeconds: p.timeTakenSeconds, prize: prizes[i] ?? 0,
+                })));
+            } finally { setLoading(false); }
+        })();
+    }, [quiz._id]);
+
+    const displayed = sortMode === "score"
+        ? participants
+        : [...participants].sort((a, b) =>
+            (a.timeTakenSeconds ?? 99999) - (b.timeTakenSeconds ?? 99999) ||
+            b.percentage - a.percentage
+          );
+
+    const handlePublish = async () => {
+        setPublishing(true);
+        try {
+            const res  = await fetch(`/api/v1/private/quizzes/${quiz._id}/publish-winners`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to publish");
+            toastSuccess(data.message ?? "Winner announcement sent!");
+        } catch (err) {
+            toastError(err instanceof Error ? err.message : "Failed to publish winners");
+        } finally { setPublishing(false); }
+    };
+
+    const medals = ["🥇", "🥈", "🥉"];
+    const hasPrize = (quiz.firstPrize ?? 0) + (quiz.secondPrize ?? 0) + (quiz.thirdPrize ?? 0) > 0;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={onClose}>
+            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}>
+                <div className="sm:hidden flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-gray-300 rounded-full" /></div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <FiAward size={18} className="text-amber-500 shrink-0" />
+                        <div className="min-w-0">
+                            <h2 className="font-bold text-gray-900 text-base leading-tight">Performance</h2>
+                            <p className="text-xs text-gray-400 truncate">{quiz.title}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 shrink-0"><FiX size={18} /></button>
+                </div>
+
+                {/* Winners strip */}
+                {!loading && winners.length > 0 && (
+                    <div className="px-5 py-3 bg-linear-to-r from-amber-50 to-yellow-50 border-b border-amber-100 shrink-0">
+                        <p className="text-xs font-semibold text-amber-800 mb-2">Top 3 Winners</p>
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                            {winners.map((w, i) => (
+                                <div key={i} className="shrink-0 flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-3 py-2 shadow-sm">
+                                    <span className="text-xl">{medals[i]}</span>
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-900 leading-tight">{w.userName}</p>
+                                        <p className="text-[11px] text-gray-500">{w.percentage}%{w.timeTakenSeconds > 0 ? ` · ${formatSeconds(w.timeTakenSeconds)}` : ""}</p>
+                                        {w.prize > 0 && <p className="text-[11px] font-bold text-amber-600">₹{w.prize.toLocaleString("en-IN")}</p>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Sort controls */}
+                <div className="px-5 py-2.5 border-b border-gray-100 flex items-center justify-between shrink-0">
+                    <span className="text-xs text-gray-500">{participants.length} participants</span>
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                        {([["score", "High Score"], ["time", "Fastest"]] as const).map(([mode, label]) => (
+                            <button key={mode} onClick={() => setSortMode(mode)}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                    sortMode === mode ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                                }`}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-y-auto flex-1">
+                    {loading ? (
+                        <div className="p-8 text-center text-gray-400 text-sm">Loading…</div>
+                    ) : participants.length === 0 ? (
+                        <div className="p-12 text-center text-gray-400 text-sm">No participants yet</div>
+                    ) : (
+                        <>
+                            {/* Desktop */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                            {["Rank", "Participant", "Score", "Time", "Date"].map((h) => (
+                                                <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {displayed.map((p) => (
+                                            <tr key={p._id} className={`hover:bg-gray-50/70 transition-colors ${p.rank <= 3 ? "bg-amber-50/30" : ""}`}>
+                                                <td className="px-4 py-3 text-sm font-bold">
+                                                    {p.rank <= 3 ? medals[p.rank - 1] : <span className="text-gray-500 font-medium">#{p.rank}</span>}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="font-medium text-gray-800 text-sm">{p.userName}</div>
+                                                    <div className="text-xs text-gray-400 truncate max-w-[180px]">{p.userEmail}</div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-sm font-bold ${p.percentage >= 80 ? "text-emerald-600" : p.percentage >= 50 ? "text-amber-600" : "text-red-500"}`}>
+                                                            {p.percentage}%
+                                                        </span>
+                                                        <span className="text-xs text-gray-400">{p.score}/{p.totalQuestions}</span>
+                                                    </div>
+                                                    {hasPrize && p.rank <= 3 && (
+                                                        <div className="text-[11px] font-bold text-amber-600 mt-0.5">
+                                                            Prize ₹{([quiz.firstPrize ?? 0, quiz.secondPrize ?? 0, quiz.thirdPrize ?? 0][p.rank - 1] ?? 0).toLocaleString("en-IN")}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-xs text-gray-600">
+                                                    <span className="flex items-center gap-1"><FiClock size={11} />{formatSeconds(p.timeTakenSeconds)}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(p.createdAt)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {/* Mobile */}
+                            <div className="sm:hidden divide-y divide-gray-100">
+                                {displayed.map((p) => (
+                                    <div key={p._id} className={`p-4 flex items-center gap-3 ${p.rank <= 3 ? "bg-amber-50/30" : ""}`}>
+                                        <div className="text-xl shrink-0 w-8 text-center">
+                                            {p.rank <= 3 ? medals[p.rank - 1] : <span className="text-xs font-bold text-gray-500">#{p.rank}</span>}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-semibold text-gray-900 text-sm truncate">{p.userName}</div>
+                                            <div className="text-xs text-gray-400 truncate">{p.userEmail}</div>
+                                            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
+                                                {p.timeTakenSeconds > 0 && <span className="flex items-center gap-0.5"><FiClock size={10} />{formatSeconds(p.timeTakenSeconds)}</span>}
+                                                {hasPrize && p.rank <= 3 && (
+                                                    <span className="font-bold text-amber-600">₹{([quiz.firstPrize ?? 0, quiz.secondPrize ?? 0, quiz.thirdPrize ?? 0][p.rank - 1] ?? 0).toLocaleString("en-IN")}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className={`text-sm font-black shrink-0 ${p.percentage >= 80 ? "text-emerald-600" : p.percentage >= 50 ? "text-amber-600" : "text-red-500"}`}>
+                                            {p.percentage}%
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Footer with publish button */}
+                <div className="px-5 py-4 border-t border-gray-100 flex items-center gap-3 shrink-0">
+                    <button onClick={onClose}
+                        className="flex-1 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                        Close
+                    </button>
+                    {participants.length > 0 && (
+                        <button onClick={handlePublish} disabled={publishing}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors disabled:opacity-50">
+                            {publishing
+                                ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending…</>
+                                : <><FiSend size={14} /> Publish Winners</>
+                            }
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Chart config ─────────────────────────────────────────────────────────────
 
 const participantChartConfig: ChartConfig = {
@@ -483,6 +752,7 @@ export default function QuizzesPage() {
     const [isSaving, setIsSaving]         = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<QuizRecord | null>(null);
     const [isDeleting, setIsDeleting]     = useState(false);
+    const [perfQuiz, setPerfQuiz]         = useState<QuizRecord | null>(null);
 
     const fetchQuizzes = useCallback(async (
         page = 1, q = qSearch, status = qStatus, dateRange = qDate, lim = qLimit
@@ -534,10 +804,17 @@ export default function QuizzesPage() {
     const handleSave = async (formData: QuizFormData) => {
         setIsSaving(true);
         try {
+            const fp = Number(formData.firstPrize)  || 0;
+            const sp = Number(formData.secondPrize) || 0;
+            const tp = Number(formData.thirdPrize)  || 0;
             const payload = {
                 title:        formData.title,
                 instructions: formData.instructions.filter((i) => i.trim()),
                 price:        Number(formData.price) || 0,
+                prizeMoney:   fp + sp + tp,
+                firstPrize:   fp,
+                secondPrize:  sp,
+                thirdPrize:   tp,
                 currency:     formData.currency,
                 status:       formData.status,
                 questions:    formData.questions,
@@ -617,27 +894,32 @@ export default function QuizzesPage() {
                 {stats && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                         {[
-                            { icon: FiBookOpen,  label: "Total Quizzes",      value: stats.total,             color: "text-indigo-600", bg: "bg-indigo-50" },
-                            { icon: FiLayers,    label: "Inactive",           value: stats.inactive,          color: "text-gray-600",   bg: "bg-gray-100" },
-                            { icon: FiCalendar,  label: "Active",             value: stats.active,            color: "text-amber-600",  bg: "bg-amber-50" },
-                            { icon: FiCheck,     label: "Published",          value: stats.published,         color: "text-emerald-600",bg: "bg-emerald-50" },
-                            { icon: FiUsers,     label: "Total Participants", value: stats.totalParticipants, color: "text-violet-600", bg: "bg-violet-50" },
-                        ].map((c) => <StatCard key={c.label} {...c} />)}
+                            { icon: FiBookOpen,  label: "Total Quizzes",      value: stats.total,             color: "text-indigo-600",  bg: "bg-indigo-50"  },
+                            { icon: FiLayers,    label: "Inactive",           value: stats.inactive,          color: "text-gray-600",    bg: "bg-gray-100"   },
+                            { icon: FiCalendar,  label: "Active",             value: stats.active,            color: "text-amber-600",   bg: "bg-amber-50"   },
+                            { icon: FiCheck,     label: "Published",          value: stats.published,         color: "text-emerald-600", bg: "bg-emerald-50" },
+                            { icon: FiUsers,     label: "Total Participants", value: stats.totalParticipants, color: "text-violet-600",  bg: "bg-violet-50"  },
+                        ].map((c, i, arr) => (
+                            <StatCard key={c.label} {...c} span={i === arr.length - 1 && arr.length % 2 !== 0} />
+                        ))}
                     </div>
                 )}
 
                 {/* Chart: participants per quiz */}
                 {quizSummary.length > 0 && (
                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
-                        <h2 className="text-sm font-semibold text-gray-700 mb-4">Participants per Quiz</h2>
-                        <ChartContainer config={participantChartConfig} className="h-52">
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-sm font-semibold text-gray-700">Participants per Quiz</h2>
+                            <span className="text-xs text-gray-400">{quizSummary.length} quiz{quizSummary.length !== 1 ? "zes" : ""}</span>
+                        </div>
+                        <ChartContainer config={participantChartConfig} className="h-44 sm:h-52">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={quizSummary.map((s) => ({ name: s.quizTitle.slice(0, 20), count: s.count }))}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                                    <YAxis tick={{ fontSize: 11 }} />
+                                <BarChart data={quizSummary.map((s) => ({ name: s.quizTitle.slice(0, 12), count: s.count }))} margin={{ left: -20, right: 8, top: 4, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                                    <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" fill="hsl(262, 70%, 60%)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="count" fill="hsl(262, 70%, 60%)" radius={[4, 4, 0, 0]} maxBarSize={48} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartContainer>
@@ -649,10 +931,11 @@ export default function QuizzesPage() {
                     <div className="flex border-b border-gray-100">
                         {(["quizzes", "participants"] as TabId[]).map((t) => (
                             <button key={t} onClick={() => setTab(t)}
-                                className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                                className={`flex-1 sm:flex-none px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
                                     tab === t ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"
                                 }`}>
-                                {t === "quizzes" ? `Quiz History (${qPagination.total})` : `Participants (${pPagination.total})`}
+                                <span className="sm:hidden">{t === "quizzes" ? `Quizzes (${qPagination.total})` : `Participants (${pPagination.total})`}</span>
+                                <span className="hidden sm:inline">{t === "quizzes" ? `Quiz History (${qPagination.total})` : `Participants (${pPagination.total})`}</span>
                             </button>
                         ))}
                     </div>
@@ -700,7 +983,7 @@ export default function QuizzesPage() {
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-gray-50 border-b border-gray-100">
-                                            {["#", "Title", "Status", "Price", "Questions", "Participants", "Created", ""].map((h) => (
+                                            {["#", "Title", "Status", "Entry / Prize", "Questions", "Participants", "Created", ""].map((h) => (
                                                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                                             ))}
                                         </tr>
@@ -724,8 +1007,13 @@ export default function QuizzesPage() {
                                                         <div className="text-xs text-gray-400">{q.createdByName}</div>
                                                     </td>
                                                     <td className="px-4 py-3"><StatusBadge status={q.status} /></td>
-                                                    <td className="px-4 py-3 text-xs text-gray-700 font-medium">
-                                                        {q.price === 0 ? "Free" : `₹${q.price}`}
+                                                    <td className="px-4 py-3 text-xs">
+                                                        <div className="font-medium text-gray-700">{q.price === 0 ? "Free" : `₹${q.price}`}</div>
+                                                        {q.prizeMoney > 0 && (
+                                                            <div className="text-amber-600 font-semibold flex items-center gap-0.5 mt-0.5">
+                                                                <FiDollarSign size={10} />Prize ₹{q.prizeMoney}
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3 text-xs text-gray-600">{q.questionCount}</td>
                                                     <td className="px-4 py-3">
@@ -736,6 +1024,10 @@ export default function QuizzesPage() {
                                                     <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(q.createdAt)}</td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-1">
+                                                            <button onClick={() => setPerfQuiz(q)}
+                                                                className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors" title="View Performance">
+                                                                <FiAward size={13} />
+                                                            </button>
                                                             {canEdit && (
                                                                 <button onClick={() => handleEditLoad(q)}
                                                                     className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Edit">
@@ -761,37 +1053,56 @@ export default function QuizzesPage() {
                             <div className="md:hidden divide-y divide-gray-100">
                                 {loading ? Array.from({ length: 3 }).map((_, i) => (
                                     <div key={i} className="p-4 animate-pulse space-y-2">
-                                        <div className="h-4 bg-gray-100 rounded w-1/2" />
-                                        <div className="h-3 bg-gray-100 rounded w-3/4" />
+                                        <div className="h-4 bg-gray-100 rounded w-3/5" />
+                                        <div className="h-3 bg-gray-100 rounded w-2/5" />
                                     </div>
                                 )) : quizzes.length === 0 ? (
                                     <div className="py-12 text-center text-gray-400 text-sm">No quizzes found</div>
                                 ) : quizzes.map((q) => (
-                                    <div key={q._id} className="p-4 space-y-2">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="font-semibold text-gray-900 text-sm leading-tight">{q.title}</div>
-                                            <div className="flex items-center gap-1 shrink-0">
+                                    <div key={q._id} className="p-4">
+                                        {/* Row 1: title + actions */}
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="min-w-0">
+                                                <div className="font-semibold text-gray-900 text-sm leading-tight truncate">{q.title}</div>
+                                                <div className="text-xs text-gray-400 mt-0.5">{q.createdByName} · {formatDate(q.createdAt)}</div>
+                                            </div>
+                                            <div className="flex items-center gap-0.5 shrink-0">
+                                                <button onClick={() => setPerfQuiz(q)}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 active:bg-amber-100" title="Performance">
+                                                    <FiAward size={14} />
+                                                </button>
                                                 {canEdit && (
                                                     <button onClick={() => handleEditLoad(q)}
-                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50">
-                                                        <FiEdit2 size={13} />
+                                                        className="p-2 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100">
+                                                        <FiEdit2 size={14} />
                                                     </button>
                                                 )}
                                                 {canDelete && (
                                                     <button onClick={() => setDeleteTarget(q)}
-                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50">
-                                                        <FiTrash2 size={13} />
+                                                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 active:bg-red-100">
+                                                        <FiTrash2 size={14} />
                                                     </button>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+                                        {/* Row 2: badges */}
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                             <StatusBadge status={q.status} />
-                                            <span className="flex items-center gap-1"><FiDollarSign size={11} />{q.price === 0 ? "Free" : `₹${q.price}`}</span>
-                                            <span className="flex items-center gap-1"><FiLayers size={11} />{q.questionCount} Q</span>
-                                            <span className="flex items-center gap-1 text-violet-600"><FiUsers size={11} />{q.participantCount}</span>
+                                            <span className="inline-flex items-center gap-0.5 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
+                                                <FiLayers size={10} /> {q.questionCount}Q
+                                            </span>
+                                            <span className="inline-flex items-center gap-0.5 text-xs text-violet-700 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5">
+                                                <FiUsers size={10} /> {q.participantCount}
+                                            </span>
+                                            <span className="inline-flex items-center gap-0.5 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
+                                                {q.price === 0 ? "Free" : `₹${q.price}`}
+                                            </span>
+                                            {q.prizeMoney > 0 && (
+                                                <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                                                    <FiAward size={10} /> ₹{q.prizeMoney.toLocaleString("en-IN")}
+                                                </span>
+                                            )}
                                         </div>
-                                        <div className="text-xs text-gray-400">{q.createdByName} · {formatDate(q.createdAt)}</div>
                                     </div>
                                 ))}
                             </div>
@@ -854,7 +1165,7 @@ export default function QuizzesPage() {
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-gray-50 border-b border-gray-100">
-                                            {["#", "User", "Quiz", "Score", "Percentage", "Date"].map((h) => (
+                                            {["#", "User", "Quiz", "Score", "Percentage", "Time", "Date"].map((h) => (
                                                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                                             ))}
                                         </tr>
@@ -880,6 +1191,7 @@ export default function QuizzesPage() {
                                                     <td className="px-4 py-3 text-xs text-gray-700 max-w-[160px] truncate">{p.quizTitle}</td>
                                                     <td className="px-4 py-3 text-xs text-gray-700 font-medium">{p.score}/{p.totalQuestions}</td>
                                                     <td className="px-4 py-3"><ScoreBadge pct={p.percentage} /></td>
+                                                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{formatSeconds(p.timeTakenSeconds)}</td>
                                                     <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(p.createdAt)}</td>
                                                 </tr>
                                             );
@@ -899,15 +1211,24 @@ export default function QuizzesPage() {
                                     <div className="py-12 text-center text-gray-400 text-sm">No participants found</div>
                                 ) : participations.map((p) => (
                                     <div key={p._id} className="p-4">
-                                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                                            <div className="font-semibold text-gray-900 text-sm truncate">{p.userName}</div>
+                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                            <div className="min-w-0">
+                                                <div className="font-semibold text-gray-900 text-sm leading-tight truncate">{p.userName}</div>
+                                                <div className="text-xs text-gray-400 truncate mt-0.5">{p.userEmail}</div>
+                                            </div>
                                             <ScoreBadge pct={p.percentage} />
                                         </div>
-                                        <div className="text-xs text-gray-400 truncate mb-1">{p.userEmail}</div>
-                                        <div className="text-xs text-gray-600 font-medium truncate mb-1">{p.quizTitle}</div>
-                                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                                            <span className="flex items-center gap-1"><FiCheck size={11} />{p.score}/{p.totalQuestions}</span>
-                                            <span className="flex items-center gap-1"><FiCalendar size={11} />{formatDate(p.createdAt)}</span>
+                                        <div className="text-xs text-indigo-700 font-medium truncate mb-1.5">{p.quizTitle}</div>
+                                        <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+                                            <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
+                                                <FiCheck size={10} />{p.score}/{p.totalQuestions}
+                                            </span>
+                                            {p.timeTakenSeconds > 0 && (
+                                                <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
+                                                    <FiClock size={10} />{formatSeconds(p.timeTakenSeconds)}
+                                                </span>
+                                            )}
+                                            <span className="text-gray-400">{formatDate(p.createdAt)}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -933,6 +1254,13 @@ export default function QuizzesPage() {
                     onConfirm={handleDelete}
                     onCancel={() => !isDeleting && setDeleteTarget(null)}
                     isDeleting={isDeleting}
+                />
+            )}
+            {perfQuiz && token && (
+                <PerformanceModal
+                    quiz={perfQuiz}
+                    token={token}
+                    onClose={() => setPerfQuiz(null)}
                 />
             )}
         </div>

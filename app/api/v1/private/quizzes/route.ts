@@ -72,6 +72,10 @@ export const GET = withAuth(
                 title:            q.title,
                 instructions:     q.instructions ?? [],
                 price:            q.price,
+                prizeMoney:       q.prizeMoney ?? 0,
+                firstPrize:       q.firstPrize  ?? 0,
+                secondPrize:      q.secondPrize ?? 0,
+                thirdPrize:       q.thirdPrize  ?? 0,
                 currency:         q.currency,
                 status:           q.status,
                 questionCount:    (q.questions ?? []).length,
@@ -96,7 +100,7 @@ export const POST = withAuth(
             await connectDB();
 
             const body = await req.json();
-            const { title, instructions, price, currency, status, questions } = body;
+            const { title, instructions, price, prizeMoney, firstPrize, secondPrize, thirdPrize, currency, status, questions } = body;
 
             if (!title?.trim()) {
                 return NextResponse.json({ message: "Quiz title is required." }, { status: 400 });
@@ -117,10 +121,18 @@ export const POST = withAuth(
             const validStatuses = ["INACTIVE", "ACTIVE", "PUBLISHED"];
             const quizStatus = validStatuses.includes(status?.toUpperCase()) ? status.toUpperCase() : "INACTIVE";
 
+            const fp = Math.max(0, Number(firstPrize)  || 0);
+            const sp = Math.max(0, Number(secondPrize) || 0);
+            const tp = Math.max(0, Number(thirdPrize)  || 0);
+
             const quiz = await Quiz.create({
                 title:        title.trim(),
                 instructions: Array.isArray(instructions) ? instructions.filter((i: string) => i?.trim()) : [],
                 price:        Math.max(0, Number(price) || 0),
+                prizeMoney:   Math.max(0, Number(prizeMoney) || 0) || (fp + sp + tp),
+                firstPrize:   fp,
+                secondPrize:  sp,
+                thirdPrize:   tp,
                 currency:     currency || "INR",
                 status:       quizStatus,
                 questions:    questions.map((q: any) => ({

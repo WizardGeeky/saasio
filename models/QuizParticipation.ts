@@ -14,6 +14,7 @@ export interface IQuizParticipation extends Document {
     score: number;
     totalQuestions: number;
     percentage: number;
+    timeTakenSeconds: number;
     answers: IQuizAnswer[];
     createdAt: Date;
     updatedAt: Date;
@@ -67,6 +68,11 @@ const QuizParticipationSchema: Schema<IQuizParticipation> = new Schema(
             required: true,
             min: 0,
             max: 100,
+        },
+        timeTakenSeconds: {
+            type: Number,
+            min: 0,
+            default: 0,
         },
         answers: {
             type: [QuizAnswerSchema],
