@@ -67,37 +67,31 @@ export interface NavConfig {
 
 export const NAV_CONFIG: NavConfig[] = [
     {
-        name: "Analytics",
-        href: "/dashboard",
-        icon: FiBarChart2,
-        privileges: [
-            { method: "GET", apiPath: "/api/v1/private/analytics" },
-        ],
-    },
-    {
-        name: "My Analytics",
-        href: "/dashboard/my-analytics",
-        icon: FiPieChart,
-        privileges: [],
-    },
-    {
-        name: "Projects",
-        href: "/dashboard/projects",
-        icon: FiFolder,
-        privileges: [
-            { method: "GET",    apiPath: "/api/v1/private/projects" },
-            { method: "POST",   apiPath: "/api/v1/private/projects" },
-            { method: "PUT",    apiPath: "/api/v1/private/projects" },
-            { method: "DELETE", apiPath: "/api/v1/private/projects" },
-        ],
-    },
-    {
         name: "AI ATS",
         href: "/dashboard/ai-ats",
         icon: FiZap,
         privileges: [
             { method: "GET",  apiPath: "/api/v1/private/ai-ats" },
             { method: "POST", apiPath: "/api/v1/private/ai-ats" },
+        ],
+    },
+    {
+        name: "AI Models",
+        href: "/dashboard/ai-models",
+        icon: FiCpu,
+        privileges: [
+            { method: "GET",    apiPath: "/api/v1/private/ai-models" },
+            { method: "POST",   apiPath: "/api/v1/private/ai-models" },
+            { method: "PUT",    apiPath: "/api/v1/private/ai-models" },
+            { method: "DELETE", apiPath: "/api/v1/private/ai-models" },
+        ],
+    },
+    {
+        name: "Analytics",
+        href: "/dashboard",
+        icon: FiBarChart2,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/analytics" },
         ],
     },
     {
@@ -109,30 +103,22 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
-        name: "Resumes",
-        href: "/dashboard/resume-config",
-        icon: FiFileText,
-        privileges: [],
-    },
-    {
-        name: "My Resumes",
-        href: "/dashboard/my-resumes",
-        icon: FiDownload,
-        privileges: [],
-    },
-    {
-        name: "Resumes History",
-        href: "/dashboard/resumes-history",
-        icon: FiDownload,
+        name: "Complaints",
+        href: "/dashboard/complaints",
+        icon: FiMessageSquare,
         privileges: [
-            { method: "GET", apiPath: "/api/v1/private/resumes-history" },
+            { method: "GET", apiPath: "/api/v1/private/complaints" },
+            { method: "PUT", apiPath: "/api/v1/private/complaints/[id]" },
         ],
     },
     {
-        name: "My CVs",
-        href: "/dashboard/my-cvs",
-        icon: FiGrid,
-        privileges: [],
+        name: "Create Order",
+        href: "/dashboard/rozarpay/orders",
+        icon: FiShoppingCart,
+        privileges: [
+            { method: "GET",  apiPath: "/api/v1/private/rozarpay" },
+            { method: "POST", apiPath: "/api/v1/private/rozarpay" },
+        ],
     },
     {
         name: "CV History",
@@ -143,29 +129,43 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
+        name: "My Analytics",
+        href: "/dashboard/my-analytics",
+        icon: FiPieChart,
+        privileges: [],
+    },
+    {
+        name: "My Complaints",
+        href: "/dashboard/complaints/my",
+        icon: FiMessageSquare,
+        privileges: [
+            { method: "GET",  apiPath: "/api/v1/private/complaints/my" },
+            { method: "POST", apiPath: "/api/v1/private/complaints" },
+        ],
+    },
+    {
+        name: "My CVs",
+        href: "/dashboard/my-cvs",
+        icon: FiGrid,
+        privileges: [],
+    },
+    {
         name: "My Quizzes",
         href: "/dashboard/my-quizzes",
         icon: FiCheckSquare,
         privileges: [],
     },
     {
-        name: "Quizzes",
-        href: "/dashboard/quizzes",
-        icon: FiBookOpen,
-        privileges: [
-            { method: "GET",    apiPath: "/api/v1/private/quizzes" },
-            { method: "POST",   apiPath: "/api/v1/private/quizzes" },
-            { method: "PUT",    apiPath: "/api/v1/private/quizzes" },
-            { method: "DELETE", apiPath: "/api/v1/private/quizzes" },
-        ],
+        name: "My Resumes",
+        href: "/dashboard/my-resumes",
+        icon: FiDownload,
+        privileges: [],
     },
     {
-        name: "Subscriptions",
-        href: "/dashboard/subscriptions",
-        icon: FiPackage,
-        privileges: [
-            { method: "GET", apiPath: "/api/v1/private/subscriptions" },
-        ],
+        name: "My Reviews",
+        href: "/dashboard/reviews/my",
+        icon: FiStar,
+        privileges: [],
     },
     {
         name: "My Subscription",
@@ -182,25 +182,12 @@ export const NAV_CONFIG: NavConfig[] = [
         privileges: [],
     },
     {
-        name: "Users",
-        href: "/dashboard/users",
-        icon: FiUsers,
+        name: "Notifications",
+        href: "/dashboard/notifications",
+        icon: FiBell,
         privileges: [
-            { method: "GET",    apiPath: "/api/v1/private/users" },
-            { method: "POST",   apiPath: "/api/v1/private/users" },
-            { method: "PUT",    apiPath: "/api/v1/private/users" },
-            { method: "DELETE", apiPath: "/api/v1/private/users" },
-        ],
-    },
-    {
-        name: "Roles",
-        href: "/dashboard/roles",
-        icon: FiShield,
-        privileges: [
-            { method: "GET",    apiPath: "/api/v1/private/roles" },
-            { method: "POST",   apiPath: "/api/v1/private/roles" },
-            { method: "PUT",    apiPath: "/api/v1/private/roles" },
-            { method: "DELETE", apiPath: "/api/v1/private/roles" },
+            { method: "GET",  apiPath: "/api/v1/private/notifications" },
+            { method: "POST", apiPath: "/api/v1/private/notifications" },
         ],
     },
     {
@@ -215,23 +202,31 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
-        name: "AI Models",
-        href: "/dashboard/ai-models",
-        icon: FiCpu,
+        name: "Profile",
+        href: "/dashboard/profile",
+        icon: FiUser,
+        privileges: [],
+    },
+    {
+        name: "Projects",
+        href: "/dashboard/projects",
+        icon: FiFolder,
         privileges: [
-            { method: "GET",    apiPath: "/api/v1/private/ai-models" },
-            { method: "POST",   apiPath: "/api/v1/private/ai-models" },
-            { method: "PUT",    apiPath: "/api/v1/private/ai-models" },
-            { method: "DELETE", apiPath: "/api/v1/private/ai-models" },
+            { method: "GET",    apiPath: "/api/v1/private/projects" },
+            { method: "POST",   apiPath: "/api/v1/private/projects" },
+            { method: "PUT",    apiPath: "/api/v1/private/projects" },
+            { method: "DELETE", apiPath: "/api/v1/private/projects" },
         ],
     },
     {
-        name: "Notifications",
-        href: "/dashboard/notifications",
-        icon: FiBell,
+        name: "Quizzes",
+        href: "/dashboard/quizzes",
+        icon: FiBookOpen,
         privileges: [
-            { method: "POST",   apiPath: "/api/v1/private/notifications" },
-            { method: "GET",    apiPath: "/api/v1/private/notifications" },
+            { method: "GET",    apiPath: "/api/v1/private/quizzes" },
+            { method: "POST",   apiPath: "/api/v1/private/quizzes" },
+            { method: "PUT",    apiPath: "/api/v1/private/quizzes" },
+            { method: "DELETE", apiPath: "/api/v1/private/quizzes" },
         ],
     },
     {
@@ -246,12 +241,53 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
-        name: "Create Order",
-        href: "/dashboard/rozarpay/orders",
-        icon: FiShoppingCart,
+        name: "Resumes",
+        href: "/dashboard/resume-config",
+        icon: FiFileText,
+        privileges: [],
+    },
+    {
+        name: "Resumes History",
+        href: "/dashboard/resumes-history",
+        icon: FiDownload,
         privileges: [
-            { method: "GET",  apiPath: "/api/v1/private/rozarpay" },
-            { method: "POST", apiPath: "/api/v1/private/rozarpay" },
+            { method: "GET", apiPath: "/api/v1/private/resumes-history" },
+        ],
+    },
+    {
+        name: "Reviews",
+        href: "/dashboard/reviews",
+        icon: FiStar,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/reviews" },
+        ],
+    },
+    {
+        name: "Roles",
+        href: "/dashboard/roles",
+        icon: FiShield,
+        privileges: [
+            { method: "GET",    apiPath: "/api/v1/private/roles" },
+            { method: "POST",   apiPath: "/api/v1/private/roles" },
+            { method: "PUT",    apiPath: "/api/v1/private/roles" },
+            { method: "DELETE", apiPath: "/api/v1/private/roles" },
+        ],
+    },
+    {
+        name: "Settings",
+        href: "/dashboard/settings",
+        icon: FiSettings,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/settings" },
+            { method: "PUT", apiPath: "/api/v1/private/settings" },
+        ],
+    },
+    {
+        name: "Subscriptions",
+        href: "/dashboard/subscriptions",
+        icon: FiPackage,
+        privileges: [
+            { method: "GET", apiPath: "/api/v1/private/subscriptions" },
         ],
     },
     {
@@ -263,50 +299,14 @@ export const NAV_CONFIG: NavConfig[] = [
         ],
     },
     {
-        name: "Profile",
-        href: "/dashboard/profile",
-        icon: FiUser,
-        privileges: [],
-    },
-    {
-        name: "My Reviews",
-        href: "/dashboard/reviews/my",
-        icon: FiStar,
-        privileges: [],
-    },
-    {
-        name: "Reviews",
-        href: "/dashboard/reviews",
-        icon: FiStar,
+        name: "Users",
+        href: "/dashboard/users",
+        icon: FiUsers,
         privileges: [
-            { method: "GET", apiPath: "/api/v1/private/reviews" },
-        ],
-    },
-    {
-        name: "My Complaints",
-        href: "/dashboard/complaints/my",
-        icon: FiMessageSquare,
-        privileges: [
-            { method: "GET", apiPath: "/api/v1/private/complaints/my" },
-            { method: "POST", apiPath: "/api/v1/private/complaints" },
-        ],
-    },
-    {
-        name: "Complaints",
-        href: "/dashboard/complaints",
-        icon: FiMessageSquare,
-        privileges: [
-            { method: "GET", apiPath: "/api/v1/private/complaints" },
-            { method: "PUT", apiPath: "/api/v1/private/complaints/[id]" },
-        ],
-    },
-    {
-        name: "Settings",
-        href: "/dashboard/settings",
-        icon: FiSettings,
-        privileges: [
-            { method: "GET",    apiPath: "/api/v1/private/settings" },
-            { method: "PUT",    apiPath: "/api/v1/private/settings" },
+            { method: "GET",    apiPath: "/api/v1/private/users" },
+            { method: "POST",   apiPath: "/api/v1/private/users" },
+            { method: "PUT",    apiPath: "/api/v1/private/users" },
+            { method: "DELETE", apiPath: "/api/v1/private/users" },
         ],
     },
 ];
