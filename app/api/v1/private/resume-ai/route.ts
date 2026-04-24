@@ -145,7 +145,7 @@ ADD RELEVANT SKILLS FROM JD:
 - Embed them naturally in: summary (3-5 JD keywords), skills section (exact JD tool names), experience/project bullets (1-2 JD keywords each), tech stack fields.
 - Use exact JD spelling: "Spring Boot" not "Spring", "RESTful API" not "REST API" if that's what JD says.
 - Skills categories should mirror JD sections (e.g., "Backend Development", "Cloud & DevOps", "Databases").
-- Add a proficiency indicator for top skills in each category: "Java (Expert), Python (Advanced), Go (Intermediate)".
+- List skills as clean comma-separated names with NO proficiency tags — do not add "(Expert)", "(Advanced)", "(Intermediate)" or any level labels.
 
 ② QUANTIFIED ACHIEVEMENTS (target 18/20):
 - Every experience and internship bullet MUST include at least one number, percentage, scale, or timeline.
@@ -375,7 +375,7 @@ function buildResumeGenerationPrompt({
         "KEYWORDS & ATS VOCABULARY:",
         "  • Identify the top 15 technical keywords from the JD and distribute them across summary, skills, bullets, and tech stacks.",
         "  • Match exact spelling from the JD (e.g., 'Spring Boot' not 'Spring', 'Node.js' not 'NodeJS').",
-        "  • Include proficiency hints in skills: 'Java (Expert), Python (Advanced), Go (Intermediate)'.",
+        "  • List skills as plain comma-separated names — NO proficiency tags like (Expert) or (Advanced).",
         "  • Add standard ATS soft skills for this role type: Agile Methodologies, Cross-functional Collaboration, Technical Documentation, etc.",
         "  • If the candidate has related skills, infer and add companion tools from the JD that are standard with their stack.",
         "",
@@ -560,6 +560,7 @@ async function callOpenAiCompatibleModel({
         body: JSON.stringify({
             model: modelName,
             temperature: 0.2,
+            max_tokens: 4000,
             messages: [
                 { role: "system", content: RESUME_AI_SYSTEM_PROMPT },
                 { role: "user", content: prompt },

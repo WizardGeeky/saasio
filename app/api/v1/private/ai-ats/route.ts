@@ -108,20 +108,24 @@ const ATS_RESPONSE_SCHEMA = {
     },
 };
 
-const ATS_ANALYSIS_SYSTEM_PROMPT = `You are an expert ATS analyzer.
+const ATS_ANALYSIS_SYSTEM_PROMPT = `You are an expert ATS analyzer and technical recruiter.
 You receive plain text extracted from a PDF resume plus a target job description.
-Return ONLY valid JSON matching the schema requested by the user.
+Return ONLY valid JSON matching the schema requested by the user. No markdown fences, no commentary, no text before or after the JSON object.
 
 Rules:
-1. Use only the facts supported by the extracted resume text and job description.
-2. Never invent jobs, dates, skills, degrees, certifications, or achievements.
-3. Score the resume based on ATS alignment, role relevance, keyword coverage, experience relevance, project relevance, and education fit.
-4. Suggestions must be specific and actionable for improving ATS performance for this exact job description.
-5. matchedKeywords and missingKeywords must be concise ATS-friendly phrases.
-6. strengths should call out strong parts of the current resume.
-7. concerns should call out weak or risky areas hurting ATS performance.
-8. resumeData must summarize the extracted resume content in a recruiter-friendly structure.
-9. If information is missing or unclear, use empty strings or empty arrays instead of inventing data.`;
+1. Use only facts supported by the extracted resume text and job description. Never invent jobs, dates, skills, degrees, certifications, or achievements.
+2. score (0–100): evaluate ATS alignment holistically — keyword coverage, experience relevance, skills match, quantified achievements, and education fit.
+3. sectionScores: each sub-score is also 0–100.
+   - skills: breadth and exact match of technical skills vs. JD requirements
+   - experience: relevance, depth, and seniority of work history to the role
+   - projects: technical complexity, relevance, and demonstrated impact
+   - education: degree level, field, and institution prestige relative to JD expectations
+4. matchedKeywords: 5–15 concise ATS-friendly phrases that appear in BOTH resume and JD. Exact JD spelling.
+5. missingKeywords: 5–10 important JD terms absent or weakly represented in the resume.
+6. suggestions: exactly 5–8 specific, actionable steps to improve ATS fit for THIS job description — not generic advice.
+7. strengths: 3–5 strong points the resume already demonstrates relative to the JD.
+8. concerns: 3–5 specific weak or risky areas actively hurting ATS performance.
+9. resumeData: parse the candidate's actual resume text into a structured recruiter-friendly summary. Do not invent data — use empty strings/arrays for missing fields.`;
 
 export const GET = withAuth(async (
     _req: NextRequest,
@@ -344,21 +348,51 @@ function buildAtsPrompt({
         `Target role: ${jobRoleName}`,
         `Uploaded resume file: ${fileName}`,
         "",
-        "Job description:",
+        "=== JOB DESCRIPTION ===",
         jobDescription,
         "",
-        "Extracted resume text:",
+        "=== CANDIDATE RESUME TEXT (single source of truth — do not invent data) ===",
         extractedResumeText,
         "",
-        "Return JSON in this exact shape:",
+        "=== REQUIRED JSON SCHEMA ===",
         JSON.stringify(ATS_RESPONSE_SCHEMA, null, 2),
         "",
-        "Scoring guidance:",
-        "- Evaluate ATS fit on a 0-100 scale.",
-        "- matchedKeywords should include the strongest overlaps between the resume and JD.",
-        "- missingKeywords should capture important JD terms that are absent or weakly represented.",
-        "- suggestions should help the candidate improve ATS fit quickly.",
-        "- resumeData should summarize the candidate resume from the extracted PDF text only.",
+        "=== SCORING CHECKLIST ===",
+        "",
+        "OVERALL SCORE (0–100):",
+        "  • 90–100: near-perfect keyword match, highly relevant experience, strong quantified achievements.",
+        "  • 70–89: good match with a few missing keywords or minor gaps.",
+        "  • 50–69: partial match — relevant experience but significant keyword or experience gaps.",
+        "  • 0–49: weak match — major gaps in required skills, experience, or education.",
+        "",
+        "SECTION SCORES — each 0–100:",
+        "  • skills: How many of the JD's required technical skills appear in the resume? Exact-match JD tool names score highest.",
+        "  • experience: How closely does work history (roles, duration, domain, seniority) match JD expectations?",
+        "  • projects: How relevant and technically complex are the listed projects to the JD requirements?",
+        "  • education: Does the degree level, field, and recency meet JD expectations?",
+        "",
+        "KEYWORDS:",
+        "  • matchedKeywords: 5–15 concise phrases present in BOTH the resume and the JD. Use exact JD spelling.",
+        "  • missingKeywords: 5–10 JD keywords or skills not found (or only weakly implied) in the resume.",
+        "",
+        "SUGGESTIONS (exactly 5–8 items):",
+        "  • Each suggestion must be specific to THIS resume and THIS job description.",
+        "  • Format: start with an action verb, name the exact missing keyword or gap, explain the impact.",
+        "  • Example: 'Add Docker and Kubernetes to your skills section — the JD explicitly requires container orchestration.'",
+        "  • Do NOT write generic advice like 'improve your summary' — be specific.",
+        "",
+        "STRENGTHS (3–5 items):",
+        "  • Call out specific skills, experiences, or achievements already aligned with the JD.",
+        "",
+        "CONCERNS (3–5 items):",
+        "  • Identify specific gaps, missing keywords, or weak areas that will hurt ATS ranking.",
+        "",
+        "resumeData:",
+        "  • Parse the actual resume text into the structured schema — use only what is stated in the resume.",
+        "  • skills: all technical skills, tools, and frameworks mentioned.",
+        "  • experience: each role with company, title, duration, and 2–3 key highlights extracted from the text.",
+        "  • projects: each project with name, tech stack, and 1–2 highlights.",
+        "  • certifications: all certifications or courses mentioned.",
     ].join("\n");
 }
 
@@ -451,7 +485,7 @@ async function callAnthropicModel({
         },
         body: JSON.stringify({
             model: modelName,
-            max_tokens: 2500,
+            max_tokens: 4000,
             temperature: 0.2,
             system: ATS_ANALYSIS_SYSTEM_PROMPT,
             messages: [
@@ -505,6 +539,7 @@ async function callOpenAiCompatibleModel({
         body: JSON.stringify({
             model: modelName,
             temperature: 0.2,
+            max_tokens: 4000,
             messages: [
                 { role: "system", content: ATS_ANALYSIS_SYSTEM_PROMPT },
                 { role: "user", content: prompt },

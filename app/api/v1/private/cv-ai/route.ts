@@ -88,7 +88,7 @@ SUMMARY — must be exceptional:
 
 SKILLS — comprehensive and categorized:
 - Group skills into logical categories matching the candidate's domain (e.g., "Programming Languages", "Frontend Frameworks", "Backend & APIs", "Cloud & DevOps", "Databases", "Tools & Methodologies").
-- Include proficiency hints for primary skills: "Python (Expert), Java (Advanced), Go (Intermediate)".
+- List skills as clean comma-separated names with NO proficiency tags — do not add "(Expert)", "(Advanced)", "(Intermediate)" or any level labels.
 - Add standard soft skills for the inferred role type: Agile, Cross-functional Collaboration, Technical Documentation, Problem Solving.
 - Infer companion tools that are standard with their existing stack.
 
@@ -264,7 +264,7 @@ function buildCvGenerationPrompt({
         "",
         "⑤ SKILLS — categorized and complete:",
         "  • Group into logical categories for the inferred domain.",
-        "  • Add proficiency indicators for primary skills (e.g., 'Python (Expert), Java (Advanced)').",
+        "  • List skills as plain comma-separated names — NO proficiency tags like (Expert) or (Advanced).",
         "  • Include relevant soft skills: Agile Methodologies, Cross-functional Collaboration, Technical Documentation.",
         "  • Add standard companion tools for the candidate's existing stack.",
         "",
@@ -355,7 +355,7 @@ async function callOpenAiCompat({ apiKey, modelName, prompt, provider, baseUrl }
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-            model: modelName, temperature: 0.2,
+            model: modelName, temperature: 0.2, max_tokens: 4000,
             messages: [{ role: "system", content: CV_AI_SYSTEM_PROMPT }, { role: "user", content: prompt }],
         }),
     });

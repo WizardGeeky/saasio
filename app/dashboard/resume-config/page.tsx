@@ -109,6 +109,113 @@ function PDFLoader() {
     );
 }
 
+// ─── PDF Layout Analyzer ──────────────────────────────────────────────────────
+
+interface PdfLayoutResult {
+    pageCount: number;
+    hasLargeGap: boolean;
+}
+
+async function analyzePdfUrl(url: string): Promise<PdfLayoutResult> {
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    const pageCount = pdf.numPages;
+    let hasLargeGap = false;
+
+    for (let p = 1; p <= Math.min(pageCount, 4); p++) {
+        const page = await pdf.getPage(p);
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const items = (textContent.items as any[]).filter((item: any) => item.transform && item.str?.trim());
+        if (items.length < 4) continue;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        items.sort((a: any, b: any) => b.transform[5] - a.transform[5]);
+        for (let i = 0; i < items.length - 1; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const gap = items[i].transform[5] - (items[i + 1] as any).transform[5] - ((items[i + 1] as any).height ?? 10);
+            if (gap / viewport.height > 0.07) { hasLargeGap = true; break; }
+        }
+        if (hasLargeGap) break;
+    }
+
+    return { pageCount, hasLargeGap };
+}
+
+function PdfLayoutBar({ url }: { url: string }) {
+    const [result, setResult] = useState<PdfLayoutResult | null>(null);
+    const [analyzing, setAnalyzing] = useState(true);
+
+    useEffect(() => {
+        if (!url) return;
+        let cancelled = false;
+        setAnalyzing(true);
+        setResult(null);
+        analyzePdfUrl(url)
+            .then((r) => { if (!cancelled) setResult(r); })
+            .catch(() => { if (!cancelled) setResult(null); })
+            .finally(() => { if (!cancelled) setAnalyzing(false); });
+        return () => { cancelled = true; };
+    }, [url]);
+
+    if (analyzing) {
+        return (
+            <div className="shrink-0 px-3 py-1.5 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
+                <div className="w-3 h-3 border border-violet-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs text-gray-400">Scanning layout…</span>
+            </div>
+        );
+    }
+
+    if (!result) return null;
+
+    const pageBadge =
+        result.pageCount === 1 ? "text-emerald-700 bg-emerald-50 border-emerald-200" :
+        result.pageCount === 2 ? "text-blue-700 bg-blue-50 border-blue-200" :
+        result.pageCount === 3 ? "text-amber-700 bg-amber-50 border-amber-200" :
+        "text-red-700 bg-red-50 border-red-200";
+
+    const isGood = result.pageCount <= 2 && !result.hasLargeGap;
+
+    return (
+        <div className="shrink-0 px-3 py-1.5 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center gap-2 text-xs">
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border font-semibold ${pageBadge}`}>
+                <FiFileText size={9} />
+                {result.pageCount} page{result.pageCount !== 1 ? "s" : ""}
+                {result.pageCount > 2 ? " · too long" : ""}
+            </span>
+
+            {result.hasLargeGap && (
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 font-medium">
+                    <FiAlertCircle size={9} />
+                    vertical gap detected
+                </span>
+            )}
+
+            {isGood && (
+                <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                    <FiCheckCircle size={9} />
+                    layout looks good
+                </span>
+            )}
+
+            {result.pageCount > 2 && (
+                <span className="ml-auto text-gray-400 hidden sm:block">
+                    Trim bullets or remove low-impact sections to fit 1–2 pages
+                </span>
+            )}
+            {result.hasLargeGap && result.pageCount <= 2 && (
+                <span className="ml-auto text-gray-400 hidden sm:block">
+                    Expand thin sections or reduce padding to fill the gap
+                </span>
+            )}
+        </div>
+    );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TEMPLATE 1 — CLASSIC  (Times, centered header, all-caps sections)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -215,21 +322,21 @@ function renderContactLinks(links: any, contactStyle: any, lnkStyle: any): React
 }
 
 const s1 = StyleSheet.create({
-    page:  { padding: "20 26", backgroundColor: "#fff" },
+    page:  { padding: "16 24", backgroundColor: "#fff" },
     hdr:   { alignItems: "center" },
     name:  { fontSize: 22, fontFamily: "Times-Bold", textAlign: "center", textTransform: "uppercase", letterSpacing: 1.5 },
     sep:   { height: 1, backgroundColor: "#555555", marginTop: 5, marginBottom: 2 },
     ht:    { fontSize: 11, fontFamily: "Times-Roman", textAlign: "center", color: "#444", marginTop: 3 },
     hc:    { fontSize: 10, fontFamily: "Times-Roman", textAlign: "center", color: "#555", marginTop: 2 },
-    sh:    { fontSize: 11, fontFamily: "Times-Bold", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 8, marginBottom: 1 },
+    sh:    { fontSize: 11, fontFamily: "Times-Bold", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 5, marginBottom: 1 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 10, fontFamily: "Times-Bold" },
-    body:  { fontSize: 10, fontFamily: "Times-Roman", color: "#333", lineHeight: 1.4 },
-    ital:  { fontSize: 10, fontFamily: "Times-Italic", color: "#555" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 10 },
-    bt:    { flex: 1, fontSize: 10, fontFamily: "Times-Roman", color: "#333", lineHeight: 1.4 },
-    lnk:   { color: "#1d4ed8", textDecoration: "underline" },
+    bold:  { fontSize: 10.5, fontFamily: "Times-Bold" },
+    body:  { fontSize: 10.5, fontFamily: "Times-Roman", color: "#333", lineHeight: 1.35 },
+    ital:  { fontSize: 10.5, fontFamily: "Times-Italic", color: "#555" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5 },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Times-Roman", color: "#333", lineHeight: 1.35 },
+    lnk:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T1({ data }: { data: any }) {
@@ -317,21 +424,21 @@ function T1({ data }: { data: any }) {
 
 const s2 = StyleSheet.create({
     page:  { padding: "0", backgroundColor: "#fff" },
-    bar:   { height: 5, backgroundColor: "#0d9488" },
-    wrap:  { padding: "14 26" },
-    name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0d9488", letterSpacing: 0.3 },
+    bar:   { height: 5, backgroundColor: "#222222" },
+    wrap:  { padding: "10 24" },
+    name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#111111", letterSpacing: 0.3 },
     ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#374151", marginTop: 2 },
-    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, lineHeight: 1.5 },
-    sh:    { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#0d9488", textTransform: "uppercase", letterSpacing: 1, marginTop: 10 },
-    sl:    { height: 1.5, backgroundColor: "#0d9488", marginTop: 2, marginBottom: 3 },
+    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, lineHeight: 1.35 },
+    sh:    { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#111111", textTransform: "uppercase", letterSpacing: 1, marginTop: 5 },
+    sl:    { height: 1.5, backgroundColor: "#333333", marginTop: 2, marginBottom: 3 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
-    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 10, color: "#0d9488" },
-    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
-    lnk:   { color: "#0d9488", textDecoration: "underline" },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111827" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    lnk:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T2({ data }: { data: any }) {
@@ -421,20 +528,20 @@ function T2({ data }: { data: any }) {
 
 const s3 = StyleSheet.create({
     page:  { padding: "0", backgroundColor: "#fff" },
-    band:  { backgroundColor: "#1e3a5f", padding: "20 26 14 26" },
+    band:  { backgroundColor: "#1a1a1a", padding: "14 24 10 24" },
     name:  { fontSize: 20, fontFamily: "Helvetica-Bold", color: "#fff", letterSpacing: 0.8 },
-    ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#93c5fd", marginTop: 3 },
-    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#bfdbfe", marginTop: 4 },
-    body:  { padding: "10 26" },
-    sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#1e3a5f", textTransform: "uppercase", letterSpacing: 1, marginTop: 8, borderBottomWidth: 1, borderBottomColor: "#1e3a5f", paddingBottom: 2 },
-    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#1e3a5f" },
-    btext: { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.4 },
-    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 12, fontSize: 10, color: "#1e3a5f", fontFamily: "Helvetica-Bold" },
-    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.4 },
-    lnk:   { color: "#93c5fd", textDecoration: "underline" },
+    ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#aaaaaa", marginTop: 3 },
+    hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#cccccc", marginTop: 4 },
+    body:  { padding: "8 24" },
+    sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111111", textTransform: "uppercase", letterSpacing: 1, marginTop: 5, borderBottomWidth: 1, borderBottomColor: "#333333", paddingBottom: 2 },
+    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111111" },
+    btext: { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 12, fontSize: 10.5, color: "#333333", fontFamily: "Helvetica-Bold" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    lnk:   { color: "#cccccc", textDecoration: "underline" },
 });
 
 function T3({ data }: { data: any }) {
@@ -522,20 +629,20 @@ function T3({ data }: { data: any }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const s4 = StyleSheet.create({
-    page:  { padding: "22 30", backgroundColor: "#fff" },
+    page:  { padding: "16 26", backgroundColor: "#fff" },
     name:  { fontSize: 24, fontFamily: "Helvetica-Bold", color: "#0a0a0a", letterSpacing: 0 },
     ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#6b7280", marginTop: 3 },
     hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#9ca3af", marginTop: 4 },
-    sep:   { height: 0.75, backgroundColor: "#d1d5db", marginTop: 10, marginBottom: 4 },
-    sh:    { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#374151", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 12, marginBottom: 3 },
-    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
+    sep:   { height: 0.75, backgroundColor: "#d1d5db", marginTop: 6, marginBottom: 3 },
+    sh:    { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#111111", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 5, marginBottom: 2 },
+    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
     bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.55 },
-    meta:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#9ca3af" },
-    br:    { flexDirection: "row", marginTop: 3 },
-    bd:    { width: 12, fontSize: 10, color: "#d1d5db" },
-    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.55 },
-    lnk:   { color: "#6b7280", textDecoration: "underline" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica", color: "#9ca3af" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 12, fontSize: 10.5, color: "#999999" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#4b5563", lineHeight: 1.35 },
+    lnk:   { color: "#555555", textDecoration: "underline" },
 });
 
 function T4({ data }: { data: any }) {
@@ -620,21 +727,21 @@ function T4({ data }: { data: any }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const s5 = StyleSheet.create({
-    page:   { padding: "26 30", backgroundColor: "#fafaf9" },
-    hdr:    { borderBottomWidth: 2, borderBottomColor: "#92400e", paddingBottom: 10, alignItems: "center" },
+    page:   { padding: "16 26", backgroundColor: "#fff" },
+    hdr:    { borderBottomWidth: 2, borderBottomColor: "#333333", paddingBottom: 6, alignItems: "center" },
     name:   { fontSize: 26, fontFamily: "Times-Bold", color: "#1c1917", letterSpacing: 0.5, textAlign: "center" },
-    accent: { height: 2, backgroundColor: "#b45309", width: 60, marginTop: 5 },
-    ht:     { fontSize: 11, fontFamily: "Times-Italic", color: "#78350f", textAlign: "center", marginTop: 5 },
+    accent: { height: 2, backgroundColor: "#333333", width: 60, marginTop: 5 },
+    ht:     { fontSize: 11, fontFamily: "Times-Italic", color: "#555555", textAlign: "center", marginTop: 4 },
     hc:     { fontSize: 10, fontFamily: "Times-Roman", color: "#57534e", textAlign: "center", marginTop: 3 },
-    sh:     { fontSize: 12, fontFamily: "Times-Bold", color: "#1c1917", marginTop: 10, marginBottom: 1, borderBottomWidth: 0.5, borderBottomColor: "#d6d3d1", paddingBottom: 2 },
-    row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-    bold:   { fontSize: 10, fontFamily: "Times-Bold", color: "#1c1917" },
-    body:   { fontSize: 10, fontFamily: "Times-Roman", color: "#44403c", lineHeight: 1.4 },
-    meta:   { fontSize: 9.5, fontFamily: "Times-Italic", color: "#78716c" },
-    br:     { flexDirection: "row", marginTop: 2 },
-    bd:     { width: 10, fontSize: 10, color: "#b45309" },
-    bt:     { flex: 1, fontSize: 10, fontFamily: "Times-Roman", color: "#44403c", lineHeight: 1.4 },
-    lnk:    { color: "#b45309", textDecoration: "underline" },
+    sh:     { fontSize: 12, fontFamily: "Times-Bold", color: "#111111", marginTop: 5, marginBottom: 1, borderBottomWidth: 0.5, borderBottomColor: "#cccccc", paddingBottom: 2 },
+    row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:   { fontSize: 10.5, fontFamily: "Times-Bold", color: "#1c1917" },
+    body:   { fontSize: 10.5, fontFamily: "Times-Roman", color: "#44403c", lineHeight: 1.35 },
+    meta:   { fontSize: 10, fontFamily: "Times-Italic", color: "#78716c" },
+    br:     { flexDirection: "row", marginTop: 1 },
+    bd:     { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:     { flex: 1, fontSize: 10.5, fontFamily: "Times-Roman", color: "#44403c", lineHeight: 1.35 },
+    lnk:    { color: "#333333", textDecoration: "underline" },
 });
 
 function T5({ data }: { data: any }) {
@@ -721,24 +828,24 @@ function T5({ data }: { data: any }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const s6 = StyleSheet.create({
-    page:  { padding: "18 24", backgroundColor: "#fff" },
+    page:  { padding: "16 22", backgroundColor: "#fff" },
     nw:    { flexDirection: "row", alignItems: "center" },
-    vbar:  { width: 4, height: 36, backgroundColor: "#7c3aed", marginRight: 10 },
+    vbar:  { width: 4, height: 36, backgroundColor: "#333333", marginRight: 10 },
     name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#0f172a", letterSpacing: 0.2 },
-    ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#7c3aed", marginTop: 1 },
+    ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#444444", marginTop: 1 },
     hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#475569", marginTop: 4 },
-    div:   { height: 1, backgroundColor: "#e2e8f0", marginTop: 6, marginBottom: 2 },
-    sw:    { flexDirection: "row", alignItems: "center", marginTop: 9, marginBottom: 3 },
-    sbar:  { width: 3, height: 13, backgroundColor: "#7c3aed", marginRight: 6 },
+    div:   { height: 1, backgroundColor: "#cccccc", marginTop: 6, marginBottom: 2 },
+    sw:    { flexDirection: "row", alignItems: "center", marginTop: 5, marginBottom: 3 },
+    sbar:  { width: 3, height: 13, backgroundColor: "#333333", marginRight: 6 },
     sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 },
-    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#64748b" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 10, color: "#7c3aed" },
-    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    lnk:   { color: "#7c3aed", textDecoration: "underline" },
+    row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
+    lnk:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T6({ data }: { data: any }) {
@@ -825,22 +932,22 @@ function T6({ data }: { data: any }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const s7 = StyleSheet.create({
-    page:   { padding: "20 26", backgroundColor: "#fff" },
-    name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f766e" },
+    page:   { padding: "16 24", backgroundColor: "#fff" },
+    name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#111111" },
     ht:     { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", marginTop: 2 },
-    hc:     { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 3, lineHeight: 1.4 },
-    div:    { height: 2, backgroundColor: "#0f766e", marginTop: 7 },
-    sw:     { flexDirection: "row", alignItems: "center", marginTop: 10, marginBottom: 3 },
-    sbar:   { width: 4, height: 14, backgroundColor: "#0f766e", marginRight: 7 },
+    hc:     { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 3, lineHeight: 1.35 },
+    div:    { height: 2, backgroundColor: "#222222", marginTop: 6 },
+    sw:     { flexDirection: "row", alignItems: "center", marginTop: 5, marginBottom: 3 },
+    sbar:   { width: 4, height: 14, backgroundColor: "#333333", marginRight: 7 },
     sh:     { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 },
     row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:   { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:   { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    meta:   { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    br:     { flexDirection: "row", marginTop: 2 },
-    bd:     { width: 10, fontSize: 10, color: "#0f766e" },
-    bt:     { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    lnk:    { color: "#0f766e", textDecoration: "underline" },
+    bold:   { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:   { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    meta:   { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:     { flexDirection: "row", marginTop: 1 },
+    bd:     { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:     { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    lnk:    { color: "#333333", textDecoration: "underline" },
 });
 
 function T7({ data }: { data: any }) {
@@ -928,21 +1035,21 @@ function T7({ data }: { data: any }) {
 
 const s8 = StyleSheet.create({
     page:   { padding: "0", backgroundColor: "#fff" },
-    hbg:    { backgroundColor: "#1e3a5f", padding: "16 26 14 26" },
+    hbg:    { backgroundColor: "#1a1a1a", padding: "12 24 10 24" },
     name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#ffffff" },
-    ht:     { fontSize: 10.5, fontFamily: "Helvetica", color: "#93c5fd", marginTop: 2 },
-    hc:     { fontSize: 9.5, fontFamily: "Helvetica", color: "#bfdbfe", marginTop: 3, lineHeight: 1.4 },
-    cnt:    { padding: "10 26" },
-    sh:     { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#1e3a5f", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 9, borderBottomWidth: 1.5, borderBottomColor: "#1e3a5f", paddingBottom: 2, marginBottom: 3 },
+    ht:     { fontSize: 10.5, fontFamily: "Helvetica", color: "#aaaaaa", marginTop: 2 },
+    hc:     { fontSize: 9.5, fontFamily: "Helvetica", color: "#cccccc", marginTop: 3, lineHeight: 1.35 },
+    cnt:    { padding: "8 24" },
+    sh:     { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111111", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 5, borderBottomWidth: 1.5, borderBottomColor: "#333333", paddingBottom: 2, marginBottom: 3 },
     row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:   { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    btext:  { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    meta:   { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    br:     { flexDirection: "row", marginTop: 2 },
-    bd:     { width: 10, fontSize: 10, fontFamily: "Helvetica-Bold", color: "#1e3a5f" },
-    bt:     { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    lnk:    { color: "#93c5fd", textDecoration: "underline" },
-    lnkb:   { color: "#1e3a5f", textDecoration: "underline" },
+    bold:   { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    btext:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    meta:   { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:     { flexDirection: "row", marginTop: 1 },
+    bd:     { width: 10, fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#333333" },
+    bt:     { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    lnk:    { color: "#cccccc", textDecoration: "underline" },
+    lnkb:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T8({ data }: { data: any }) {
@@ -1034,21 +1141,21 @@ function T8({ data }: { data: any }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const s9 = StyleSheet.create({
-    page:  { padding: "22 28", backgroundColor: "#fff" },
-    name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#064e3b", letterSpacing: 0.2 },
-    ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#059669", marginTop: 2 },
+    page:  { padding: "16 26", backgroundColor: "#fff" },
+    name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#111111", letterSpacing: 0.2 },
+    ht:    { fontSize: 10, fontFamily: "Helvetica", color: "#444444", marginTop: 2 },
     hc:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4 },
-    dbar:  { height: 2, backgroundColor: "#064e3b", marginTop: 8, marginBottom: 1 },
-    dthin: { height: 0.75, backgroundColor: "#059669" },
-    sh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#064e3b", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 10, marginBottom: 2 },
+    dbar:  { height: 2, backgroundColor: "#222222", marginTop: 6, marginBottom: 1 },
+    dthin: { height: 0.75, backgroundColor: "#888888" },
+    sh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#111111", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 5, marginBottom: 2 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
     bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 10, color: "#059669" },
-    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.45 },
-    lnk:   { color: "#059669", textDecoration: "underline" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    lnk:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T9({ data }: { data: any }) {
@@ -1138,16 +1245,16 @@ const s10 = StyleSheet.create({
     ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#374151", marginTop: 2 },
     hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#6b7280", marginTop: 2 },
     hbar:  { height: 1.5, backgroundColor: "#000", marginTop: 5, marginBottom: 1 },
-    sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 7, marginBottom: 0 },
+    sh:    { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 5, marginBottom: 0 },
     shbar: { height: 1, backgroundColor: "#000", marginTop: 1, marginBottom: 3 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 3 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#000" },
-    body:  { fontSize: 9.5, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.4 },
-    meta:  { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
-    br:    { flexDirection: "row", marginTop: 1.5 },
-    bd:    { width: 10, fontSize: 9.5 },
-    bt:    { flex: 1, fontSize: 9.5, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.4 },
-    lnk:   { color: "#1d4ed8", textDecoration: "underline" },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#000" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5 },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.35 },
+    lnk:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T10({ data }: { data: any }) {
@@ -1230,24 +1337,24 @@ function T10({ data }: { data: any }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // TEMPLATE 11 - FAANG FOCUS (single-column, recruiter-first, strong blue scan line)
 const s11 = StyleSheet.create({
-    page:  { padding: "18 24", backgroundColor: "#fff" },
+    page:  { padding: "16 22", backgroundColor: "#fff" },
     head:  { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
     left:  { flex: 1, paddingRight: 12 },
     name:  { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f172a", letterSpacing: 0.2 },
-    ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#2563eb", marginTop: 2 },
-    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#475569", textAlign: "right", lineHeight: 1.45, width: 180 },
-    bar:   { height: 1.5, backgroundColor: "#2563eb", marginTop: 7 },
-    thin:  { height: 0.5, backgroundColor: "#bfdbfe", marginBottom: 2 },
-    sh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#2563eb", textTransform: "uppercase", letterSpacing: 0.9, marginTop: 8 },
-    sl:    { height: 1, backgroundColor: "#2563eb", marginTop: 2, marginBottom: 3 },
+    ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#444444", marginTop: 2 },
+    hc:    { fontSize: 9, fontFamily: "Helvetica", color: "#475569", textAlign: "right", lineHeight: 1.35, width: 180 },
+    bar:   { height: 1.5, backgroundColor: "#222222", marginTop: 6 },
+    thin:  { height: 0.5, backgroundColor: "#cccccc", marginBottom: 2 },
+    sh:    { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: "#111111", textTransform: "uppercase", letterSpacing: 0.9, marginTop: 5 },
+    sl:    { height: 1, backgroundColor: "#333333", marginTop: 2, marginBottom: 3 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:  { fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:  { fontSize: 9.1, fontFamily: "Helvetica-Oblique", color: "#64748b" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.7, color: "#2563eb" },
-    bt:    { flex: 1, fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    lnk:   { color: "#2563eb", textDecoration: "underline" },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
+    lnk:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T11({ data }: { data: any }) {
@@ -1333,23 +1440,23 @@ function T11({ data }: { data: any }) {
 
 // TEMPLATE 12 - MAANG SLATE (centered header, calm slate-green accents, clean spacing)
 const s12 = StyleSheet.create({
-    page:  { padding: "20 28", backgroundColor: "#fff" },
-    hdr:   { alignItems: "center", borderBottomWidth: 0.8, borderBottomColor: "#d1d5db", paddingBottom: 8 },
+    page:  { padding: "16 26", backgroundColor: "#fff" },
+    hdr:   { alignItems: "center", borderBottomWidth: 0.8, borderBottomColor: "#d1d5db", paddingBottom: 6 },
     name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#111827", letterSpacing: 0.4 },
-    ht:    { fontSize: 9.8, fontFamily: "Helvetica", color: "#0f766e", marginTop: 2 },
-    hc:    { fontSize: 9.2, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, textAlign: "center", lineHeight: 1.4 },
-    accent:{ width: 62, height: 2, backgroundColor: "#0f766e", marginTop: 6 },
-    srow:  { flexDirection: "row", alignItems: "center", marginTop: 9, marginBottom: 3 },
-    dot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: "#0f766e", marginRight: 6 },
+    ht:    { fontSize: 9.8, fontFamily: "Helvetica", color: "#444444", marginTop: 2 },
+    hc:    { fontSize: 9.2, fontFamily: "Helvetica", color: "#6b7280", marginTop: 4, textAlign: "center", lineHeight: 1.35 },
+    accent:{ width: 62, height: 2, backgroundColor: "#333333", marginTop: 6 },
+    srow:  { flexDirection: "row", alignItems: "center", marginTop: 5, marginBottom: 3 },
+    dot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: "#333333", marginRight: 6 },
     sh:    { fontSize: 9.3, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 1.1 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#111827" },
-    body:  { fontSize: 9.8, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    meta:  { fontSize: 9.2, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.8, color: "#0f766e" },
-    bt:    { flex: 1, fontSize: 9.8, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.5 },
-    lnk:   { color: "#0f766e", textDecoration: "underline" },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#111827" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#6b7280" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#374151", lineHeight: 1.35 },
+    lnk:   { color: "#333333", textDecoration: "underline" },
 });
 
 function T12({ data }: { data: any }) {
@@ -1429,20 +1536,20 @@ function T12({ data }: { data: any }) {
 
 // TEMPLATE 13 - PLATFORM PRIME (section-band layout for systems and backend resumes)
 const s13 = StyleSheet.create({
-    page:  { padding: "20 24", backgroundColor: "#fff" },
+    page:  { padding: "16 22", backgroundColor: "#fff" },
     name:  { fontSize: 21, fontFamily: "Helvetica-Bold", color: "#0f172a" },
     ht:    { fontSize: 9.5, fontFamily: "Helvetica", color: "#475569", marginTop: 2 },
-    hc:    { fontSize: 9.1, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.45 },
-    top:   { height: 2.5, backgroundColor: "#475569", marginTop: 7, marginBottom: 5 },
-    sw:    { backgroundColor: "#f1f5f9", padding: "4 6", marginTop: 8, marginBottom: 3, borderLeftWidth: 2, borderLeftColor: "#475569" },
+    hc:    { fontSize: 9.1, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.35 },
+    top:   { height: 2.5, backgroundColor: "#333333", marginTop: 6, marginBottom: 4 },
+    sw:    { backgroundColor: "#f4f4f4", padding: "3 6", marginTop: 5, marginBottom: 3, borderLeftWidth: 2, borderLeftColor: "#333333" },
     sh:    { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#1e293b", textTransform: "uppercase", letterSpacing: 0.9 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:  { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:  { fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:  { fontSize: 9.1, fontFamily: "Helvetica-Oblique", color: "#64748b" },
-    br:    { flexDirection: "row", marginTop: 2 },
-    bd:    { width: 10, fontSize: 9.7, color: "#475569" },
-    bt:    { flex: 1, fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:  { fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
+    meta:  { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    br:    { flexDirection: "row", marginTop: 1 },
+    bd:    { width: 10, fontSize: 10.5, color: "#444444" },
+    bt:    { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
     lnk:   { color: "#334155", textDecoration: "underline" },
 });
 
@@ -1524,22 +1631,22 @@ function T13({ data }: { data: any }) {
 
 // TEMPLATE 14 - RECRUITER SCAN (summary highlight box, impact-first and easy to skim)
 const s14 = StyleSheet.create({
-    page:   { padding: "18 24", backgroundColor: "#fff" },
-    hdr:    { borderBottomWidth: 1.2, borderBottomColor: "#1d4ed8", paddingBottom: 7 },
+    page:   { padding: "16 22", backgroundColor: "#fff" },
+    hdr:    { borderBottomWidth: 1.2, borderBottomColor: "#333333", paddingBottom: 6 },
     name:   { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    ht:     { fontSize: 9.4, fontFamily: "Helvetica", color: "#1d4ed8", marginTop: 2 },
-    hc:     { fontSize: 9, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.4 },
-    box:    { borderLeftWidth: 3, borderLeftColor: "#1d4ed8", backgroundColor: "#eff6ff", padding: "6 8", marginTop: 8 },
-    sh:     { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 1, marginTop: 8, marginBottom: 2 },
-    sl:     { height: 1, backgroundColor: "#1d4ed8", marginBottom: 3 },
+    ht:     { fontSize: 9.4, fontFamily: "Helvetica", color: "#444444", marginTop: 2 },
+    hc:     { fontSize: 9, fontFamily: "Helvetica", color: "#64748b", marginTop: 4, lineHeight: 1.35 },
+    box:    { borderLeftWidth: 3, borderLeftColor: "#333333", backgroundColor: "#f8f8f8", padding: "5 8", marginTop: 5 },
+    sh:     { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: 1, marginTop: 5, marginBottom: 2 },
+    sl:     { height: 1, backgroundColor: "#333333", marginBottom: 3 },
     row:    { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-    bold:   { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#0f172a" },
-    body:   { fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    meta:   { fontSize: 9, fontFamily: "Helvetica-Oblique", color: "#64748b" },
-    br:     { flexDirection: "row", marginTop: 2 },
-    bd:     { width: 10, fontSize: 9.7, color: "#1d4ed8" },
-    bt:     { flex: 1, fontSize: 9.7, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.45 },
-    lnk:    { color: "#1d4ed8", textDecoration: "underline" },
+    bold:   { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#0f172a" },
+    body:   { fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
+    meta:   { fontSize: 10, fontFamily: "Helvetica-Oblique", color: "#64748b" },
+    br:     { flexDirection: "row", marginTop: 1 },
+    bd:     { width: 10, fontSize: 10.5, color: "#333333" },
+    bt:     { flex: 1, fontSize: 10.5, fontFamily: "Helvetica", color: "#334155", lineHeight: 1.35 },
+    lnk:    { color: "#333333", textDecoration: "underline" },
 });
 
 function T14({ data }: { data: any }) {
@@ -1632,12 +1739,12 @@ const s15 = StyleSheet.create({
     sh:    { fontSize: 9.2, fontFamily: "Helvetica-Bold", color: "#000", textTransform: "uppercase", letterSpacing: 1, marginTop: 6 },
     sl:    { height: 0.5, backgroundColor: "#000", marginTop: 1, marginBottom: 2 },
     row:   { flexDirection: "row", justifyContent: "space-between", marginTop: 3 },
-    bold:  { fontSize: 9.6, fontFamily: "Helvetica-Bold", color: "#000" },
-    body:  { fontSize: 9.3, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
-    meta:  { fontSize: 8.7, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
+    bold:  { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: "#000" },
+    body:  { fontSize: 10, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
+    meta:  { fontSize: 9.5, fontFamily: "Helvetica-Oblique", color: "#4b5563" },
     br:    { flexDirection: "row", marginTop: 1.5 },
-    bd:    { width: 8, fontSize: 9.3, color: "#000" },
-    bt:    { flex: 1, fontSize: 9.3, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
+    bd:    { width: 8, fontSize: 10, color: "#000" },
+    bt:    { flex: 1, fontSize: 10, fontFamily: "Helvetica", color: "#111827", lineHeight: 1.35 },
     lnk:   { color: "#1d4ed8", textDecoration: "underline" },
 });
 
@@ -3127,6 +3234,9 @@ export default function ResumeConfigPage() {
                                                 <MobilePDFCanvas url={url} />
                                             </div>
 
+                                            {/* Layout analysis */}
+                                            <PdfLayoutBar url={url} />
+
                                             {/* Download bar */}
                                             <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-3">
                                                 {subStatus.loaded && !isHistoryRedownloadReady && (!subStatus.hasActive || !subStatus.hasUsage) ? (
@@ -3174,6 +3284,9 @@ export default function ResumeConfigPage() {
                                                     style={{ border: "none" }}
                                                 />
                                             </div>
+
+                                            {/* Layout analysis */}
+                                            <PdfLayoutBar url={url} />
 
                                             {/* Download bar */}
                                             <div className="shrink-0 px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-3">
